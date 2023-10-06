@@ -1,0 +1,27 @@
+Put result
+201
+UserDAO [_rid=LuByAJLIN14BAAAAAAAAAA==, _ts=1696556513,
+id=0:1696556511239, name=SCC 0:1696556511239, pwd=super_secret, photoId=0:34253455, houseIds=[]]
+
+Get for id = 0:1696556511239
+UserDAO [_rid=LuByAJLIN14BAAAAAAAAAA==, _ts=1696556513,
+id=0:1696556511239, name=SCC 0:1696556511239, pwd=super_secret, photoId=0:34253455, houseIds=[]]
+
+
+Get for all ids
+UserDAO [_rid=LuByAJLIN14BAAAAAAAAAA==, _ts=1696556513,
+id=0:1696556511239, name=SCC 0:1696556511239, pwd=super_secret, photoId=0:34253455, houseIds=[]]
+
+
+Put result
+201
+UserDAO [_rid=LuByAJLIN14CAAAAAAAAAA==, _ts=1696556513,
+id=0:1696556513045, name=SCC 0:1696556513045, pwd=super_secret, photoId=0:34253455, houseIds=[]]
+Get for id = 0:1696556513045
+
+Get by id result
+UserDAO [_rid=LuByAJLIN14CAAAAAAAAAA==, _ts=1696556513,
+id=0:1696556513045, name=SCC 0:1696556513045, pwd=super_secret, photoId=0:34253455, houseIds=[]]
+
+Delte user
+Get by id result
