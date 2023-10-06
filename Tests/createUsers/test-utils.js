@@ -47,9 +47,9 @@ function loadData() {
 	var i
 	var basefile
 	if( fs.existsSync( '/../images'))
-		basefile = '/../images/house'
+		basefile = '/../images/house.'
 	else
-		basefile =  '../images/house'
+		basefile =  '../images/house.'
 	for( i = 1; i <= 40 ; i++) {
 		var img  = fs.readFileSync(basefile + i + '.jpg')
 		images.push( img)
@@ -111,7 +111,7 @@ function selectUser(context, events, done) {
  * Generate data for a new user using Faker
  */
 function genNewUser(context, events, done) {
-    const rand = Math.random() * 100000
+    const rand = (Math.random() + 1) * 1000000
 	const first = "fER"
     const last = "ADASC"
 	context.vars.id = first + "." + last + rand.toString();
@@ -126,7 +126,8 @@ function genNewUser(context, events, done) {
  */
 function genNewUserReply(requestParams, response, context, ee, next) {
 	if( response.statusCode >= 200 && response.statusCode < 300 && response.body.length > 0)  {
-		let u = JSON.parse( response.body)
+	   // console.log(response.body)
+		let u = response.body
 		users.push(u)
 		fs.writeFileSync('users.data', JSON.stringify(users));
 	}
