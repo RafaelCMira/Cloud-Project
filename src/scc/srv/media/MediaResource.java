@@ -8,113 +8,74 @@ import com.azure.storage.blob.models.BlobItem;
 import scc.utils.Hash;
 
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 
-import jakarta.ws.rs.Consumes;
-import jakarta.ws.rs.GET;
-import jakarta.ws.rs.NotFoundException;
-import jakarta.ws.rs.POST;
-import jakarta.ws.rs.Path;
 import jakarta.ws.rs.PathParam;
-import jakarta.ws.rs.Produces;
-import jakarta.ws.rs.core.MediaType;
 
 /**
  * Resource for managing media files, such as images.
  */
-@Path("/media")
 public class MediaResource {
-
-    // Get connection string in the storage access keys page
-    String storageConnectionString = "DefaultEndpointsProtocol=https;AccountName=scc59243;AccountKey=EVOrbhWeRzbKCyTTAvPyc1PI9SrpIiVu9sDAuS1hXltrWOtjVUz78CGr8MuDrbnPwtX+k3DwGKBk+ASt1vUmeg==;EndpointSuffix=core.windows.net";
-
-    /**
-     * Post a new image.The id of the image is its hash.
-     */
-    @POST
-    @Path("/")
-    @Consumes(MediaType.APPLICATION_OCTET_STREAM)
-    @Produces(MediaType.APPLICATION_JSON)
     public String upload(byte[] contents) {
+        String id = Hash.of(contents);
         try {
-            String id = Hash.of(contents);
-
             BinaryData data = BinaryData.fromBytes(contents);
 
             // Get container client
-            BlobContainerClient containerClient = new BlobContainerClientBuilder()
-                    .connectionString(storageConnectionString)
-                    .containerName("images")
-                    .buildClient();
+            BlobContainerClient containerClient = getContainerClient(MediaService.CONTAINER_NAME);
 
             // Get client to blob
             BlobClient blob = containerClient.getBlobClient(id);
 
             // Upload contents from BinaryData (check documentation for other alternatives)
             blob.upload(data);
-
-            System.out.println("File updloaded : " + id);
-            return id;
         } catch (Exception e) {
             e.printStackTrace();
         }
-
-        return "werwer";
+        return id;
     }
 
-    /**
-     * Return the contents of an image. Throw an appropriate error message if
-     * id does not exist.
-     */
-    @GET
-    @Path("/{id}")
-    @Produces(MediaType.APPLICATION_OCTET_STREAM)
+
     public byte[] download(@PathParam("id") String id) {
+        byte[] content = null;
         try {
             // Get container client
-            BlobContainerClient containerClient = new BlobContainerClientBuilder()
-                    .connectionString(storageConnectionString)
-                    .containerName("images")
-                    .buildClient();
+            BlobContainerClient containerClient = getContainerClient(MediaService.CONTAINER_NAME);
 
             // Get client to blob
             BlobClient blob = containerClient.getBlobClient(id);
 
             // Download contents to BinaryData (check documentation for other alternatives)
             BinaryData data = blob.downloadContent();
-
-            return data.toBytes();
-
+            content = data.toBytes();
+            if (content == null) throw new Exception(String.format("Id: %s does not exist", id));
         } catch (Exception e) {
             e.printStackTrace();
         }
-
-        return null;
+        return content;
     }
 
-    /**
-     * Lists the ids of images stored.
-     */
-    @GET
-    @Path("/")
-    @Produces(MediaType.APPLICATION_JSON)
+
     public List<String> list() {
         // Get container client
-        BlobContainerClient containerClient = new BlobContainerClientBuilder()
-                .connectionString(storageConnectionString)
-                .containerName("images")
-                .buildClient();
+        BlobContainerClient containerClient = getContainerClient(MediaService.CONTAINER_NAME);
 
+        //Get blobs
         var blobs = containerClient.listBlobs();
 
         // List blobs in the container
         List<String> blobNames = new ArrayList<>();
-        for (BlobItem blobItem : containerClient.listBlobs()) {
+        for (BlobItem blobItem : blobs)
             blobNames.add(blobItem.getName());
-        }
 
         return blobNames;
+    }
+
+    // Get container client
+    private BlobContainerClient getContainerClient(String containerName) {
+        return new BlobContainerClientBuilder()
+                .connectionString(MediaService.storageConnectionString)
+                .containerName(containerName)
+                .buildClient();
     }
 }

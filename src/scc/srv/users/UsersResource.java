@@ -9,6 +9,7 @@ import com.azure.storage.blob.BlobContainerClientBuilder;
 import scc.data.User;
 import scc.data.UserDAO;
 import scc.db.CosmosDBLayer;
+import scc.srv.media.MediaService;
 
 import java.util.Optional;
 
@@ -17,13 +18,11 @@ public class UsersResource implements UsersService {
     private static final String CONTAINER_NAME = "users";
     private final CosmosDBLayer db = CosmosDBLayer.getInstance(CONTAINER_NAME);
 
-    String storageConnectionString = "DefaultEndpointsProtocol=https;AccountName=scc59243;AccountKey=EVOrbhWeRzbKCyTTAvPyc1PI9SrpIiVu9sDAuS1hXltrWOtjVUz78CGr8MuDrbnPwtX+k3DwGKBk+ASt1vUmeg==;EndpointSuffix=core.windows.net";
-
     @Override
     public String createUser(UserDAO userDAO) throws Exception {
         // Get container client
         BlobContainerClient containerClient = new BlobContainerClientBuilder()
-                .connectionString(storageConnectionString)
+                .connectionString(MediaService.storageConnectionString)
                 .containerName("images")
                 .buildClient();
 
@@ -36,7 +35,7 @@ public class UsersResource implements UsersService {
 
         var res = db.createUser(userDAO);
         int statusCode = res.getStatusCode();
-        if (statusCode < 300) {
+        if (isStatusOk(statusCode)) {
             return userDAO.toUser().toString();
         } else {
             throw new Exception("Error: " + statusCode);
@@ -47,7 +46,7 @@ public class UsersResource implements UsersService {
     public String deleteUser(String id) throws Exception {
         CosmosItemResponse<Object> res = db.delUserById(id);
         int statusCode = res.getStatusCode();
-        if (statusCode < 300) {
+        if (isStatusOk(statusCode)) {
             return String.format("StatusCode: %d \nUser %s was delete", statusCode, id);
         } else {
             throw new Exception("Error: " + statusCode);
@@ -58,7 +57,7 @@ public class UsersResource implements UsersService {
     public User updateUser(String id, UserDAO userDAO) throws Exception {
         var res = db.updateUserById(id, userDAO);
         int statusCode = res.getStatusCode();
-        if (statusCode < 300) {
+        if (isStatusOk(res.getStatusCode())) {
             return res.getItem().toUser();
         } else {
             throw new Exception("Error: " + statusCode);
@@ -74,6 +73,11 @@ public class UsersResource implements UsersService {
         } else {
             throw new Exception("Error: 404");
         }
+    }
+
+    // Verifies if HTTP code is OK
+    private boolean isStatusOk(int statusCode) {
+        return statusCode > 200 && statusCode < 300;
     }
 
 

@@ -60,6 +60,11 @@ public class CosmosDBLayer {
         return container.deleteItem(id, key, new CosmosItemRequestOptions());
     }
 
+    /*public CosmosItemResponse<Object> delUser(UserDAO user) {
+        init();
+        return container.deleteItem(user, new CosmosItemRequestOptions());
+    }*/
+
     public CosmosPagedIterable<UserDAO> getUserById(String id) {
         init();
         return container.queryItems("SELECT * FROM users WHERE users.id=\"" + id + "\"", new CosmosQueryRequestOptions(), UserDAO.class);
@@ -78,16 +83,11 @@ public class CosmosDBLayer {
     }*/
 
 
-    public CosmosPagedIterable<UserDAO> getContainer() {
+    public CosmosPagedIterable<UserDAO> getUsers() {
         init();
         return container.queryItems("SELECT * FROM users ", new CosmosQueryRequestOptions(), UserDAO.class);
     }
 
-    /*public CosmosItemResponse<Object> delUser(UserDAO user) {
-        init();
-        return container.deleteItem(user, new CosmosItemRequestOptions());
-    }
-*/
 
     public void close() {
         client.close();
