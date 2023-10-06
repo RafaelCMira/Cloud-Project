@@ -1,12 +1,10 @@
 package scc.data;
 
-import java.util.Arrays;
+public class HouseDAO {
 
-/**
- * Represents a House, as returned to the clients
- */
+    private String _rid;
 
-public class House {
+    private String _ts;
 
     private String id;
 
@@ -18,14 +16,33 @@ public class House {
 
     private String photoId;
 
+    public HouseDAO(){}
 
-    public House(String id, String name, String location, String description , String photoId) {
+    public HouseDAO(House h) { this(h.getId(), h.getName(), h.getLocation(), h.getDescription(), h.getPhotoId()); }
+
+    public HouseDAO(String id, String name, String location, String description , String photoId) {
         super();
         this.id = id;
         this.name = name;
         this.location = location;
         this.description = description;
         this.photoId = photoId;
+    }
+
+    public String get_rid() {
+        return _rid;
+    }
+
+    public void set_rid(String _rid) {
+        this._rid = _rid;
+    }
+
+    public String get_ts() {
+        return _ts;
+    }
+
+    public void set_ts(String _ts) {
+        this._ts = _ts;
     }
 
     public String getId() {
@@ -68,6 +85,8 @@ public class House {
 
     @Override
     public String toString() {
-        return "House [id=" + id + ", name=" + name + ", location=" + location + ", description=" + description + ", photoId=" + photoId + "]";
+        return "House [ _rid=" + _rid + ", _ts=" + _ts +
+                ", id=" + id + ", name=" + name + ", location=" + location + ", description=" + description + ", photoId=" + photoId + "]";
     }
+
 }
