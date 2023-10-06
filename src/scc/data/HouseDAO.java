@@ -1,5 +1,7 @@
 package scc.data;
 
+import java.util.Arrays;
+
 public class HouseDAO {
 
     private String _rid;
@@ -16,17 +18,20 @@ public class HouseDAO {
 
     private String photoId;
 
+    private String ownerID;
+
     public HouseDAO(){}
 
-    public HouseDAO(House h) { this(h.getId(), h.getName(), h.getLocation(), h.getDescription(), h.getPhotoId()); }
+    public HouseDAO(House h) { this(h.getId(), h.getName(), h.getLocation(), h.getDescription(), h.getPhotoId(), h.getOwnerID()); }
 
-    public HouseDAO(String id, String name, String location, String description , String photoId) {
+    public HouseDAO(String id, String name, String location, String description , String photoId, String ownerID) {
         super();
         this.id = id;
         this.name = name;
         this.location = location;
         this.description = description;
         this.photoId = photoId;
+        this.ownerID = ownerID;
     }
 
     public String get_rid() {
@@ -83,10 +88,19 @@ public class HouseDAO {
         this.photoId = photoId;
     }
 
+    public String getOwnerID() { return ownerID; }
+
+    public void setOwnerID(String ownerID) { this.ownerID = ownerID;}
+
+    public House toHouse() {
+        return new House(id, name, location, description, photoId, ownerID);
+    }
+
     @Override
     public String toString() {
         return "House [ _rid=" + _rid + ", _ts=" + _ts +
-                ", id=" + id + ", name=" + name + ", location=" + location + ", description=" + description + ", photoId=" + photoId + "]";
+                ", id=" + id + ", name=" + name + ", location=" + location + ", description=" + description + ", photoId=" + photoId + ", ownerID="
+        + ownerID +"]";
     }
 
 }

@@ -18,14 +18,17 @@ public class House {
 
     private String photoId;
 
+    private String ownerID;
 
-    public House(String id, String name, String location, String description , String photoId) {
+
+    public House(String id, String name, String location, String description , String photoId, String ownerID) {
         super();
         this.id = id;
         this.name = name;
         this.location = location;
         this.description = description;
         this.photoId = photoId;
+        this.ownerID = ownerID;
     }
 
     public String getId() {
@@ -66,8 +69,13 @@ public class House {
         this.photoId = photoId;
     }
 
+    public String getOwnerID() { return ownerID; }
+
+    public void setOwnerID(String ownerID) { this.ownerID = ownerID;}
+
     @Override
     public String toString() {
-        return "House [id=" + id + ", name=" + name + ", location=" + location + ", description=" + description + ", photoId=" + photoId + "]";
+        return "House [id=" + id + ", name=" + name + ", location=" + location + ", description=" + description + ", photoId=" + photoId + ", ownerID="
+                + ownerID +"]";
     }
 }
