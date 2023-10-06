@@ -2,11 +2,11 @@ package scc.data;
 
 import java.util.Arrays;
 
-/**
- * Represents a House, as returned to the clients
- */
+public class HouseDAO {
 
-public class House {
+    private String _rid;
+
+    private String _ts;
 
     private String id;
 
@@ -20,8 +20,11 @@ public class House {
 
     private String ownerID;
 
+    public HouseDAO(){}
 
-    public House(String id, String name, String location, String description , String photoId, String ownerID) {
+    public HouseDAO(House h) { this(h.getId(), h.getName(), h.getLocation(), h.getDescription(), h.getPhotoId(), h.getOwnerID()); }
+
+    public HouseDAO(String id, String name, String location, String description , String photoId, String ownerID) {
         super();
         this.id = id;
         this.name = name;
@@ -29,6 +32,22 @@ public class House {
         this.description = description;
         this.photoId = photoId;
         this.ownerID = ownerID;
+    }
+
+    public String get_rid() {
+        return _rid;
+    }
+
+    public void set_rid(String _rid) {
+        this._rid = _rid;
+    }
+
+    public String get_ts() {
+        return _ts;
+    }
+
+    public void set_ts(String _ts) {
+        this._ts = _ts;
     }
 
     public String getId() {
@@ -73,9 +92,15 @@ public class House {
 
     public void setOwnerID(String ownerID) { this.ownerID = ownerID;}
 
+    public House toHouse() {
+        return new House(id, name, location, description, photoId, ownerID);
+    }
+
     @Override
     public String toString() {
-        return "House [id=" + id + ", name=" + name + ", location=" + location + ", description=" + description + ", photoId=" + photoId + ", ownerID="
-                + ownerID +"]";
+        return "House [ _rid=" + _rid + ", _ts=" + _ts +
+                ", id=" + id + ", name=" + name + ", location=" + location + ", description=" + description + ", photoId=" + photoId + ", ownerID="
+        + ownerID +"]";
     }
+
 }
