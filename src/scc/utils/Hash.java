@@ -25,7 +25,7 @@ public class Hash {
         md.update(data);
         return md.digest();
     }
-	
+
     public static String of(String data) {
         return String.format("%016X", new BigInteger(1, digest(data.getBytes())));
     }

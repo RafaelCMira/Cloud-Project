@@ -1,4 +1,4 @@
-package scc.srv;
+package scc.srv.media;
 
 import com.azure.core.util.BinaryData;
 import com.azure.storage.blob.BlobClient;
@@ -19,10 +19,7 @@ import jakarta.ws.rs.POST;
 import jakarta.ws.rs.Path;
 import jakarta.ws.rs.PathParam;
 import jakarta.ws.rs.Produces;
-import jakarta.ws.rs.ServiceUnavailableException;
 import jakarta.ws.rs.core.MediaType;
-
-import javax.swing.*;
 
 /**
  * Resource for managing media files, such as images.
@@ -88,9 +85,8 @@ public class MediaResource {
             // Download contents to BinaryData (check documentation for other alternatives)
             BinaryData data = blob.downloadContent();
 
-            byte[] arr = data.toBytes();
+            return data.toBytes();
 
-            return arr;
         } catch (Exception e) {
             e.printStackTrace();
         }
@@ -111,7 +107,6 @@ public class MediaResource {
                 .containerName("images")
                 .buildClient();
 
-
         var blobs = containerClient.listBlobs();
 
         // List blobs in the container
@@ -119,7 +114,7 @@ public class MediaResource {
         for (BlobItem blobItem : containerClient.listBlobs()) {
             blobNames.add(blobItem.getName());
         }
-        
+
         return blobNames;
     }
 }

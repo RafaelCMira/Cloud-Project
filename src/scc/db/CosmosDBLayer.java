@@ -5,10 +5,7 @@ import com.azure.cosmos.CosmosClient;
 import com.azure.cosmos.CosmosClientBuilder;
 import com.azure.cosmos.CosmosContainer;
 import com.azure.cosmos.CosmosDatabase;
-import com.azure.cosmos.models.CosmosItemRequestOptions;
-import com.azure.cosmos.models.CosmosItemResponse;
-import com.azure.cosmos.models.CosmosQueryRequestOptions;
-import com.azure.cosmos.models.PartitionKey;
+import com.azure.cosmos.models.*;
 import com.azure.cosmos.util.CosmosPagedIterable;
 
 import scc.data.UserDAO;
@@ -20,66 +17,78 @@ public class CosmosDBLayer {
 
     private static CosmosDBLayer instance;
 
-    public static synchronized CosmosDBLayer getInstance() {
-        if( instance != null)
+    public static synchronized CosmosDBLayer getInstance(String containerName) {
+        if (instance != null)
             return instance;
 
         CosmosClient client = new CosmosClientBuilder()
                 .endpoint(CONNECTION_URL)
                 .key(DB_KEY)
-                //.directMode()
-                .gatewayMode()
-                // replace by .directMode() for better performance
+                .gatewayMode() // replace by .directMode() for better performance
                 .consistencyLevel(ConsistencyLevel.SESSION)
                 .connectionSharingAcrossClientsEnabled(true)
                 .contentResponseOnWriteEnabled(true)
                 .buildClient();
-        instance = new CosmosDBLayer( client);
+        instance = new CosmosDBLayer(client, containerName);
         return instance;
-
     }
 
     private CosmosClient client;
     private CosmosDatabase db;
-    private CosmosContainer users;
+    private String containerName;
+    private CosmosContainer container;
 
-    public CosmosDBLayer(CosmosClient client) {
+    public CosmosDBLayer(CosmosClient client, String container) {
         this.client = client;
+        this.containerName = container;
     }
 
     private synchronized void init() {
-        if( db != null)
+        if (db != null)
             return;
         db = client.getDatabase(DB_NAME);
-        users = db.getContainer("users");
+        container = db.getContainer(containerName);
+    }
 
+    public CosmosItemResponse<UserDAO> createUser(UserDAO user) {
+        init();
+        return container.createItem(user);
     }
 
     public CosmosItemResponse<Object> delUserById(String id) {
         init();
-        PartitionKey key = new PartitionKey( id);
-        return users.deleteItem(id, key, new CosmosItemRequestOptions());
+        PartitionKey key = new PartitionKey(id);
+        return container.deleteItem(id, key, new CosmosItemRequestOptions());
     }
 
-    public CosmosItemResponse<Object> delUser(UserDAO user) {
+    public CosmosPagedIterable<UserDAO> getUserById(String id) {
         init();
-        return users.deleteItem(user, new CosmosItemRequestOptions());
+        return container.queryItems("SELECT * FROM users WHERE users.id=\"" + id + "\"", new CosmosQueryRequestOptions(), UserDAO.class);
     }
 
-    public CosmosItemResponse<UserDAO> putUser(UserDAO user) {
+    public CosmosItemResponse<UserDAO> updateUserById(String id, UserDAO user) {
         init();
-        return users.createItem(user);
+        PartitionKey key = new PartitionKey(id);
+        return container.replaceItem(user, id, key, new CosmosItemRequestOptions());
     }
 
-    public CosmosPagedIterable<UserDAO> getUserById( String id) {
+    /*public CosmosItemResponse<UserDAO> updateUserById(String id) {
         init();
-        return users.queryItems("SELECT * FROM users WHERE users.id=\"" + id + "\"", new CosmosQueryRequestOptions(), UserDAO.class);
+        PartitionKey key = new PartitionKey(id);
+        return container.patchItem(id, key, new CosmosPatchItemRequestOptions(), UserDAO.class);
+    }*/
+
+
+    public CosmosPagedIterable<UserDAO> getContainer() {
+        init();
+        return container.queryItems("SELECT * FROM users ", new CosmosQueryRequestOptions(), UserDAO.class);
     }
 
-    public CosmosPagedIterable<UserDAO> getUsers() {
+    /*public CosmosItemResponse<Object> delUser(UserDAO user) {
         init();
-        return users.queryItems("SELECT * FROM users ", new CosmosQueryRequestOptions(), UserDAO.class);
+        return container.deleteItem(user, new CosmosItemRequestOptions());
     }
+*/
 
     public void close() {
         client.close();

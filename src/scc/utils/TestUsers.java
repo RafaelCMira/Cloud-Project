@@ -10,17 +10,16 @@ import scc.db.CosmosDBLayer;
 
 /**
  * This is a temporary class only to test the accessing the database.
- *
+ * <p>
  * Standalone program for accessing the database
  */
-public class TestUsers
-{
+public class TestUsers {
     public static void main(String[] args) {
         System.setProperty(org.slf4j.simple.SimpleLogger.DEFAULT_LOG_LEVEL_KEY, "Error");
 
         try {
             Locale.setDefault(Locale.US);
-            CosmosDBLayer db = CosmosDBLayer.getInstance();
+            CosmosDBLayer db = CosmosDBLayer.getInstance("users");
             String id = "0:" + System.currentTimeMillis();
             CosmosItemResponse<UserDAO> res = null;
             UserDAO u = new UserDAO();
@@ -30,21 +29,21 @@ public class TestUsers
             u.setPhotoId("0:34253455");
             u.setHouseIds(new String[0]);
 
-            res = db.putUser(u);
-            System.out.println( "Put result");
-            System.out.println( res.getStatusCode());
-            System.out.println( res.getItem());
+            res = db.createUser(u);
+            System.out.println("Put result");
+            System.out.println(res.getStatusCode());
+            System.out.println(res.getItem());
 
-            System.out.println( "Get for id = " + id);
+            System.out.println("Get for id = " + id);
             CosmosPagedIterable<UserDAO> resGet = db.getUserById(id);
-            for( UserDAO e: resGet) {
-                System.out.println( e);
+            for (UserDAO e : resGet) {
+                System.out.println(e);
             }
 
-            System.out.println( "Get for all ids");
-            resGet = db.getUsers();
-            for( UserDAO e: resGet) {
-                System.out.println( e);
+            System.out.println("Get for all ids");
+            resGet = db.getContainer();
+            for (UserDAO e : resGet) {
+                System.out.println(e);
             }
 
             // Now, let's create and delete
@@ -57,25 +56,25 @@ public class TestUsers
             u.setPhotoId("0:34253455");
             u.setHouseIds(new String[0]);
 
-            res = db.putUser(u);
-            System.out.println( "Put result");
-            System.out.println( res.getStatusCode());
-            System.out.println( res.getItem());
-            System.out.println( "Get for id = " + id);
+            res = db.createUser(u);
+            System.out.println("Put result");
+            System.out.println(res.getStatusCode());
+            System.out.println(res.getItem());
+            System.out.println("Get for id = " + id);
 
-            System.out.println( "Get by id result");
+            System.out.println("Get by id result");
             resGet = db.getUserById(id);
-            for( UserDAO e: resGet) {
-                System.out.println( e);
+            for (UserDAO e : resGet) {
+                System.out.println(e);
             }
 
-            System.out.println( "Delte user");
+            System.out.println("Delte user");
             db.delUserById(id);
 
-            System.out.println( "Get by id result");
+            System.out.println("Get by id result");
             resGet = db.getUserById(id);
-            for( UserDAO e: resGet) {
-                System.out.println( e);
+            for (UserDAO e : resGet) {
+                System.out.println(e);
             }
 
             db.close();
