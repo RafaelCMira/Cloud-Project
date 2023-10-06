@@ -12,9 +12,9 @@ public class MainApplication extends Application {
     private Set<Class<?>> resources = new HashSet<Class<?>>();
 
     public MainApplication() {
-        //  resources.add(ControlResource.class);
+        // TODO: isto é para adicionar em qual? (nos singletons ou nos resources)
+        resources.add(UsersResource.class);
         singletons.add(new MediaResource());
-        singletons.add(new UsersResource()); // TODO: isto é para adicionar em qual? (nos singletons ou nos resources)
     }
 
     @Override
