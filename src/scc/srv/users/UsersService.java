@@ -25,7 +25,7 @@ public interface UsersService {
     @DELETE
     @Path("/{" + ID + "}")
     @Produces(MediaType.APPLICATION_JSON)
-    User deleteUser(@PathParam(ID) String id) throws Exception;
+    String deleteUser(@PathParam(ID) String id) throws Exception;
 
     @GET
     @Path("/{" + ID + "}")

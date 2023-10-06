@@ -28,7 +28,7 @@ import jakarta.ws.rs.core.MediaType;
 public class MediaResource {
 
     // Get connection string in the storage access keys page
-    String storageConnectionString = "DefaultEndpointsProtocol=https;AccountName=backend59243;AccountKey=cbjPB/ZSiVASTrveVdQxekadVMHGFgHfVyZ2jvwBOThtDr7eFYWTW+w4xknDz6Hq9lO6AEEb3mev+ASt1yInow==;EndpointSuffix=core.windows.net";
+    String storageConnectionString = "DefaultEndpointsProtocol=https;AccountName=scc59243;AccountKey=EVOrbhWeRzbKCyTTAvPyc1PI9SrpIiVu9sDAuS1hXltrWOtjVUz78CGr8MuDrbnPwtX+k3DwGKBk+ASt1vUmeg==;EndpointSuffix=core.windows.net";
 
     /**
      * Post a new image.The id of the image is its hash.

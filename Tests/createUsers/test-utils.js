@@ -9,7 +9,6 @@ module.exports = {
   genNewUserReply
 }
 
-
 const Faker = require('@faker-js/faker');
 const fs = require('fs')
 
@@ -20,7 +19,7 @@ var users = []
 // All endpoints starting with the following prefixes will be aggregated in the same for the statistics
 var statsPrefix = [ ["/rest/media/","GET"],
 			["/rest/media","POST"],
-			["/rest/user/","GET"],
+			["/rest/users/","GET"],
 	]
 
 // Function used to compress statistics
@@ -47,10 +46,10 @@ function random( val){
 function loadData() {
 	var i
 	var basefile
-	if( fs.existsSync( '/images')) 
-		basefile = '/images/house.'
+	if( fs.existsSync( '/../images'))
+		basefile = '/../images/house'
 	else
-		basefile =  'images/cats.'	
+		basefile =  '../images/house'
 	for( i = 1; i <= 40 ; i++) {
 		var img  = fs.readFileSync(basefile + i + '.jpg')
 		images.push( img)
@@ -107,15 +106,17 @@ function selectUser(context, events, done) {
 	return done()
 }
 
+
 /**
  * Generate data for a new user using Faker
  */
 function genNewUser(context, events, done) {
-	const first = `${Faker.name.firstName()}`
-	const last = `${Faker.name.lastName()}`
-	context.vars.id = first + "." + last
+    const rand = Math.random() * 100000
+	const first = "fER"
+    const last = "ADASC"
+	context.vars.id = first + "." + last + rand.toString();
 	context.vars.name = first + " " + last
-	context.vars.pwd = `${Faker.internet.password()}`
+	context.vars.pwd = "randompass"
 	return done()
 }
 

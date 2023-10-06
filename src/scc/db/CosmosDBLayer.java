@@ -11,10 +11,9 @@ import com.azure.cosmos.util.CosmosPagedIterable;
 import scc.data.UserDAO;
 
 public class CosmosDBLayer {
-    private static final String CONNECTION_URL = "https://scc-60700-2324.documents.azure.com:443/";
-    private static final String DB_KEY = "X7frCj0reVTuHn39JjLHsgq0M7xLJX1NSsCJAcyUEJOXfovmRy4LUzPRIlorA90Dq3KiDLiAQNEUACDbE8sVxQ==";
-    private static final String DB_NAME = "scc607002324";
-
+    private static final String CONNECTION_URL = "https://scc59243bd.documents.azure.com:443/";
+    private static final String DB_KEY = "wiCRbNxzI7wWoytEJUS6Qq5139xxXrO5BFo8KF7QM10fgSqbQ1SKvjyZbE11Ebuy0VnT2gtvaGi8ACDbh5bpDQ==";
+    private static final String DB_NAME = "59243lab3";
     private static CosmosDBLayer instance;
 
     public static synchronized CosmosDBLayer getInstance(String containerName) {
