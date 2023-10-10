@@ -35,7 +35,6 @@ public class MediaResource {
         return id;
     }
 
-
     public byte[] download(@PathParam("id") String id) {
         byte[] content = null;
         try {
@@ -54,7 +53,6 @@ public class MediaResource {
         }
         return content;
     }
-
 
     public List<String> list() {
         // Get container client
