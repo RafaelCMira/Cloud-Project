@@ -49,6 +49,9 @@ public class CosmosDBLayer {
         container = db.getContainer(containerName);
     }
 
+
+    //public CosmosItemResponse<> db_select(String query, )
+
     public CosmosItemResponse<UserDAO> createUser(UserDAO user) {
         init();
         return container.createItem(user);
