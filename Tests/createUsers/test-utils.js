@@ -9,7 +9,7 @@ module.exports = {
   genNewUserReply
 }
 
-const Faker = require('@faker-js/faker');
+const faker = require('faker');
 const fs = require('fs')
 
 var imagesIds = []
@@ -110,13 +110,22 @@ function selectUser(context, events, done) {
 /**
  * Generate data for a new user using Faker
  */
-function genNewUser(context, events, done) {
+/*function genNewUser(context, events, done) {
     const rand = (Math.random() + 1) * 1000000
 	const first = "fER"
     const last = "ADASC"
 	context.vars.id = first + "." + last + rand.toString();
 	context.vars.name = first + " " + last
 	context.vars.pwd = "randompass"
+	return done()
+}*/
+
+function genNewUser(context, events, done) {
+	const first = `${Faker.name.firstName()}`
+	const last = `${Faker.name.lastName()}`
+	context.vars.id = first + "." + last
+	context.vars.name = first + " " + last
+	context.vars.pwd = `${Faker.internet.password()}`
 	return done()
 }
 
