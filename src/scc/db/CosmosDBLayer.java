@@ -3,13 +3,11 @@ package scc.db;
 import com.azure.cosmos.ConsistencyLevel;
 import com.azure.cosmos.CosmosClient;
 import com.azure.cosmos.CosmosClientBuilder;
-import com.azure.cosmos.CosmosContainer;
 import com.azure.cosmos.CosmosDatabase;
 import com.azure.cosmos.models.*;
 import com.azure.cosmos.util.CosmosPagedIterable;
 
 import scc.data.UserDAO;
-import scc.srv.users.UsersService;
 
 public class CosmosDBLayer {
 
