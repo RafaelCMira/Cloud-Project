@@ -1,7 +1,5 @@
 package scc.data;
 
-import java.util.Arrays;
-
 public class HouseDAO {
 
     private String _rid;
@@ -18,20 +16,28 @@ public class HouseDAO {
 
     private String photoId;
 
+    private String[] rentalsID;
+
     private String ownerID;
+
+    private int[][] priceByPeriod;
 
     public HouseDAO(){}
 
-    public HouseDAO(House h) { this(h.getId(), h.getName(), h.getLocation(), h.getDescription(), h.getPhotoId(), h.getOwnerID()); }
+    public HouseDAO(House h) { this(h.getId(), h.getName(), h.getLocation(), h.getDescription(),
+            h.getPhotoId(), h.getRentalsID() ,h.getOwnerID(), h.getPriceByPeriod()); }
 
-    public HouseDAO(String id, String name, String location, String description , String photoId, String ownerID) {
+    public HouseDAO(String id, String name, String location, String description , String photoId,
+                    String[] rentalsID, String ownerID, int[][] priceByPeriod) {
         super();
         this.id = id;
         this.name = name;
         this.location = location;
         this.description = description;
         this.photoId = photoId;
+        this.rentalsID = rentalsID;
         this.ownerID = ownerID;
+        this.priceByPeriod = priceByPeriod;
     }
 
     public String get_rid() {
@@ -88,12 +94,37 @@ public class HouseDAO {
         this.photoId = photoId;
     }
 
+    public void addRental(String rentalID) {
+        // TODO - Add the Rental
+    }
+
     public String getOwnerID() { return ownerID; }
 
     public void setOwnerID(String ownerID) { this.ownerID = ownerID;}
 
+    public int[][] getPriceByPeriod() { return priceByPeriod; }
+
+    /**
+     * Returns the Price of the given Month, it can be the discount or the normal price.
+     * @param typeOfPrice - type of the Price ( 0 = Normal Price; 1 = Discount Price)
+     * @param month
+     * @return the price of the given Month.
+     */
+    public int getPeriodPrice(int typeOfPrice, int month) {
+        return priceByPeriod[typeOfPrice][month];
+    }
+
+    /**
+     * Change the price of a particular type in a given month.
+     * @param typeOfPrice - type of the Price ( 0 = Normal Price; 1 = Discount Price)
+     * @param month
+     * @param newPrice - the new Price
+     */
+    public void setPeriodPrice(int typeOfPrice, int month, int newPrice) {
+        priceByPeriod[typeOfPrice][month] = newPrice;
+    }
     public House toHouse() {
-        return new House(id, name, location, description, photoId, ownerID);
+        return new House(id, name, location, description, photoId, rentalsID, ownerID, priceByPeriod);
     }
 
     @Override

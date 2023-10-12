@@ -1,4 +1,4 @@
-package scc.utils;
+package scc.utils.Tests;
 
 import java.util.List;
 import java.util.Locale;

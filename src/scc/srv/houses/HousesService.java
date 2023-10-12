@@ -4,11 +4,10 @@ import jakarta.ws.rs.*;
 import jakarta.ws.rs.core.MediaType;
 import scc.data.HouseDAO;
 import scc.data.House;
-import scc.data.HouseDAO;
 
 @Path(HousesService.PATH)
 public interface HousesService {
-    String PATH = "/houses";
+    String PATH = "/house";
     String ID = "id";
     String NAME = "name";
     String LOCATION = "location";
@@ -26,7 +25,7 @@ public interface HousesService {
     @DELETE
     @Path("/{" + ID + "}")
     @Produces(MediaType.APPLICATION_JSON)
-    House deleteHouse(@PathParam(ID) String id) throws Exception;
+    String deleteHouse(@PathParam(ID) String id) throws Exception;
 
     @GET
     @Path("/{" + ID + "}")

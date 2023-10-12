@@ -9,9 +9,6 @@ public class RedisCache {
 	
 	private static JedisPool instance;
 
-	/**
-	 * TODO - We must change this to use the AzureManagement when creating the resources.
-	 */
 	public synchronized static JedisPool getCachePool() {
 		if( instance != null)
 			return instance;

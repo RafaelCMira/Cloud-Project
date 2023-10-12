@@ -54,6 +54,25 @@ public class MediaResource {
         return content;
     }
 
+    /**
+     * Checks if the photo exists in the blob
+     * @param id - the photo id
+     * @return true if the photo exists in the blob, false otherwise
+     */
+    public boolean hasPhotoById(String id) {
+        try {
+            // Get container client
+            BlobContainerClient containerClient = getContainerClient(MediaService.CONTAINER_NAME);
+
+            // Get client to blob
+            BlobClient blob = containerClient.getBlobClient(id);
+            return blob.exists();
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+        return false;
+    }
+
     public List<String> list() {
         // Get container client
         BlobContainerClient containerClient = getContainerClient(MediaService.CONTAINER_NAME);

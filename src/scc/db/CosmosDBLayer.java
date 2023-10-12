@@ -7,6 +7,7 @@ import com.azure.cosmos.CosmosDatabase;
 import com.azure.cosmos.models.*;
 import com.azure.cosmos.util.CosmosPagedIterable;
 
+import scc.data.HouseDAO;
 import scc.data.UserDAO;
 
 public class CosmosDBLayer {
@@ -28,10 +29,6 @@ public class CosmosDBLayer {
         this.client = client;
     }
 
-    /**
-     * TODO - We need to change this to use AzureMangement to create
-     *  all DB resources automatically
-     */
     public static synchronized CosmosDBLayer getInstance() {
         if (instance != null)
             return instance;
@@ -53,6 +50,10 @@ public class CosmosDBLayer {
             return;
         db = client.getDatabase(DB_NAME);
     }
+
+    ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+    ////////////////////////////// USERS
+    ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
     public CosmosItemResponse<UserDAO> createUser(UserDAO user) {
         init();
@@ -92,6 +93,29 @@ public class CosmosDBLayer {
         init();
         String query = "SELECT * FROM users";
         return db.getContainer(USERS_CONTAINER).queryItems(query, new CosmosQueryRequestOptions(), UserDAO.class);
+    }
+
+
+    ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+    ////////////////////////////// HOUSES
+    ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+
+    public CosmosItemResponse<HouseDAO> createHouse(HouseDAO house) {
+        init();
+        return db.getContainer(HOUSES_CONTAINER).createItem(house);
+    }
+
+    public CosmosItemResponse<Object> delHouseById(String id) {
+        init();
+        PartitionKey key = new PartitionKey(id);
+        return db.getContainer(HOUSES_CONTAINER).deleteItem(id, key, new CosmosItemRequestOptions());
+    }
+
+    public CosmosPagedIterable<HouseDAO> getHouseById(String id) {
+        init();
+        String query = "SELECT * FROM houses WHERE houses.id=\"" + id + "\"";
+        return db.getContainer(HOUSES_CONTAINER).queryItems(query, new CosmosQueryRequestOptions(), HouseDAO.class);
     }
 
 

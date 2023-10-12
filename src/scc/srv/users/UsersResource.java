@@ -24,6 +24,7 @@ public class UsersResource implements UsersService {
         if (Checks.badParams(userDAO.getId(), userDAO.getName(), userDAO.getPwd(), userDAO.getPhotoId()))
             throw new Exception("Error: 400 Bad Request");
 
+        // TODO - Replace this blob access with a Media Resource method
         // Get container client
         BlobContainerClient containerClient = new BlobContainerClientBuilder()
                 .connectionString(MediaService.storageConnectionString)
