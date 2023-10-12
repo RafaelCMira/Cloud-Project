@@ -4,11 +4,14 @@ import redis.clients.jedis.JedisPool;
 import redis.clients.jedis.JedisPoolConfig;
 
 public class RedisCache {
-	private static final String RedisHostname = "scc2324cache4204.redis.cache.windows.net";
-	private static final String RedisKey = "HcR09frYgXC3zVhZUll7F9CdVEiRmwVqlAzCaKC6ujM=";
+	private static final String RedisHostname = System.getenv("REDIS_URL");
+	private static final String RedisKey = System.getenv("REDIS_KEY");
 	
 	private static JedisPool instance;
-	
+
+	/**
+	 * TODO - We must change this to use the AzureManagement when creating the resources.
+	 */
 	public synchronized static JedisPool getCachePool() {
 		if( instance != null)
 			return instance;

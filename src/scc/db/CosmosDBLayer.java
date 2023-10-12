@@ -28,6 +28,10 @@ public class CosmosDBLayer {
         this.client = client;
     }
 
+    /**
+     * TODO - We need to change this to use AzureMangement to create
+     *  all DB resources automatically
+     */
     public static synchronized CosmosDBLayer getInstance() {
         if (instance != null)
             return instance;
