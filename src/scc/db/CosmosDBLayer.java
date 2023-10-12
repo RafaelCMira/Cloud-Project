@@ -118,6 +118,11 @@ public class CosmosDBLayer {
         return db.getContainer(HOUSES_CONTAINER).queryItems(query, new CosmosQueryRequestOptions(), HouseDAO.class);
     }
 
+    public CosmosItemResponse<HouseDAO> updateHouseById(String id, HouseDAO house) {
+        init();
+        PartitionKey key = new PartitionKey(id);
+        return db.getContainer(HOUSES_CONTAINER).replaceItem(house, id, key, new CosmosItemRequestOptions());
+    }
 
     public void close() {
         client.close();
