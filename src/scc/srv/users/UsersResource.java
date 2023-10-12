@@ -17,8 +17,7 @@ import java.util.Optional;
 
 
 public class UsersResource implements UsersService {
-    private static final String CONTAINER_NAME = "users";
-    private final CosmosDBLayer db = CosmosDBLayer.getInstance(CONTAINER_NAME);
+    private final CosmosDBLayer db = CosmosDBLayer.getInstance();
 
     @Override
     public String createUser(UserDAO userDAO) throws Exception {
@@ -36,7 +35,7 @@ public class UsersResource implements UsersService {
 
         // Download contents to BinaryData (check documentation for other alternatives)
         BinaryData data = blob.downloadContent();
-        if (data == null) throw new Exception("Error: 404");
+        if (data == null) throw new Exception("Error: 404 Image not found");
 
         var res = db.createUser(userDAO);
         int statusCode = res.getStatusCode();
