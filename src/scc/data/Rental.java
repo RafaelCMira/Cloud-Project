@@ -14,8 +14,14 @@ public class Rental {
     private LocalDate initialDate;
     private LocalDate endDate;
 
-    public Rental() {
-
+    public Rental(int id, House rental, User renter, double price, LocalDate initialDate, LocalDate endDate) {
+        super();
+        this.id = id;
+        this.rental = rental;
+        this.renter = renter;
+        this.price = price;
+        this.initialDate = initialDate;
+        this.endDate = endDate;
     }
 
     public void setId(int id) {
@@ -30,7 +36,7 @@ public class Rental {
         this.rental = rental;
     }
 
-    public House rental() {
+    public House getRental() {
         return rental;
     }
 
@@ -38,7 +44,7 @@ public class Rental {
         this.renter = renter;
     }
 
-    public User renter() {
+    public User getRenter() {
         return renter;
     }
 
