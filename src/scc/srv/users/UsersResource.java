@@ -40,7 +40,7 @@ public class UsersResource implements UsersService {
 
         var res = db.createUser(userDAO);
         int statusCode = res.getStatusCode();
-        if (isStatusOk(statusCode)) {
+        if (Checks.isStatusOk(statusCode)) {
             return userDAO.toUser().toString();
         } else {
             throw new Exception("Error: " + statusCode);
@@ -52,7 +52,7 @@ public class UsersResource implements UsersService {
         if (id == null) throw new Exception("Error: 400 Bad Request (ID NULL)");
         CosmosItemResponse<Object> res = db.delUserById(id);
         int statusCode = res.getStatusCode();
-        if (isStatusOk(statusCode)) {
+        if (Checks.isStatusOk(statusCode)) {
             return String.format("StatusCode: %d \nUser %s was delete", statusCode, id);
         } else {
             throw new Exception("Error: " + statusCode);
@@ -64,7 +64,7 @@ public class UsersResource implements UsersService {
         var updatedUser = updatedUser(id, userDAO);
         var res = db.updateUserById(id, updatedUser);
         int statusCode = res.getStatusCode();
-        if (isStatusOk(res.getStatusCode())) {
+        if (Checks.isStatusOk(res.getStatusCode())) {
             // return res.getItem().toUser();
             return updatedUser.toUser(); // se isto nao estiver bem usar o acima
         } else {
@@ -84,10 +84,6 @@ public class UsersResource implements UsersService {
         }
     }
 
-    // Verifies if HTTP code is OK
-    private boolean isStatusOk(int statusCode) {
-        return statusCode > 200 && statusCode < 300;
-    }
 
     /**
      * Returns updated userDAO to the method who's making the request to the database

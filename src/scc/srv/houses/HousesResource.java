@@ -42,7 +42,7 @@ public class HousesResource implements HousesService {
 
         var res = db.createHouse(houseDAO);
         int statusCode = res.getStatusCode();
-        if (statusCode < 300) {
+        if (Checks.isStatusOk(statusCode)) {
             return houseDAO.toHouse().toString();
         } else {
             throw new Exception("Error: " + statusCode);
@@ -56,7 +56,7 @@ public class HousesResource implements HousesService {
         CosmosItemResponse<Object> res = db.delHouseById(id);
         int statusCode = res.getStatusCode();
 
-        if (isStatusOk(statusCode)) {
+        if (Checks.isStatusOk(statusCode)) {
             return String.format("StatusCode: %d \nHouse %s was delete", statusCode, id);
         } else {
             throw new Exception("Error: " + statusCode);
@@ -81,7 +81,7 @@ public class HousesResource implements HousesService {
         HouseDAO updatedHouse = refactorHouse(id, houseDAO);
         var res = db.updateHouseById(id, updatedHouse);
         int statusCode = res.getStatusCode();
-        if (isStatusOk(res.getStatusCode())) {
+        if (Checks.isStatusOk(res.getStatusCode())) {
             return updatedHouse.toHouse();
         } else {
             throw new Exception("Error: " + statusCode);
@@ -91,13 +91,14 @@ public class HousesResource implements HousesService {
 
     /**
      * Checks if the given House has prices valid for all months.
+     *
      * @param house - house to be checked
      * @return true if all month has a valid price, false otherwise.
      */
     private boolean hasPricesByPeriod(HouseDAO house) {
         int[][] p = house.getPriceByPeriod();
-        for(int i=0; i<12; i++) {
-            if(p[0][i] <= 0) return false;
+        for (int i = 0; i < 12; i++) {
+            if (p[0][i] <= 0) return false;
         }
         return true;
     }
@@ -105,7 +106,7 @@ public class HousesResource implements HousesService {
     /**
      * Returns updated houseDAO to the method who's making the request to the database
      *
-     * @param id      of the house being accessed
+     * @param id       of the house being accessed
      * @param houseDAO new house attributes
      * @return updated userDAO to the method who's making the request to the database
      * @throws Exception If id is null or if the user does not exist
@@ -138,8 +139,4 @@ public class HousesResource implements HousesService {
         }
     }
 
-    // Verifies if HTTP code is OK
-    private boolean isStatusOk(int statusCode) {
-        return statusCode > 200 && statusCode < 300;
-    }
 }
