@@ -19,10 +19,10 @@ console.log("Random Phone Number:", randomPhone);*/
 
 const first = `${faker.name.firstName()}`
 console.log(first);
-	const last = `${faker.name.lastName()}`
+
+const last = `${faker.name.lastName()}`
 console.log(last);
 
-	pwd = `${faker.internet.password()}`
-
+pwd = `${faker.internet.password()}`
 console.log(pwd);
 
