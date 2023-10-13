@@ -10,6 +10,8 @@ import com.azure.cosmos.util.CosmosPagedIterable;
 import scc.data.HouseDAO;
 import scc.data.UserDAO;
 
+import java.util.List;
+
 public class CosmosDBLayer {
 
     public static final String USERS_CONTAINER = "users";
@@ -122,6 +124,12 @@ public class CosmosDBLayer {
         init();
         PartitionKey key = new PartitionKey(id);
         return db.getContainer(HOUSES_CONTAINER).replaceItem(house, id, key, new CosmosItemRequestOptions());
+    }
+
+    public CosmosPagedIterable<HouseDAO> getHousesLocation(String location) {
+        init();
+        String query = "SELECT * FROM houses WHERE houses.location=\"" + location + "\"";
+        return db.getContainer(HOUSES_CONTAINER).queryItems(query, new CosmosQueryRequestOptions(), HouseDAO.class);
     }
 
     public void close() {

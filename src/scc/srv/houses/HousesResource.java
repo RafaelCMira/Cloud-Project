@@ -9,6 +9,7 @@ import scc.srv.Checks;
 import scc.srv.media.MediaResource;
 import scc.utils.Hash;
 
+import java.util.List;
 import java.util.Optional;
 
 public class HousesResource implements HousesService {
@@ -70,6 +71,28 @@ public class HousesResource implements HousesService {
             return updatedHouse.toHouse();
         } else {
             throw new Exception("Error: " + statusCode);
+        }
+    }
+
+    @Override
+    public House getAvailHouseByLocation(String location) throws Exception {
+
+        CosmosPagedIterable<HouseDAO> res = db.getHousesLocation(location);
+        List<HouseDAO> result = res.stream().toList();
+
+        // TODO - check if house is available
+        /* for ( HouseDAO h: result) {
+
+            for (Rental r: h.getRentalsID() ) {
+
+            }
+        }
+        */
+
+        if (!result.isEmpty()) {
+            return null;
+        } else {
+            throw new Exception("Error: 404");
         }
     }
 
