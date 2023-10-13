@@ -1,6 +1,7 @@
 package scc.data;
 
 import java.util.Arrays;
+import java.util.List;
 
 /**
  * Represents a House, as returned to the clients
@@ -18,7 +19,7 @@ public class House {
 
     private String photoId;
 
-    private String[] rentalsID;
+    private List<String> rentalsID;
 
     private String ownerID;
 
@@ -26,7 +27,7 @@ public class House {
 
 
     public House(String id, String name, String location, String description,
-                 String photoId, String[] rentalsID, String ownerID, int[][] priceByPeriod) {
+                 String photoId, List<String> rentalsID, String ownerID, int[][] priceByPeriod) {
         super();
         this.id = id;
         this.name = name;
@@ -76,10 +77,10 @@ public class House {
         this.photoId = photoId;
     }
 
-    public String[] getRentalsID() { return rentalsID; }
+    public List<String> getRentalsID() { return rentalsID; }
 
     public void addRental(String rentalID) {
-        // TODO - Add the Rental
+        rentalsID.add(rentalID);
     }
 
     public String getOwnerID() { return ownerID; }

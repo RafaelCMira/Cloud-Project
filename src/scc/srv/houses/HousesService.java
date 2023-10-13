@@ -37,4 +37,9 @@ public interface HousesService {
     @Consumes(MediaType.APPLICATION_JSON)
     @Produces(MediaType.APPLICATION_JSON)
     House updateHouse(@PathParam(ID) String id, HouseDAO houseDAO) throws Exception;
+
+    @GET
+    @Path("/")
+    @Produces(MediaType.APPLICATION_JSON)
+    House getAvailHouseByLocation( @QueryParam(LOCATION) String location) throws Exception;
 }

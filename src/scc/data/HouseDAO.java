@@ -1,5 +1,7 @@
 package scc.data;
 
+import java.util.List;
+
 public class HouseDAO {
 
     private String _rid;
@@ -16,7 +18,7 @@ public class HouseDAO {
 
     private String photoId;
 
-    private String[] rentalsID;
+    private List<String> rentalsID;
 
     private String ownerID;
 
@@ -28,7 +30,7 @@ public class HouseDAO {
             h.getPhotoId(), h.getRentalsID() ,h.getOwnerID(), h.getPriceByPeriod()); }
 
     public HouseDAO(String id, String name, String location, String description , String photoId,
-                    String[] rentalsID, String ownerID, int[][] priceByPeriod) {
+                    List<String> rentalsID, String ownerID, int[][] priceByPeriod) {
         super();
         this.id = id;
         this.name = name;
@@ -94,8 +96,12 @@ public class HouseDAO {
         this.photoId = photoId;
     }
 
+    public List<String> getRentalsID() {
+        return rentalsID;
+    }
+
     public void addRental(String rentalID) {
-        // TODO - Add the Rental
+        rentalsID.add(rentalID);
     }
 
     public String getOwnerID() { return ownerID; }

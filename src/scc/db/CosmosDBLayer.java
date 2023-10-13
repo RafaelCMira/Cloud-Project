@@ -11,6 +11,8 @@ import scc.data.HouseDAO;
 import scc.data.RentalDAO;
 import scc.data.UserDAO;
 
+import java.util.List;
+
 public class CosmosDBLayer {
 
     public static final String USERS_CONTAINER = "users";
@@ -125,6 +127,12 @@ public class CosmosDBLayer {
         return db.getContainer(HOUSES_CONTAINER).replaceItem(house, id, key, new CosmosItemRequestOptions());
     }
 
+    public CosmosPagedIterable<HouseDAO> getHousesLocation(String location) {
+        init();
+        String query = "SELECT * FROM houses WHERE houses.location=\"" + location + "\"";
+        return db.getContainer(HOUSES_CONTAINER).queryItems(query, new CosmosQueryRequestOptions(), HouseDAO.class);
+    }
+
     ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
     ////////////////////////////// RENTALS
     ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -151,6 +159,11 @@ public class CosmosDBLayer {
         PartitionKey key = new PartitionKey(houseId);
         return db.getContainer(RENTALS_CONTAINER).replaceItem(rental, houseId, key, new CosmosItemRequestOptions());
     }
+
+    ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+    ////////////////////////////// QUESTIONS
+    ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
 
     public void close() {
         client.close();
