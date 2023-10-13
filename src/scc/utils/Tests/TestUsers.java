@@ -19,7 +19,7 @@ public class TestUsers {
 
         try {
             Locale.setDefault(Locale.US);
-            CosmosDBLayer db = CosmosDBLayer.getInstance("users");
+            CosmosDBLayer db = CosmosDBLayer.getInstance();
             String id = "0:" + System.currentTimeMillis();
             CosmosItemResponse<UserDAO> res = null;
             UserDAO u = new UserDAO();
@@ -68,7 +68,7 @@ public class TestUsers {
                 System.out.println(e);
             }
 
-            System.out.println("Delte user");
+            System.out.println("Delete user");
             db.delUserById(id);
 
             System.out.println("Get by id result");

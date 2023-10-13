@@ -26,7 +26,7 @@ scenarios:
                 as: "imageId"              # capture the reply as image id to be used in user creation
           - function: "genNewUser"         # Generate the needed information for the user
           - post:
-              url: "/users"
+              url: "/user"
               headers:
                 Content-Type: application/json
                 Accept: application/json
