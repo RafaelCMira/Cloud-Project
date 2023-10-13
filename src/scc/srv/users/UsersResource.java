@@ -10,6 +10,7 @@ import scc.data.User;
 import scc.data.UserDAO;
 import scc.db.CosmosDBLayer;
 import scc.srv.Checks;
+import scc.srv.media.MediaResource;
 import scc.srv.media.MediaService;
 import scc.utils.Hash;
 
@@ -24,22 +25,13 @@ public class UsersResource implements UsersService {
         if (Checks.badParams(userDAO.getId(), userDAO.getName(), userDAO.getPwd(), userDAO.getPhotoId()))
             throw new Exception("Error: 400 Bad Request");
 
-        // TODO - Replace this blob access with a Media Resource method
-        // Get container client
-        BlobContainerClient containerClient = new BlobContainerClientBuilder()
-                .connectionString(MediaService.storageConnectionString)
-                .containerName("images")
-                .buildClient();
-
-        // Get client to blob
-        BlobClient blob = containerClient.getBlobClient(userDAO.getPhotoId());
-
-        // Download contents to BinaryData (check documentation for other alternatives)
-        BinaryData data = blob.downloadContent();
-        if (data == null) throw new Exception("Error: 404 Image not found");
+        MediaResource media = new MediaResource();
+        if (media.hasPhotoById(userDAO.getPhotoId()))
+            throw new Exception("Error: 404 Image not found");
 
         var res = db.createUser(userDAO);
         int statusCode = res.getStatusCode();
+
         if (Checks.isStatusOk(statusCode)) {
             return userDAO.toUser().toString();
         } else {

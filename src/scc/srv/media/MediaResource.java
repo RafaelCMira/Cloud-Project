@@ -56,6 +56,7 @@ public class MediaResource {
 
     /**
      * Checks if the photo exists in the blob
+     *
      * @param id - the photo id
      * @return true if the photo exists in the blob, false otherwise
      */

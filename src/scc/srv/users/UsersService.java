@@ -8,7 +8,7 @@ import scc.data.UserDAO;
 
 @Path(UsersService.PATH)
 public interface UsersService {
-    String PATH = "/users";
+    String PATH = "/user";
     String ID = "id"; // nickname
     String NAME = "name";
     String PWD = "pwd";
