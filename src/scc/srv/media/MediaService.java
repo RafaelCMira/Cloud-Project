@@ -13,7 +13,7 @@ public interface MediaService {
     // Get connection string in the storage access keys page
     String storageConnectionString = System.getenv("BLOB_KEY");
 
-    String CONTAINER_NAME = "images";
+    String CONTAINER_NAME = "media";
 
 
     /**
