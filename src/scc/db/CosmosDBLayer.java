@@ -8,6 +8,7 @@ import com.azure.cosmos.models.*;
 import com.azure.cosmos.util.CosmosPagedIterable;
 
 import scc.data.HouseDAO;
+import scc.data.RentalDAO;
 import scc.data.UserDAO;
 
 public class CosmosDBLayer {
@@ -122,6 +123,33 @@ public class CosmosDBLayer {
         init();
         PartitionKey key = new PartitionKey(id);
         return db.getContainer(HOUSES_CONTAINER).replaceItem(house, id, key, new CosmosItemRequestOptions());
+    }
+
+    ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+    ////////////////////////////// RENTALS
+    ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+    public CosmosItemResponse<RentalDAO> createRental(RentalDAO rental) {
+        init();
+        return db.getContainer(RENTALS_CONTAINER).createItem(rental);
+    }
+
+    public CosmosPagedIterable<RentalDAO> getRentalById(String id) {
+        init();
+        String query = "SELECT * FROM rentals WHERE rentals.id=\"" + id + "\"";
+        return db.getContainer(RENTALS_CONTAINER).queryItems(query, new CosmosQueryRequestOptions(), RentalDAO.class);
+    }
+
+    public CosmosPagedIterable<RentalDAO> getRentals() {
+        init();
+        String query = "SELECT * FROM rentals";
+        return db.getContainer(RENTALS_CONTAINER).queryItems(query, new CosmosQueryRequestOptions(), RentalDAO.class);
+    }
+
+    public CosmosItemResponse<RentalDAO> updateRentalById(String houseId, RentalDAO rental) {
+        init();
+        PartitionKey key = new PartitionKey(houseId);
+        return db.getContainer(RENTALS_CONTAINER).replaceItem(rental, houseId, key, new CosmosItemRequestOptions());
     }
 
     public void close() {
