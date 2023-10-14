@@ -1,12 +1,13 @@
 package scc.srv.question;
 
-import scc.data.House;
-import scc.data.HouseDAO;
-import scc.data.QuestionDAO;
+import scc.data.*;
 import scc.db.CosmosDBLayer;
 import scc.srv.Checks;
 
+import javax.naming.LinkException;
+import java.util.List;
 import java.util.Optional;
+import java.util.stream.Collectors;
 
 public class QuestionResource implements QuestionService {
 
@@ -17,26 +18,61 @@ public class QuestionResource implements QuestionService {
         if (Checks.badParams(questionDAO.getUserID(), questionDAO.getHouseID(), questionDAO.getText()))
             throw new Exception("Error: 400 Bad Request");
 
-        var res = db.getHouseById(questionDAO.getHouseID());
-        Optional<HouseDAO> result = res.stream().findFirst();
+        // Verify if house exists
+        var houseRes = db.getHouseById(questionDAO.getHouseID());
+        Optional<HouseDAO> result = houseRes.stream().findFirst();
         if (result.isEmpty())
-            throw new Exception("Error: 404");
+            throw new Exception("Error: 404 House Not Found ");
 
+        // Verify if user of makes the question exists
         var userRes = db.getUserById(questionDAO.getUserID());
         var userResult = userRes.stream().findFirst();
         if (userResult.isEmpty())
-            throw new Exception("Error: 404");
+            throw new Exception("Error: 404 User Not Found");
 
-        return null;
+        var createRes = db.createQuestion(questionDAO);
+        int statusCode = createRes.getStatusCode();
+
+        if (Checks.isStatusOk(statusCode))
+            return questionDAO.toQuestion().toString();
+        else
+            throw new Exception("Error: " + statusCode);
     }
 
     @Override
-    public House updateQuestion(String houseID, String questionID, QuestionDAO questionDAO) throws Exception {
-        return null;
+    public Question replyToQuestion(String houseID, String questionID, String replierID, QuestionDAO questionDAO) throws Exception {
+
+        // Verify if house exists
+        var houseRes = db.getHouseById(questionDAO.getHouseID());
+        Optional<HouseDAO> result = houseRes.stream().findFirst();
+        if (result.isEmpty())
+            throw new Exception("Error: 404 House Not Found ");
+        
+        // Verify if user who replies is the owner
+        String ownerID = result.get().getOwnerID();
+        if (!ownerID.equals(replierID))
+            throw new Exception("Error: 403 You're not the owner");
+
+        var replyRes = db.replyToQuestion(houseID, questionID, questionDAO.getAnswer());
+
+        int statusCode = replyRes.getStatusCode();
+        if (Checks.isStatusOk(statusCode))
+            return questionDAO.toQuestion();
+        else
+            throw new Exception("Error: " + statusCode);
     }
 
     @Override
-    public House listQuestions(String houseID) throws Exception {
-        return null;
+    public List<Question> listQuestions(String houseID) throws Exception {
+        // Verify if house exists
+        var houseRes = db.getHouseById(houseID);
+        Optional<HouseDAO> result = houseRes.stream().findFirst();
+        if (result.isEmpty())
+            throw new Exception("Error: 404 House Not Found");
+
+        var queryRes = db.listHouseQuestions(houseID);
+        return queryRes.stream()
+                .map(QuestionDAO::toQuestion)
+                .toList();
     }
 }

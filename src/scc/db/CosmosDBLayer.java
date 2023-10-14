@@ -7,11 +7,7 @@ import com.azure.cosmos.CosmosDatabase;
 import com.azure.cosmos.models.*;
 import com.azure.cosmos.util.CosmosPagedIterable;
 
-import scc.data.HouseDAO;
-import scc.data.RentalDAO;
-import scc.data.UserDAO;
-
-import java.util.List;
+import scc.data.*;
 
 public class CosmosDBLayer {
 
@@ -76,7 +72,7 @@ public class CosmosDBLayer {
 
     public CosmosPagedIterable<UserDAO> getUserById(String id) {
         init();
-        String query = "SELECT * FROM users WHERE users.id=\"" + id + "\"";
+        String query = String.format("SELECT * FROM users WHERE users.id=\"%s\"", id);
         return db.getContainer(USERS_CONTAINER).queryItems(query, new CosmosQueryRequestOptions(), UserDAO.class);
     }
 
@@ -92,7 +88,7 @@ public class CosmosDBLayer {
         return container.patchItem(id, key, new CosmosPatchItemRequestOptions(), UserDAO.class);
     }*/
 
-    public CosmosPagedIterable<UserDAO> getUsers() {
+    public CosmosPagedIterable<UserDAO> listUsers() {
         init();
         String query = "SELECT * FROM users";
         return db.getContainer(USERS_CONTAINER).queryItems(query, new CosmosQueryRequestOptions(), UserDAO.class);
@@ -117,7 +113,7 @@ public class CosmosDBLayer {
 
     public CosmosPagedIterable<HouseDAO> getHouseById(String id) {
         init();
-        String query = "SELECT * FROM houses WHERE houses.id=\"" + id + "\"";
+        String query = String.format("SELECT * FROM houses WHERE houses.id=\"%s\"", id);
         return db.getContainer(HOUSES_CONTAINER).queryItems(query, new CosmosQueryRequestOptions(), HouseDAO.class);
     }
 
@@ -129,7 +125,7 @@ public class CosmosDBLayer {
 
     public CosmosPagedIterable<HouseDAO> getHousesLocation(String location) {
         init();
-        String query = "SELECT * FROM houses WHERE houses.location=\"" + location + "\"";
+        String query = String.format("SELECT * FROM houses WHERE houses.location=\"%s\"", location);
         return db.getContainer(HOUSES_CONTAINER).queryItems(query, new CosmosQueryRequestOptions(), HouseDAO.class);
     }
 
@@ -163,6 +159,46 @@ public class CosmosDBLayer {
     ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
     ////////////////////////////// QUESTIONS
     ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+    public CosmosItemResponse<QuestionDAO> createQuestion(QuestionDAO questionDAO) {
+        init();
+        return db.getContainer(QUESTIONS_CONTAINER).createItem(questionDAO);
+    }
+
+    public CosmosItemResponse<QuestionDAO> replyToQuestion(String houseID, String questionID, String answer) throws Exception {
+        init();
+        PartitionKey key = new PartitionKey(houseID);
+
+        // Verify if question exists
+        // query to retrieve the item you want to update.
+        var question = getQuestionByID(houseID, questionID).stream().findFirst();
+
+        // Check if the query returned any results.
+        if (question.isEmpty())
+            throw new Exception("Error: 404 Question Not Found");
+
+        // Verify if it has already been answered
+        QuestionDAO existingQuestion = question.get();
+        if (existingQuestion.getAnswer().isEmpty())
+            throw new Exception("Error: 403 Question Already Answered");
+
+        // Update the answer
+        existingQuestion.setAnswer(answer);
+        return db.getContainer(QUESTIONS_CONTAINER).replaceItem(existingQuestion, questionID, key, new CosmosItemRequestOptions());
+    }
+
+
+    public CosmosPagedIterable<QuestionDAO> getQuestionByID(String houseID, String questionID) {
+        init();
+        String query = String.format("SELECT * FROM questions WHERE questions.questionID = '%s' AND questions.houseID = '%s'", houseID, questionID);
+        return db.getContainer(QUESTIONS_CONTAINER).queryItems(query, new CosmosQueryRequestOptions(), QuestionDAO.class);
+    }
+
+    public CosmosPagedIterable<QuestionDAO> listHouseQuestions(String houseId) {
+        init();
+        String query = String.format("SELECT * FROM questions WHERE questions.houseID=\"%s\"", houseId);
+        return db.getContainer(QUESTIONS_CONTAINER).queryItems(query, new CosmosQueryRequestOptions(), QuestionDAO.class);
+    }
 
 
     public void close() {

@@ -41,7 +41,7 @@ public class TestUsers {
             }
 
             System.out.println("Get for all ids");
-            resGet = db.getUsers();
+            resGet = db.listUsers();
             for (UserDAO e : resGet) {
                 System.out.println(e);
             }
