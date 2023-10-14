@@ -5,16 +5,16 @@ import jakarta.ws.rs.core.MediaType;
 import scc.data.HouseDAO;
 import scc.data.House;
 
+import java.time.LocalDate;
+import java.util.List;
+
 @Path(HousesService.PATH)
 public interface HousesService {
     String PATH = "/house";
     String ID = "id";
-    String NAME = "name";
     String LOCATION = "location";
-    String DESCRIPTION = "description";
-    String PHOTO_ID = "photoId";
-    String OWNER_ID = "ownerID";
-    String QUERY = "query";
+    String INITIAL_DATE = "initialDate";
+    String END_DATE = "endDate";
 
 
     @POST
@@ -39,7 +39,13 @@ public interface HousesService {
     House updateHouse(@PathParam(ID) String id, HouseDAO houseDAO) throws Exception;
 
     @GET
-    @Path("/")
+    @Path("/{" + LOCATION + "}")
     @Produces(MediaType.APPLICATION_JSON)
-    House getAvailHouseByLocation( @QueryParam(LOCATION) String location) throws Exception;
+    List<House> getAvailHouseByLocation(@PathParam(LOCATION) String location) throws Exception;
+
+    @GET
+    @Path("/{" + LOCATION + "}")
+    @Produces(MediaType.APPLICATION_JSON)
+    List<House> getHouseByLocationPeriod(@PathParam(LOCATION) String location,@QueryParam(INITIAL_DATE) LocalDate initialDate,
+                                         @QueryParam(END_DATE) LocalDate endDate) throws Exception;
 }

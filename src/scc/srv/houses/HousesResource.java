@@ -4,11 +4,14 @@ import com.azure.cosmos.models.CosmosItemResponse;
 import com.azure.cosmos.util.CosmosPagedIterable;
 import scc.data.House;
 import scc.data.HouseDAO;
+import scc.data.RentalDAO;
 import scc.db.CosmosDBLayer;
 import scc.srv.Checks;
 import scc.srv.media.MediaResource;
 import scc.utils.Hash;
 
+import java.time.LocalDate;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 
@@ -75,22 +78,58 @@ public class HousesResource implements HousesService {
     }
 
     @Override
-    public House getAvailHouseByLocation(String location) throws Exception {
+    public List<House> getAvailHouseByLocation(String location) throws Exception {
+        var cDate = java.time.LocalDate.now(); // Get current date
+        List<House> result = new ArrayList<>();
 
         CosmosPagedIterable<HouseDAO> res = db.getHousesLocation(location);
-        List<HouseDAO> result = res.stream().toList();
+        List<HouseDAO> houses = res.stream().toList();
 
-        // TODO - check if house is available
-        /* for ( HouseDAO h: result) {
-
-            for (Rental r: h.getRentalsID() ) {
-
+        // Check if house is available
+         for ( HouseDAO h: houses) {
+             boolean available = true;
+            for (String id: h.getRentalsID()) {
+                Optional<RentalDAO>  rental = db.getRentalById(id).stream().findFirst();
+                if (rental.isEmpty() || rental.get().getInitialDate() != cDate)
+                    available = false;
             }
+            if (available)
+                result.add(h.toHouse());
         }
-        */
 
         if (!result.isEmpty()) {
-            return null;
+            return result;
+        } else {
+            throw new Exception("Error: 404");
+        }
+    }
+
+    @Override
+    public List<House> getHouseByLocationPeriod(String location, LocalDate initialDate, LocalDate endDate) throws Exception {
+        List<House> result = new ArrayList<>();
+
+        CosmosPagedIterable<HouseDAO> res = db.getHousesLocation(location);
+        List<HouseDAO> houses = res.stream().toList();
+
+        // Check if house is available in the given timeframe
+        for ( HouseDAO h: houses) {
+            boolean available = true;
+            for (String id: h.getRentalsID()) {
+                Optional<RentalDAO>  rental = db.getRentalById(id).stream().findFirst();
+                if (rental.isEmpty()) {
+                    available = false;
+                } else {
+                    RentalDAO r = rental.get();
+                    available = r.getInitialDate().isAfter(endDate) || r.getEndDate().isBefore(initialDate);
+                }
+
+            }
+            if (available)
+                result.add(h.toHouse());
+        }
+
+        if (!result.isEmpty()) {
+            return result;
         } else {
             throw new Exception("Error: 404");
         }
