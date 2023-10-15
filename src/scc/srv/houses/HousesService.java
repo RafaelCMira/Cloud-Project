@@ -38,7 +38,7 @@ public interface HousesService {
     @Produces(MediaType.APPLICATION_JSON)
     House updateHouse(@PathParam(ID) String id, HouseDAO houseDAO) throws Exception;
 
-    @GET
+   /* @GET
     @Path("/{" + LOCATION + "}")
     @Produces(MediaType.APPLICATION_JSON)
     List<House> getAvailHouseByLocation(@PathParam(LOCATION) String location) throws Exception;
@@ -47,5 +47,5 @@ public interface HousesService {
     @Path("/{" + LOCATION + "}")
     @Produces(MediaType.APPLICATION_JSON)
     List<House> getHouseByLocationPeriod(@PathParam(LOCATION) String location,@QueryParam(INITIAL_DATE) LocalDate initialDate,
-                                         @QueryParam(END_DATE) LocalDate endDate) throws Exception;
+                                         @QueryParam(END_DATE) LocalDate endDate) throws Exception;*/
 }

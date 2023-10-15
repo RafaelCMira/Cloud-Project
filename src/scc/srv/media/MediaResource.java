@@ -15,7 +15,7 @@ import jakarta.ws.rs.PathParam;
 /**
  * Resource for managing media files, such as images.
  */
-public class MediaResource {
+public class MediaResource implements MediaService {
     public String upload(byte[] contents) {
         String id = Hash.of(contents);
         try {
@@ -35,7 +35,7 @@ public class MediaResource {
         return id;
     }
 
-    public byte[] download(@PathParam("id") String id) {
+    public byte[] download(String id) {
         byte[] content = null;
         try {
             // Get container client

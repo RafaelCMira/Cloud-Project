@@ -77,6 +77,7 @@ public class HousesResource implements HousesService {
         }
     }
 
+/*
     @Override
     public List<House> getAvailHouseByLocation(String location) throws Exception {
         var cDate = java.time.LocalDate.now(); // Get current date
@@ -134,6 +135,7 @@ public class HousesResource implements HousesService {
             throw new Exception("Error: 404");
         }
     }
+*/
 
 
     /**
