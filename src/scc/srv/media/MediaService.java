@@ -11,7 +11,9 @@ public interface MediaService {
     String PATH = "/media";
 
     // Get connection string in the storage access keys page
-    String storageConnectionString = System.getenv("BLOB_KEY");
+    // String storageConnectionString = System.getenv("BLOB_KEY");
+    String storageConnectionString = "DefaultEndpointsProtocol=https;AccountName=sccstorage59243;" +
+            "AccountKey=XNzzGxS0bs3vlouEluDwUC6PFXjbgL+IlrTJkCbFtwG1kDGQHSquGgTgQtB1QbteyuClEvDEeaOS+ASt+TbUUQ==;EndpointSuffix=core.windows.net";
 
     String CONTAINER_NAME = "media";
 

@@ -9,27 +9,27 @@ import java.util.Arrays;
  * handle the empty list.
  */
 public class User {
-    private String id;
+    private String userID;
     private String name;
     private String pwd;
     private String photoId;
     private String[] houseIds;
 
-    public User(String id, String name, String pwd, String photoId, String[] houseIds) {
+    public User(String userID, String name, String pwd, String photoId, String[] houseIds) {
         super();
-        this.id = id;
+        this.userID = userID;
         this.name = name;
         this.pwd = pwd;
         this.photoId = photoId;
         this.houseIds = houseIds;
     }
 
-    public String getId() {
-        return id;
+    public String getUserID() {
+        return userID;
     }
 
-    public void setId(String id) {
-        this.id = id;
+    public void setUserID(String userID) {
+        this.userID = userID;
     }
 
     public String getName() {
@@ -66,7 +66,7 @@ public class User {
 
     @Override
     public String toString() {
-        return "User [id=" + id + ", name=" + name + ", pwd=" + pwd + ", photoId=" + photoId + ", houseIds="
+        return "User [id=" + userID + ", name=" + name + ", pwd=" + pwd + ", photoId=" + photoId + ", houseIds="
                 + Arrays.toString(houseIds) + "]";
     }
 

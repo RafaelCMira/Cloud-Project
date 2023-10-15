@@ -17,7 +17,7 @@ public class UsersResource implements UsersService {
 
     @Override
     public String createUser(UserDAO userDAO) throws Exception {
-        if (Checks.badParams(userDAO.getId(), userDAO.getName(), userDAO.getPwd(), userDAO.getPhotoId()))
+        if (Checks.badParams(userDAO.getUserID(), userDAO.getName(), userDAO.getPwd(), userDAO.getPhotoId()))
             throw new Exception("Error: 400 Bad Request");
 
         MediaResource media = new MediaResource();

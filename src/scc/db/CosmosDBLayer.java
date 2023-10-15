@@ -12,13 +12,27 @@ import scc.data.*;
 public class CosmosDBLayer {
 
     public static final String USERS_CONTAINER = "users";
-    public static final String HOUSES_CONTAINER = "houses";
-    public static final String RENTALS_CONTAINER = "rentals";
-    public static final String QUESTIONS_CONTAINER = "questions";
+    public static final String USERS_PARTITION_KEY = "/userID";
 
-    private static final String CONNECTION_URL = System.getenv("COSMOSDB_URL");
-    private static final String DB_KEY = System.getenv("COSMOSDB_KEY");
-    private static final String DB_NAME = System.getenv("COSMOSDB_DATABASE");
+    public static final String HOUSES_CONTAINER = "houses";
+    public static final String HOUSES_PARTITION_KEY = "/houseID";
+
+    public static final String RENTALS_CONTAINER = "rentals";
+    public static final String RENTALS_PARTITION_KEY = "/rentalID";
+
+    public static final String QUESTIONS_CONTAINER = "questions";
+    public static final String QUESTIONS_PARTITION_KEY = "/questionID";
+
+
+    // private static final String CONNECTION_URL = System.getenv("COSMOSDB_URL");
+    private static final String CONNECTION_URL = "https://scc24account59243.documents.azure.com:443/";
+
+    // private static final String DB_KEY = System.getenv("COSMOSDB_KEY");
+    private static final String DB_KEY = "pXjP77P5EVQAEvSxTRgYpJc3OBce2OMx39rLNqSsyJMGvCG1sDSbgpY1bsyJJ1QfmGPFj3iebPcFACDbO9k6CA==";
+
+    // private static final String DB_NAME = System.getenv("COSMOSDB_DATABASE");
+    private static final String DB_NAME = "scc24bd59243";
+
 
     private static CosmosDBLayer instance;
     private final CosmosClient client;

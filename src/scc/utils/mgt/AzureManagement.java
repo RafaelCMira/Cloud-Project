@@ -32,7 +32,10 @@ import com.azure.cosmos.models.CosmosDatabaseProperties;
 import com.azure.cosmos.models.ThroughputProperties;
 import com.azure.cosmos.models.UniqueKey;
 import com.azure.cosmos.models.UniqueKeyPolicy;
+import com.azure.storage.blob.BlobContainerClient;
+import com.azure.storage.blob.models.PublicAccessType;
 import scc.db.CosmosDBLayer;
+import scc.srv.media.MediaService;
 
 
 public class AzureManagement {
@@ -43,9 +46,9 @@ public class AzureManagement {
 
     // TODO: change your suffix and other names if you want
     static final String MY_SUFFIX = "59243"; // Add your suffix here
-    static final String AZURE_COSMOSDB_NAME = "scc24" + MY_SUFFIX;    // Cosmos DB account name
+    static final String AZURE_COSMOSDB_NAME = "scc24account" + MY_SUFFIX;    // Cosmos DB account name
     static final String AZURE_COSMOSDB_DATABASE = "scc24db" + MY_SUFFIX;    // Cosmos DB database name
-    static final String[] BLOB_CONTAINERS = {"media"};    // TODO: Containers to add to the blob storage
+    static final String[] BLOB_CONTAINERS = {MediaService.CONTAINER_NAME};    // TODO: Containers to add to the blob storage
 
     static final Region[] REGIONS = new Region[]{Region.EUROPE_WEST}; // Define the regions to deploy resources here
 
@@ -53,22 +56,22 @@ public class AzureManagement {
     static final String[] AZURE_RG_REGIONS = Arrays.stream(REGIONS)
             .map(reg -> "scc24-rg-" + reg.name() + "-" + MY_SUFFIX).toArray(String[]::new);
 
-    // Name of application server to be launched in each regions -- launching the application
-    // server must be done using mvn, as you have been doing
+    // Name of application server to be launched in each regions
+    // -- launching the application server must be done using mvn, as you have been doing
     // TODO: this name should be the same as defined in your app
-    static final String[] AZURE_APP_NAME = Arrays.stream(REGIONS).map(reg -> "scc24app" + reg.name() + MY_SUFFIX)
+    static final String[] AZURE_APP_NAME = Arrays.stream(REGIONS).map(reg -> "scc24app-" + reg.name() + "-" + MY_SUFFIX)
             .toArray(String[]::new);
 
     // Name of Blob storage account
-    static final String[] AZURE_STORAGE_NAME = Arrays.stream(REGIONS).map(reg -> "sccst" + reg.name() + MY_SUFFIX)
+    static final String[] AZURE_STORAGE_NAME = Arrays.stream(REGIONS).map(reg -> "scc24st" + reg.name() + MY_SUFFIX)
             .toArray(String[]::new);
 
     // Name of Redis server to be defined
-    static final String[] AZURE_REDIS_NAME = Arrays.stream(REGIONS).map(reg -> "redis" + reg.name() + MY_SUFFIX)
+    static final String[] AZURE_REDIS_NAME = Arrays.stream(REGIONS).map(reg -> "scc24redis" + reg.name() + MY_SUFFIX)
             .toArray(String[]::new);
 
     // Name of Azure functions to be launched in each regions
-    static final String[] AZURE_FUNCTIONS_NAME = Arrays.stream(REGIONS).map(reg -> "scc23fun" + reg.name() + MY_SUFFIX)
+    static final String[] AZURE_FUNCTIONS_NAME = Arrays.stream(REGIONS).map(reg -> "scc24functions" + reg.name() + MY_SUFFIX)
             .toArray(String[]::new);
 
     // Name of property file with keys and URLS to access resources
@@ -78,7 +81,7 @@ public class AzureManagement {
     // Name of shell script file with commands to set application setting for you application server
     // and Azure functions
     static final String[] AZURE_SETTINGS_LOCATIONS = Arrays.stream(REGIONS)
-            .map(reg -> "azureprops-" + reg.name() + ".sh").toArray(String[]::new);
+            .map(reg -> "azureprops-" + reg.name() + ".bat").toArray(String[]::new);
 
     public static AzureResourceManager createManagementClient() throws IOException {
         AzureProfile profile = new AzureProfile(AzureEnvironment.AZURE);
@@ -112,10 +115,12 @@ public class AzureManagement {
         storageAccount.innerModel().allowBlobPublicAccess();
         System.out.println("Storage account created with success: name = " + name + " ; group = " + rgName
                 + " ; region = " + region.name());
+
         return storageAccount;
     }
 
     private static BlobContainer createBlobContainer(AzureResourceManager azure, String rgName, String accountName, String containerName) {
+        // TODO: PublicAccess.BLOB é que temos de ter mas isto falha porque a account não dá para por com acesso publico aqui!
         BlobContainer container = azure.storageBlobContainers().defineContainer(containerName)
                 .withExistingStorageAccount(rgName, accountName).withPublicAccess(PublicAccess.NONE).create();
         System.out.println("Blob container created with success: name = " + containerName + " ; group = " + rgName
@@ -288,7 +293,6 @@ public class AzureManagement {
             }
             db.createContainer(props);
             System.out.println("CosmosDB collection created with success: name = " + collectionName + "@" + dbname);
-
         } catch (Exception e) { // TODO: Something has gone terribly wrong.
             e.printStackTrace();
             return;
@@ -441,10 +445,10 @@ public class AzureManagement {
                             createCosmosDatabase(cosmosClient, AZURE_COSMOSDB_DATABASE);
 
                             //TODO: create the collections you have in your application
-                            createCosmosCollection(cosmosClient, AZURE_COSMOSDB_DATABASE, CosmosDBLayer.USERS_CONTAINER, "/userId", null);
-                            createCosmosCollection(cosmosClient, AZURE_COSMOSDB_DATABASE, CosmosDBLayer.HOUSES_CONTAINER, "/houseId", null);
-                            createCosmosCollection(cosmosClient, AZURE_COSMOSDB_DATABASE, CosmosDBLayer.RENTALS_CONTAINER, "/houseId", null);
-                            createCosmosCollection(cosmosClient, AZURE_COSMOSDB_DATABASE, CosmosDBLayer.QUESTIONS_CONTAINER, "/houseId", null);
+                            createCosmosCollection(cosmosClient, AZURE_COSMOSDB_DATABASE, CosmosDBLayer.USERS_CONTAINER, CosmosDBLayer.USERS_PARTITION_KEY, null);
+                            /*createCosmosCollection(cosmosClient, AZURE_COSMOSDB_DATABASE, CosmosDBLayer.HOUSES_CONTAINER, CosmosDBLayer.HOUSES_PARTITION_KEY, null);
+                            createCosmosCollection(cosmosClient, AZURE_COSMOSDB_DATABASE, CosmosDBLayer.RENTALS_CONTAINER, CosmosDBLayer.RENTALS_PARTITION_KEY, null);
+                            createCosmosCollection(cosmosClient, AZURE_COSMOSDB_DATABASE, CosmosDBLayer.QUESTIONS_CONTAINER, CosmosDBLayer.QUESTIONS_PARTITION_KEY, null);*/
 
                             System.err.println("Azure Cosmos DB resources created with success");
 

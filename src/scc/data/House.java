@@ -1,6 +1,5 @@
 package scc.data;
 
-import java.util.Arrays;
 import java.util.List;
 
 /**
@@ -9,7 +8,7 @@ import java.util.List;
 
 public class House {
 
-    private String id;
+    private String houseID;
 
     private String name;
 
@@ -26,10 +25,10 @@ public class House {
     private int[][] priceByPeriod;
 
 
-    public House(String id, String name, String location, String description,
+    public House(String houseID, String name, String location, String description,
                  String photoId, List<String> rentalsID, String ownerID, int[][] priceByPeriod) {
         super();
-        this.id = id;
+        this.houseID = houseID;
         this.name = name;
         this.location = location;
         this.description = description;
@@ -39,12 +38,12 @@ public class House {
         this.priceByPeriod = priceByPeriod;
     }
 
-    public String getId() {
-        return id;
+    public String getHouseID() {
+        return houseID;
     }
 
-    public void setId(String id) {
-        this.id = id;
+    public void setHouseID(String houseID) {
+        this.houseID = houseID;
     }
 
     public String getName() {
@@ -67,7 +66,9 @@ public class House {
         return description;
     }
 
-    public void setDescription(String description) { this.description = description;}
+    public void setDescription(String description) {
+        this.description = description;
+    }
 
     public String getPhotoId() {
         return photoId;
@@ -77,20 +78,29 @@ public class House {
         this.photoId = photoId;
     }
 
-    public List<String> getRentalsID() { return rentalsID; }
+    public List<String> getRentalsID() {
+        return rentalsID;
+    }
 
     public void addRental(String rentalID) {
         rentalsID.add(rentalID);
     }
 
-    public String getOwnerID() { return ownerID; }
+    public String getOwnerID() {
+        return ownerID;
+    }
 
-    public void setOwnerID(String ownerID) { this.ownerID = ownerID;}
+    public void setOwnerID(String ownerID) {
+        this.ownerID = ownerID;
+    }
 
-    public int[][] getPriceByPeriod() { return priceByPeriod; }
+    public int[][] getPriceByPeriod() {
+        return priceByPeriod;
+    }
 
     /**
      * Returns the Price of the given Month, it can be the discount or the normal price.
+     *
      * @param typeOfPrice - type of the Price ( 0 = Normal Price; 1 = Discount Price)
      * @param month
      * @return the price of the given Month.
@@ -101,9 +111,10 @@ public class House {
 
     /**
      * Change the price of a particular type in a given month.
+     *
      * @param typeOfPrice - type of the Price ( 0 = Normal Price; 1 = Discount Price)
      * @param month
-     * @param newPrice - the new Price
+     * @param newPrice    - the new Price
      */
     public void setPeriodPrice(int typeOfPrice, int month, int newPrice) {
         priceByPeriod[typeOfPrice][month] = newPrice;
@@ -111,7 +122,7 @@ public class House {
 
     @Override
     public String toString() {
-        return "House [id=" + id + ", name=" + name + ", location=" + location + ", description=" + description + ", photoId=" + photoId + ", ownerID="
-                + ownerID +"]";
+        return "House [id=" + houseID + ", name=" + name + ", location=" + location + ", description=" + description + ", photoId=" + photoId + ", ownerID="
+                + ownerID + "]";
     }
 }

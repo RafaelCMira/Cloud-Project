@@ -5,6 +5,8 @@ import java.io.IOException;
 import java.util.Properties;
 
 public class AzureProperties {
+
+    // Blob Keys
     public static final String BLOB_KEY = "BlobStoreConnection";
 
     // Database Keys

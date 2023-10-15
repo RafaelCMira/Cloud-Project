@@ -7,16 +7,16 @@ import java.time.LocalDate;
  */
 
 public class Rental {
-    private int id;
+    private int rentalID;
     private House rental;
     private User renter;
     private double price;
     private LocalDate initialDate;
     private LocalDate endDate;
 
-    public Rental(int id, House rental, User renter, double price, LocalDate initialDate, LocalDate endDate) {
+    public Rental(int rentalID, House rental, User renter, double price, LocalDate initialDate, LocalDate endDate) {
         super();
-        this.id = id;
+        this.rentalID = rentalID;
         this.rental = rental;
         this.renter = renter;
         this.price = price;
@@ -24,12 +24,12 @@ public class Rental {
         this.endDate = endDate;
     }
 
-    public void setId(int id) {
-        this.id = id;
+    public void setRentalID(int rentalID) {
+        this.rentalID = rentalID;
     }
 
-    public int getId() {
-        return id;
+    public int getRentalID() {
+        return rentalID;
     }
 
     public void setRental(House rental) {

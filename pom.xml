@@ -8,7 +8,6 @@
     <properties>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <authors>59243</authors>
-        <region>westeurope</region>
     </properties>
     <dependencies>
         <dependency>
@@ -169,8 +168,8 @@
                             </resource>
                         </resources>
                     </deployment>
-                    <resourceGroup>scc24-rg-${region}-${authors}</resourceGroup>
-                    <appName>scc24app${region}${authors}</appName>
+                    <resourceGroup>scc24-rg-westeurope-${authors}</resourceGroup>
+                    <appName>scc24app-westeurope-${authors}</appName>
                 </configuration>
             </plugin>
         </plugins>
