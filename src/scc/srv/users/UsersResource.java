@@ -9,6 +9,7 @@ import scc.srv.Checks;
 import scc.srv.media.MediaResource;
 import scc.utils.Hash;
 
+import java.util.List;
 import java.util.Optional;
 
 
@@ -65,6 +66,11 @@ public class UsersResource implements UsersService {
             return updatedUser.toUser(); // se isto nao estiver bem usar o acima
         else
             throw new Exception("Error: " + statusCode);
+    }
+
+    @Override
+    public List<User> listUsers() throws Exception {
+        return db.listUsers().stream().map(UserDAO::toUser).toList();
     }
 
 

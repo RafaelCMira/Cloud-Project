@@ -74,7 +74,7 @@ public class MediaResource implements MediaService {
         return false;
     }
 
-    public List<String> list() {
+    public List<String> listImages() {
         // Get container client
         BlobContainerClient containerClient = getContainerClient(MediaService.CONTAINER_NAME);
 

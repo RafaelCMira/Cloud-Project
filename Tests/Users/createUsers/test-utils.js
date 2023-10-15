@@ -21,7 +21,7 @@ var statsPrefix = [
 	["/rest/media/", "GET"],
 	["/rest/media", "POST"],
 	["/rest/user/", "GET"],
-	["/rest/user/", "GET"],
+	["/rest/user/", "POST"],
 ];
 
 // Function used to compress statistics
@@ -97,10 +97,10 @@ function selectImageToDownload(context, events, done) {
  * Select an image to download.
  */
 function selectUser(context, events, done) {
-	if (userIds.length > 0) {
-		context.vars.userId = userIds.sample();
+	if (userIDs.length > 0) {
+		context.vars.userID = userIDs.sample();
 	} else {
-		delete context.vars.userId;
+		delete context.vars.userID;
 	}
 	return done();
 }
@@ -109,7 +109,7 @@ function selectUser(context, events, done) {
 function genNewUser(context, events, done) {
 	const first = `${faker.name.firstName()}`;
 	const last = `${faker.name.lastName()}`;
-	context.vars.id = first + "." + last;
+	context.vars.userID = first + "." + last;
 	context.vars.name = first + " " + last;
 	context.vars.pwd = `${faker.internet.password()}`;
 	return done();

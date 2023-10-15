@@ -5,6 +5,8 @@ import jakarta.ws.rs.core.MediaType;
 import scc.data.User;
 import scc.data.UserDAO;
 
+import java.util.List;
+
 
 @Path(UsersService.PATH)
 public interface UsersService {
@@ -37,6 +39,11 @@ public interface UsersService {
     @Consumes(MediaType.APPLICATION_JSON)
     @Produces(MediaType.APPLICATION_JSON)
     User updateUser(@PathParam(ID) String id, UserDAO userDAO) throws Exception;
+
+
+    @GET
+    @Produces(MediaType.APPLICATION_JSON)
+    List<User> listUsers() throws Exception;
 
 
 }

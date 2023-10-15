@@ -2,7 +2,6 @@ package scc.srv.media;
 
 import jakarta.ws.rs.*;
 import jakarta.ws.rs.core.MediaType;
-import scc.utils.mgt.AzureManagement;
 import scc.utils.props.AzureProperties;
 
 import java.util.List;
@@ -51,5 +50,5 @@ public interface MediaService {
      */
     @GET
     @Produces(MediaType.APPLICATION_JSON)
-    List<String> list();
+    List<String> listImages();
 }
