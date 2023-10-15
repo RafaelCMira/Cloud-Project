@@ -107,11 +107,11 @@ function selectUser(context, events, done) {
 
 
 function genNewUser(context, events, done) {
-	const first = `${Faker.name.firstName()}`;
-	const last = `${Faker.name.lastName()}`;
+	const first = `${faker.name.firstName()}`;
+	const last = `${faker.name.lastName()}`;
 	context.vars.id = first + "." + last;
 	context.vars.name = first + " " + last;
-	context.vars.pwd = `${Faker.internet.password()}`;
+	context.vars.pwd = `${faker.internet.password()}`;
 	return done();
 }
 

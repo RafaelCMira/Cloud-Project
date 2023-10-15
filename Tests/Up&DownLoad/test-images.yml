@@ -1,5 +1,5 @@
 config:
-  target: 'https://scc24appwesteurope59243.azurewebsites.net/rest'
+  target: 'https://scc24app-westeurope-59243.azurewebsites.net/rest'
   plugins:
     metrics-by-endpoint: { }
   processor: "./test-utils.js"
