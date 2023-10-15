@@ -32,8 +32,6 @@ import com.azure.cosmos.models.CosmosDatabaseProperties;
 import com.azure.cosmos.models.ThroughputProperties;
 import com.azure.cosmos.models.UniqueKey;
 import com.azure.cosmos.models.UniqueKeyPolicy;
-import com.azure.storage.blob.BlobContainerClient;
-import com.azure.storage.blob.models.PublicAccessType;
 import scc.db.CosmosDBLayer;
 import scc.srv.media.MediaService;
 
@@ -41,7 +39,7 @@ import scc.srv.media.MediaService;
 public class AzureManagement {
     // TODO: These variable allow you to control what is being created
     static final boolean CREATE_STORAGE = true;
-    static final boolean CREATE_COSMOSDB = false;
+    static final boolean CREATE_COSMOSDB = true;
     static final boolean CREATE_REDIS = false;
 
     // TODO: change your suffix and other names if you want
@@ -446,8 +444,8 @@ public class AzureManagement {
 
                             //TODO: create the collections you have in your application
                             createCosmosCollection(cosmosClient, AZURE_COSMOSDB_DATABASE, CosmosDBLayer.USERS_CONTAINER, CosmosDBLayer.USERS_PARTITION_KEY, null);
-                            /*createCosmosCollection(cosmosClient, AZURE_COSMOSDB_DATABASE, CosmosDBLayer.HOUSES_CONTAINER, CosmosDBLayer.HOUSES_PARTITION_KEY, null);
-                            createCosmosCollection(cosmosClient, AZURE_COSMOSDB_DATABASE, CosmosDBLayer.RENTALS_CONTAINER, CosmosDBLayer.RENTALS_PARTITION_KEY, null);
+                            createCosmosCollection(cosmosClient, AZURE_COSMOSDB_DATABASE, CosmosDBLayer.HOUSES_CONTAINER, CosmosDBLayer.HOUSES_PARTITION_KEY, null);
+                           /* createCosmosCollection(cosmosClient, AZURE_COSMOSDB_DATABASE, CosmosDBLayer.RENTALS_CONTAINER, CosmosDBLayer.RENTALS_PARTITION_KEY, null);
                             createCosmosCollection(cosmosClient, AZURE_COSMOSDB_DATABASE, CosmosDBLayer.QUESTIONS_CONTAINER, CosmosDBLayer.QUESTIONS_PARTITION_KEY, null);*/
 
                             System.err.println("Azure Cosmos DB resources created with success");
