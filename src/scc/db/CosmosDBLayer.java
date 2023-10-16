@@ -10,26 +10,26 @@ import scc.utils.props.AzureProperties;
 public class CosmosDBLayer {
 
     public static final String USERS_CONTAINER = "users";
-    public static final String USERS_PARTITION_KEY = "id";
+    public static final String USERS_PARTITION_KEY = "/id";
 
     public static final String HOUSES_CONTAINER = "houses";
-    public static final String HOUSES_PARTITION_KEY = "/houseID";
+    public static final String HOUSES_PARTITION_KEY = "/id";
 
     public static final String RENTALS_CONTAINER = "rentals";
-    public static final String RENTALS_PARTITION_KEY = "/houseID";
+    public static final String RENTALS_PARTITION_KEY = "/id";
 
     public static final String QUESTIONS_CONTAINER = "questions";
-    public static final String QUESTIONS_PARTITION_KEY = "/houseID";
+    public static final String QUESTIONS_PARTITION_KEY = "/id";
 
 
-    //private static final String CONNECTION_URL = System.getenv(AzureProperties.COSMOSDB_URL);
-    private static final String CONNECTION_URL = "https://scc24account60700.documents.azure.com:443/";
+    private static final String CONNECTION_URL = System.getenv(AzureProperties.COSMOSDB_URL);
+    //private static final String CONNECTION_URL = "https://scc24account60700.documents.azure.com:443/";
 
-    //private static final String DB_KEY = System.getenv(AzureProperties.COSMOSDB_KEY);
-    private static final String DB_KEY = "Km0YTZA2am4j5XUC26S9PxaFw0kbK8eic2mg4KagndPUzCiZ01slWV1LyXtpSBvyM5qlUVg0IFxkACDbgoEXeQ==";
+    private static final String DB_KEY = System.getenv(AzureProperties.COSMOSDB_KEY);
+    //private static final String DB_KEY = "Km0YTZA2am4j5XUC26S9PxaFw0kbK8eic2mg4KagndPUzCiZ01slWV1LyXtpSBvyM5qlUVg0IFxkACDbgoEXeQ==";
 
-    //private static final String DB_NAME = System.getenv(AzureProperties.COSMOSDB_DATABASE);
-    private static final String DB_NAME = "scc24db60700";
+    private static final String DB_NAME = System.getenv(AzureProperties.COSMOSDB_DATABASE);
+    //private static final String DB_NAME = "scc24db60700";
 
 
     private static CosmosDBLayer instance;
