@@ -22,7 +22,7 @@ public class TestCache {
             Locale.setDefault(Locale.US);
             String id = "0:" + System.currentTimeMillis();
             UserDAO u = new UserDAO();
-            u.setUserID(id);
+            u.setId(id);
             u.setName("SCC " + id);
             u.setPwd("super_secret");
             u.setPhotoId("0:34253455");

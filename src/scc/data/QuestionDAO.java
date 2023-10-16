@@ -4,7 +4,7 @@ public class QuestionDAO {
 
     private String _rid;
     private String _ts;
-    private String questionID;
+    private String id;
     private String userID;
     private String houseID;
     private String text;
@@ -17,21 +17,21 @@ public class QuestionDAO {
         this(q.getQuestionID(), q.getUserID(), q.getHouseID(), q.getText(), q.getAnswer());
     }
 
-    public QuestionDAO(String questionID, String userID, String houseID, String text, String answer) {
+    public QuestionDAO(String id, String userID, String houseID, String text, String answer) {
         super();
-        this.questionID = questionID;
+        this.id = id;
         this.userID = userID;
         this.houseID = houseID;
         this.text = text;
         this.answer = answer;
     }
 
-    public String getQuestionID() {
-        return questionID;
+    public String getId() {
+        return id;
     }
 
-    public void setQuestionID(String questionID) {
-        this.questionID = questionID;
+    public void setId(String id) {
+        this.id = id;
     }
 
     public String get_rid() {
@@ -83,7 +83,7 @@ public class QuestionDAO {
     }
 
     public Question toQuestion() {
-        return new Question(questionID, userID, houseID, text, answer);
+        return new Question(id, userID, houseID, text, answer);
     }
 
     @Override
@@ -91,7 +91,7 @@ public class QuestionDAO {
         return "QuestionDAO{" +
                 "_rid='" + _rid + '\'' +
                 ", _ts='" + _ts + '\'' +
-                ", questionID='" + questionID + '\'' +
+                ", questionID='" + id + '\'' +
                 ", userID='" + userID + '\'' +
                 ", houseID='" + houseID + '\'' +
                 ", text='" + text + '\'' +

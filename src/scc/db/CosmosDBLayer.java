@@ -1,9 +1,6 @@
 package scc.db;
 
-import com.azure.cosmos.ConsistencyLevel;
-import com.azure.cosmos.CosmosClient;
-import com.azure.cosmos.CosmosClientBuilder;
-import com.azure.cosmos.CosmosDatabase;
+import com.azure.cosmos.*;
 import com.azure.cosmos.models.*;
 import com.azure.cosmos.util.CosmosPagedIterable;
 
@@ -13,7 +10,7 @@ import scc.utils.props.AzureProperties;
 public class CosmosDBLayer {
 
     public static final String USERS_CONTAINER = "users";
-    public static final String USERS_PARTITION_KEY = "/userID";
+    public static final String USERS_PARTITION_KEY = "id";
 
     public static final String HOUSES_CONTAINER = "houses";
     public static final String HOUSES_PARTITION_KEY = "/houseID";
@@ -25,14 +22,14 @@ public class CosmosDBLayer {
     public static final String QUESTIONS_PARTITION_KEY = "/houseID";
 
 
-    private static final String CONNECTION_URL = System.getenv(AzureProperties.COSMOSDB_URL);
-    // private static final String CONNECTION_URL = "https://scc24account59243.documents.azure.com:443/";
+    //private static final String CONNECTION_URL = System.getenv(AzureProperties.COSMOSDB_URL);
+    private static final String CONNECTION_URL = "https://scc24account60700.documents.azure.com:443/";
 
-    private static final String DB_KEY = System.getenv(AzureProperties.COSMOSDB_KEY);
-    // private static final String DB_KEY = "pXjP77P5EVQAEvSxTRgYpJc3OBce2OMx39rLNqSsyJMGvCG1sDSbgpY1bsyJJ1QfmGPFj3iebPcFACDbO9k6CA==";
+    //private static final String DB_KEY = System.getenv(AzureProperties.COSMOSDB_KEY);
+    private static final String DB_KEY = "Km0YTZA2am4j5XUC26S9PxaFw0kbK8eic2mg4KagndPUzCiZ01slWV1LyXtpSBvyM5qlUVg0IFxkACDbgoEXeQ==";
 
-    private static final String DB_NAME = System.getenv(AzureProperties.COSMOSDB_DATABASE);
-    // private static final String DB_NAME = "scc24bd59243";
+    //private static final String DB_NAME = System.getenv(AzureProperties.COSMOSDB_DATABASE);
+    private static final String DB_NAME = "scc24db60700";
 
 
     private static CosmosDBLayer instance;
@@ -50,6 +47,7 @@ public class CosmosDBLayer {
         CosmosClient client = new CosmosClientBuilder()
                 .endpoint(CONNECTION_URL)
                 .key(DB_KEY)
+                //.directMode()
                 .gatewayMode() // replace by .directMode() for better performance
                 .consistencyLevel(ConsistencyLevel.SESSION)
                 .connectionSharingAcrossClientsEnabled(true)

@@ -1,5 +1,5 @@
 config:
-  target: 'https://scc24app-westeurope-59243.azurewebsites.net/rest'
+  target: 'https://scc24app-westeurope-60700.azurewebsites.net/rest'
   plugins:
     metrics-by-endpoint: { }
   processor: "./test-utils.js"
@@ -31,7 +31,7 @@ scenarios:
                 Content-Type: application/json
                 Accept: application/json
               json:
-                userID: "{{ userID }}"
+                id: "{{ id }}"
                 name: "{{ name }}"
                 pwd: "{{ pwd }}"
                 photoId: "{{ imageId }}"

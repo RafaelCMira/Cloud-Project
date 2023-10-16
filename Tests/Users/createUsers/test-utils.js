@@ -98,9 +98,9 @@ function selectImageToDownload(context, events, done) {
  */
 function selectUser(context, events, done) {
 	if (userIDs.length > 0) {
-		context.vars.userID = userIDs.sample();
+		context.vars.id = userIDs.sample();
 	} else {
-		delete context.vars.userID;
+		delete context.vars.id;
 	}
 	return done();
 }
@@ -109,7 +109,7 @@ function selectUser(context, events, done) {
 function genNewUser(context, events, done) {
 	const first = `${faker.name.firstName()}`;
 	const last = `${faker.name.lastName()}`;
-	context.vars.userID = first + "." + last;
+	context.vars.id = first + "." + last;
 	context.vars.name = first + " " + last;
 	context.vars.pwd = `${faker.internet.password()}`;
 	return done();
@@ -119,11 +119,12 @@ function genNewUser(context, events, done) {
  * Process reply for of new users to store the id on file
  */
 function genNewUserReply(requestParams, response, context, ee, next) {
+
 	if (response.statusCode >= 200 && response.statusCode < 300 && response.body.length > 0) {
-		// console.log(response.body)
 		let u = response.body;
 		users.push(u);
 		fs.writeFileSync("users.data", JSON.stringify(users));
-	}
+	} else
+	    console.log(response.body)
 	return next();
 }

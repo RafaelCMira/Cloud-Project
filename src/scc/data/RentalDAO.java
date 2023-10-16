@@ -9,7 +9,7 @@ import java.time.LocalDate;
 public class RentalDAO {
     private String _rid;
     private String _ts;
-    private int rentalID;
+    private int id;
     private House rental;
     private User renter;
     private double price;
@@ -23,7 +23,7 @@ public class RentalDAO {
 
     public RentalDAO(int rentalID, House rental, User renter, double price, LocalDate initialDate, LocalDate endDate) {
         super();
-        this.rentalID = rentalID;
+        this.id = rentalID;
         this.rental = rental;
         this.renter = renter;
         this.price = price;
@@ -47,12 +47,12 @@ public class RentalDAO {
         this._ts = _ts;
     }
 
-    public void setRentalID(int rentalID) {
-        this.rentalID = rentalID;
+    public void setId(int id) {
+        this.id = id;
     }
 
-    public int getRentalID() {
-        return rentalID;
+    public int getId() {
+        return id;
     }
 
     public void setRental(House rental) {
@@ -98,7 +98,7 @@ public class RentalDAO {
     @Override
     public String toString() {
         return "Rental [ _rid=" + _rid + ", _ts=" + _ts +
-                ", id=" + rentalID + ", rental=" + rental + ", renter=" + renter + ", price=" + price + ", initialDate=" + initialDate
+                ", id=" + id + ", rental=" + rental + ", renter=" + renter + ", price=" + price + ", initialDate=" + initialDate
                 + ", endDate=" + endDate + "]";
     }
 }
