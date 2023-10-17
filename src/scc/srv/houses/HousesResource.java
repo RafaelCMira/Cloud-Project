@@ -26,7 +26,7 @@ public class HousesResource implements HousesService {
         }
 
         MediaResource media = new MediaResource();
-        if (media.hasPhotoById(houseDAO.getPhotoId()))
+        if (!media.hasPhotoById(houseDAO.getPhotoId()))
             throw new Exception("Error: 404 Image not found");
 
         var res = db.createHouse(houseDAO);

@@ -61,9 +61,9 @@ public class UsersResource implements UsersService {
         var updatedUser = genUpdatedUserDAO(id, userDAO);
         var res = db.updateUserById(id, updatedUser);
         int statusCode = res.getStatusCode();
-        if (Checks.isStatusOk(res.getStatusCode()))
-            // return res.getItem().toUser();
-            return updatedUser.toUser(); // se isto nao estiver bem usar o acima
+        if (Checks.isStatusOk(statusCode))
+            return res.getItem().toUser();
+         //   return updatedUser.toUser(); // se isto nao estiver bem usar o acima
         else
             throw new Exception("Error: " + statusCode);
     }
