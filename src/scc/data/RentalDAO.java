@@ -9,23 +9,23 @@ import java.time.LocalDate;
 public class RentalDAO {
     private String _rid;
     private String _ts;
-    private int id;
-    private House rental;
-    private User renter;
+    private String id;
+    private String houseID;
+    private String userID;
     private double price;
     private LocalDate initialDate;
     private LocalDate endDate;
 
     public RentalDAO(Rental r) {
-        this(r.getRentalID(), r.getRental(), r.getRenter(), r.getPrice(), r.getInitialDate(),
+        this(r.getId(), r.getHouseID(), r.getUserID(), r.getPrice(), r.getInitialDate(),
                 r.getEndDate());
     }
 
-    public RentalDAO(int rentalID, House rental, User renter, double price, LocalDate initialDate, LocalDate endDate) {
+    public RentalDAO(String id, String houseID, String userID, double price, LocalDate initialDate, LocalDate endDate) {
         super();
-        this.id = rentalID;
-        this.rental = rental;
-        this.renter = renter;
+        this.id = id;
+        this.houseID = houseID;
+        this.userID = userID;
         this.price = price;
         this.initialDate = initialDate;
         this.endDate = endDate;
@@ -47,28 +47,28 @@ public class RentalDAO {
         this._ts = _ts;
     }
 
-    public void setId(int id) {
+    public void setId(String id) {
         this.id = id;
     }
 
-    public int getId() {
+    public String getId() {
         return id;
     }
 
-    public void setRental(House rental) {
-        this.rental = rental;
+    public void setHouseID(String houseID) {
+        this.houseID = houseID;
     }
 
-    public House getRental() {
-        return rental;
+    public String getHouseID() {
+        return houseID;
     }
 
-    public void setRenter(User renter) {
-        this.renter = renter;
+    public void setUserID(String userID) {
+        this.userID = userID;
     }
 
-    public User getRenter() {
-        return renter;
+    public String getUserID() {
+        return userID;
     }
 
     public void setPrice(double price) {
@@ -95,10 +95,12 @@ public class RentalDAO {
         return endDate;
     }
 
+    public Rental toRental() { return new Rental(id, houseID, userID, price, initialDate, endDate);}
+
     @Override
     public String toString() {
         return "Rental [ _rid=" + _rid + ", _ts=" + _ts +
-                ", id=" + id + ", rental=" + rental + ", renter=" + renter + ", price=" + price + ", initialDate=" + initialDate
+                ", id=" + id + ", houseId=" + houseID + ", userID=" + userID + ", price=" + price + ", initialDate=" + initialDate
                 + ", endDate=" + endDate + "]";
     }
 }

@@ -7,45 +7,45 @@ import java.time.LocalDate;
  */
 
 public class Rental {
-    private int rentalID;
-    private House rental;
-    private User renter;
+    private String id;
+    private String houseID;
+    private String userID;
     private double price;
     private LocalDate initialDate;
     private LocalDate endDate;
 
-    public Rental(int rentalID, House rental, User renter, double price, LocalDate initialDate, LocalDate endDate) {
+    public Rental(String id, String houseID, String userID, double price, LocalDate initialDate, LocalDate endDate) {
         super();
-        this.rentalID = rentalID;
-        this.rental = rental;
-        this.renter = renter;
+        this.id = id;
+        this.houseID = houseID;
+        this.userID = userID;
         this.price = price;
         this.initialDate = initialDate;
         this.endDate = endDate;
     }
 
-    public void setRentalID(int rentalID) {
-        this.rentalID = rentalID;
+    public void setId(String id) {
+        this.id = id;
     }
 
-    public int getRentalID() {
-        return rentalID;
+    public String getId() {
+        return id;
     }
 
-    public void setRental(House rental) {
-        this.rental = rental;
+    public void setHouseID(String houseID) {
+        this.houseID = houseID;
     }
 
-    public House getRental() {
-        return rental;
+    public String getHouseID() {
+        return houseID;
     }
 
-    public void setRenter(User renter) {
-        this.renter = renter;
+    public void setUserID(String userID) {
+        this.userID = userID;
     }
 
-    public User getRenter() {
-        return renter;
+    public String getUserID() {
+        return userID;
     }
 
     public void setPrice(double price) {
