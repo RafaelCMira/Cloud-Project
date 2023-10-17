@@ -1,8 +1,9 @@
 package scc.utils.mgt;
 
-import java.io.IOException;
+import java.io.*;
 import java.nio.file.Files;
 import java.nio.file.Paths;
+import java.nio.file.StandardCopyOption;
 import java.nio.file.StandardOpenOption;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
@@ -373,6 +374,30 @@ public class AzureManagement {
         azure.resourceGroups().deleteByName(rgName);
     }
 
+    public static void modifyBatchFile(String fileName) {
+        File file = new File(fileName);
+        File tempFile = new File(fileName + ".tmp");
+
+        try (BufferedReader reader = new BufferedReader(new FileReader(file));
+             BufferedWriter writer = new BufferedWriter(new FileWriter(tempFile))) {
+
+            String line;
+            while ((line = reader.readLine()) != null) {
+                writer.write("@echo off");
+                writer.newLine();
+                writer.write(line);
+                writer.newLine();
+                writer.newLine();
+            }
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+
+        file.delete();
+        tempFile.renameTo(file);
+    }
+
+
     public static void main(String[] args) {
         try {
             System.setProperty(org.slf4j.simple.SimpleLogger.DEFAULT_LOG_LEVEL_KEY, "Error");
@@ -487,6 +512,7 @@ public class AzureManagement {
             System.err.println("Error while creating resources");
             e.printStackTrace();
         }
+        modifyBatchFile("azureprops-westeurope.bat");
         System.exit(0);
     }
 }
