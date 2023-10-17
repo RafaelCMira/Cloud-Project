@@ -1,15 +1,14 @@
 package scc.srv.rentals;
 
+import com.azure.cosmos.models.CosmosItemResponse;
 import com.azure.cosmos.util.CosmosPagedIterable;
-import scc.data.HouseDAO;
-import scc.data.Rental;
-import scc.data.RentalDAO;
-import scc.data.UserDAO;
+import scc.data.*;
 import scc.db.CosmosDBLayer;
 import scc.srv.Checks;
 import scc.utils.Hash;
 
 import java.time.LocalDate;
+import java.util.List;
 import java.util.Optional;
 
 public class RentalResource implements RentalService {
@@ -17,7 +16,7 @@ public class RentalResource implements RentalService {
     private final CosmosDBLayer db = CosmosDBLayer.getInstance();
 
     @Override
-    public String createRental(RentalDAO rentalDAO) throws Exception {
+    public String createRental(String houseID, RentalDAO rentalDAO) throws Exception {
         if(Checks.badParams(rentalDAO.getId(), rentalDAO.getHouseID(), rentalDAO.getUserID()))
             throw new Exception("Error: 400 Bad Request");
 
@@ -43,10 +42,10 @@ public class RentalResource implements RentalService {
     }
 
     @Override
-    public Rental getRental(String id) throws Exception {
+    public Rental getRental(String houseID, String id) throws Exception {
         if(id == null) throw new Exception("Error: 400 Bad Request (Null ID)");
 
-        CosmosPagedIterable<RentalDAO> res = db.getRentalById(id);
+        CosmosPagedIterable<RentalDAO> res = db.getRentalById(houseID, id);
         Optional<RentalDAO> result = res.stream().findFirst();
         if (result.isPresent()) {
             return result.get().toRental();
@@ -56,8 +55,8 @@ public class RentalResource implements RentalService {
     }
 
     @Override
-    public Rental updateRental(String id, RentalDAO rentalDAO) throws Exception {
-        RentalDAO updatedRental = refactorRental(id, rentalDAO);
+    public Rental updateRental(String houseID, String id, RentalDAO rentalDAO) throws Exception {
+        RentalDAO updatedRental = refactorRental(houseID, id, rentalDAO);
         var res = db.updateRentalById(id, updatedRental);
         int statusCode = res.getStatusCode();
         if (Checks.isStatusOk(res.getStatusCode())) {
@@ -67,10 +66,32 @@ public class RentalResource implements RentalService {
         }
     }
 
-    private RentalDAO refactorRental(String id, RentalDAO rentalDAO) throws Exception{
+    @Override
+    public List<Rental> listRentals(String houseID) {
+        CosmosPagedIterable<RentalDAO> rentalsDAO = db.getRentals(houseID);
+        return rentalsDAO.stream()
+                .map(RentalDAO::toRental)
+                .toList();
+    }
+
+    @Override
+    public String deleteRental(String houseID, String id) throws Exception{
+        if(id == null) throw new Exception("Error: 400 Bad Request (Null ID");
+
+        CosmosItemResponse<Object> res = db.deleteRentalById(houseID, id);
+        int statusCode = res.getStatusCode();
+
+        if (Checks.isStatusOk(statusCode)) {
+            return String.format("StatusCode: %d \nRental %s was delete", statusCode, id);
+        } else {
+            throw new Exception("Error: " + statusCode);
+        }
+    }
+
+    private RentalDAO refactorRental(String houseID, String id, RentalDAO rentalDAO) throws Exception{
         if(id == null) throw new Exception("Error: 400 Bad Request (Null ID)");
 
-        CosmosPagedIterable<RentalDAO> res = db.getRentalById(id);
+        CosmosPagedIterable<RentalDAO> res = db.getRentalById(houseID, id);
         Optional<RentalDAO> result = res.stream().findFirst();
         if (result.isPresent()) {
             RentalDAO r = result.get();
@@ -102,7 +123,7 @@ public class RentalResource implements RentalService {
             return r;
 
         } else {
-            throw new Exception("Error: 404");
+            throw new Exception("Error: 404 Rental Not Found");
         }
     }
 }

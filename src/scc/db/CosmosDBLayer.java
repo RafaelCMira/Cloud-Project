@@ -146,27 +146,33 @@ public class CosmosDBLayer {
     ////////////////////////////// RENTALS
     ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
-    public CosmosItemResponse<RentalDAO> createRental(RentalDAO rental) {
+    public CosmosItemResponse<RentalDAO> createRental(RentalDAO rentalDAO) {
         init();
-        return db.getContainer(RENTALS_CONTAINER).createItem(rental);
+        return db.getContainer(RENTALS_CONTAINER).createItem(rentalDAO);
     }
 
-    public CosmosPagedIterable<RentalDAO> getRentalById(String id) {
+    public CosmosPagedIterable<RentalDAO> getRentalById(String houseID, String id) {
         init();
-        String query = "SELECT * FROM rentals WHERE rentals.id=\"" + id + "\"";
+        String query = "SELECT * FROM rentals WHERE rentals.houseID = \"" + houseID + "\" AND rentals.id=\"" + id + "\"";
         return db.getContainer(RENTALS_CONTAINER).queryItems(query, new CosmosQueryRequestOptions(), RentalDAO.class);
     }
 
-    public CosmosPagedIterable<RentalDAO> getRentals() {
+    public CosmosPagedIterable<RentalDAO> getRentals(String houseID) {
         init();
-        String query = "SELECT * FROM rentals";
-        return db.getContainer(RENTALS_CONTAINER).queryItems(query, new CosmosQueryRequestOptions(), RentalDAO.class);
+        PartitionKey key = new PartitionKey(houseID);
+        return db.getContainer(RENTALS_CONTAINER).readAllItems(key, RentalDAO.class); // (query, new CosmosQueryRequestOptions(), RentalDAO.class);
     }
 
-    public CosmosItemResponse<RentalDAO> updateRentalById(String houseId, RentalDAO rental) {
+    public CosmosItemResponse<RentalDAO> updateRentalById(String houseId, RentalDAO rentalDAO) {
         init();
         PartitionKey key = new PartitionKey(houseId);
-        return db.getContainer(RENTALS_CONTAINER).replaceItem(rental, houseId, key, new CosmosItemRequestOptions());
+        return db.getContainer(RENTALS_CONTAINER).replaceItem(rentalDAO, houseId, key, new CosmosItemRequestOptions());
+    }
+
+    public CosmosItemResponse<Object> deleteRentalById(String houseID, String id) {
+        init();
+        PartitionKey key = new PartitionKey(houseID);
+        return db.getContainer(RENTALS_CONTAINER).deleteItem(id, key, new CosmosItemRequestOptions());
     }
 
     ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
