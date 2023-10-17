@@ -14,6 +14,6 @@ public class Checks {
 
     // Verifies if HTTP code is OK
     public static boolean isStatusOk(int statusCode) {
-        return statusCode > 200 && statusCode < 300;
+        return statusCode >= 200 && statusCode < 300;
     }
 }

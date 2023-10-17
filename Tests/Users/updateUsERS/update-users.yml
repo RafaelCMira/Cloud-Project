@@ -1,0 +1,31 @@
+config:
+  target: 'https://scc24app-westeurope-59243.azurewebsites.net/rest'
+  plugins:
+    metrics-by-endpoint: { }
+  processor: "./test-utils.js"
+  variables:
+    metricsProcessEndpoint: "myProcessEndpoint"  # function used to aggregate endpoints for statistics
+  phases:
+    - name: "Update users"    # Create users
+      duration: 1
+      arrivalCount: 1
+
+scenarios:
+  - name: 'Update users'
+    weight: 1
+    flow:
+        - function: "genUpdateUser"         # Generate the needed information for the user
+        - put:
+            url: "/user/{{id}}"
+            headers:
+              Content-Type: application/json
+              Accept: application/json
+            json:
+              id: ""
+              name: "{{ name }}"
+              pwd: ""
+              photoId: ""
+              houseIds: [ ]
+              _rid: ""
+              _ts: ""
+            aferResponse: "genUpdateReply"
