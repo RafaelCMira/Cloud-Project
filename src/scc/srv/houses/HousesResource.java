@@ -5,6 +5,7 @@ import com.azure.cosmos.util.CosmosPagedIterable;
 import scc.data.House;
 import scc.data.HouseDAO;
 import scc.data.RentalDAO;
+import scc.data.UserDAO;
 import scc.db.CosmosDBLayer;
 import scc.srv.Checks;
 import scc.srv.media.MediaResource;
@@ -27,11 +28,16 @@ public class HousesResource implements HousesService {
 
         MediaResource media = new MediaResource();
         if (!media.hasPhotoById(houseDAO.getPhotoId()))
-            throw new Exception("Error: 404 Image not found");
+            throw new Exception("Error: 404 Image not found.");
+
+        Optional<UserDAO> user = db.getUserById(houseDAO.getOwnerID()).stream().findFirst();
+        if(user.isEmpty())
+            throw new Exception("Error: 404 User not found.");
 
         var res = db.createHouse(houseDAO);
         int statusCode = res.getStatusCode();
         if (Checks.isStatusOk(statusCode)) {
+            // TODO - add HouseId to user houses list
             return houseDAO.toHouse().toString();
         } else {
             throw new Exception("Error: " + statusCode);
