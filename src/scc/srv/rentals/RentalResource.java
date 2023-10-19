@@ -2,10 +2,14 @@ package scc.srv.rentals;
 
 import com.azure.cosmos.models.CosmosItemResponse;
 import com.azure.cosmos.util.CosmosPagedIterable;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import redis.clients.jedis.Jedis;
+import scc.cache.RedisCache;
 import scc.data.*;
 import scc.db.CosmosDBLayer;
 import scc.srv.Checks;
-import scc.utils.Hash;
+import scc.srv.houses.HousesService;
+import scc.srv.users.UsersService;
 
 import java.time.LocalDate;
 import java.util.List;
@@ -15,35 +19,55 @@ public class RentalResource implements RentalService {
 
     private final CosmosDBLayer db = CosmosDBLayer.getInstance();
 
+    private final ObjectMapper mapper = new ObjectMapper();
+
     @Override
     public String createRental(String houseID, RentalDAO rentalDAO) throws Exception {
         if(Checks.badParams(rentalDAO.getId(), rentalDAO.getHouseID(), rentalDAO.getUserID()))
             throw new Exception("Error: 400 Bad Request");
 
-        // Verify if house exists
-        var houseRes = db.getHouseById(rentalDAO.getHouseID());
-        Optional<HouseDAO> hResult = houseRes.stream().findFirst();
-        if (hResult.isEmpty())
-            throw new Exception("Error: 404 House Not Found ");
+        try (Jedis jedis = RedisCache.getCachePool().getResource()) {
 
-        // Verify if user exists
-        var userRes = db.getUserById(rentalDAO.getUserID());
-        Optional<UserDAO> uResult = userRes.stream().findFirst();
-        if (uResult.isEmpty())
-            throw new Exception("Error: 404 User Not Found ");
+            // Verify if house exists
+            if (jedis.get(HousesService.CACHE_PREFIX+houseID) == null) {
+                var houseRes = db.getHouseById(houseID);
+                Optional<HouseDAO> hResult = houseRes.stream().findFirst();
+                if (hResult.isEmpty())
+                    throw new Exception("Error: 404 House Not Found ");
+            }
 
-        var createRental = db.createRental(rentalDAO);
-        int statusCode = createRental.getStatusCode();
+            // Verify if user exists
+            if (jedis.get(UsersService.CACHE_PREFIX+rentalDAO.getUserID()) == null) {
+                var userRes = db.getUserById(rentalDAO.getUserID());
+                Optional<UserDAO> uResult = userRes.stream().findFirst();
+                if (uResult.isEmpty())
+                    throw new Exception("Error: 404 User Not Found ");
 
-        if (Checks.isStatusOk(statusCode))
-            return rentalDAO.toRental().toString();
-        else
-            throw new Exception("Error: " + statusCode);
+            }
+
+            // TODO - check if the house is available
+
+            var createRental = db.createRental(rentalDAO);
+            int statusCode = createRental.getStatusCode();
+
+            if (Checks.isStatusOk(statusCode)) {
+                jedis.set(CACHE_PREFIX + rentalDAO.getId(), mapper.writeValueAsString(rentalDAO));
+                return rentalDAO.toRental().toString();
+            } else
+                throw new Exception("Error: " + statusCode);
+        }
     }
 
     @Override
     public Rental getRental(String houseID, String id) throws Exception {
         if(id == null) throw new Exception("Error: 400 Bad Request (Null ID)");
+
+        // Check if it is in Cache
+        try (Jedis jedis = RedisCache.getCachePool().getResource()) {
+            String rCache = jedis.get(CACHE_PREFIX+id);
+            if (rCache != null)
+                return mapper.convertValue(rCache,RentalDAO.class).toRental();
+        }
 
         CosmosPagedIterable<RentalDAO> res = db.getRentalById(houseID, id);
         Optional<RentalDAO> result = res.stream().findFirst();
@@ -60,6 +84,9 @@ public class RentalResource implements RentalService {
         var res = db.updateRentalById(id, updatedRental);
         int statusCode = res.getStatusCode();
         if (Checks.isStatusOk(res.getStatusCode())) {
+            try (Jedis jedis = RedisCache.getCachePool().getResource()){
+                jedis.set(CACHE_PREFIX+id,mapper.writeValueAsString(updatedRental));
+            }
             return updatedRental.toRental();
         } else {
             throw new Exception("Error: " + statusCode);
@@ -78,10 +105,15 @@ public class RentalResource implements RentalService {
     public String deleteRental(String houseID, String id) throws Exception{
         if(id == null) throw new Exception("Error: 400 Bad Request (Null ID");
 
+        // TODO - remove rental from house
+
         CosmosItemResponse<Object> res = db.deleteRentalById(houseID, id);
         int statusCode = res.getStatusCode();
 
         if (Checks.isStatusOk(statusCode)) {
+            try (Jedis jedis = RedisCache.getCachePool().getResource()) {
+                jedis.getDel(CACHE_PREFIX+id);
+            }
             return String.format("StatusCode: %d \nRental %s was delete", statusCode, id);
         } else {
             throw new Exception("Error: " + statusCode);

@@ -6,7 +6,6 @@ import jakarta.ws.rs.core.Link;
 import jakarta.ws.rs.core.MediaType;
 import scc.data.*;
 
-import javax.print.attribute.standard.Media;
 import java.util.List;
 
 @Path(RentalService.PATH)
@@ -16,6 +15,8 @@ public interface RentalService {
     String HOUSE_ID = "houseId";
     String RENTAL_ID = "id";
     String RENTAL = "/rental";
+
+    String CACHE_PREFIX = "rental:";
 
 
     @POST
