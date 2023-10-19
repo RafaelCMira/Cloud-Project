@@ -80,8 +80,8 @@ public class UsersResource implements UsersService {
     }
 
     @Override
-    public User updateUser(String id, UserDAO userDAO) throws Exception {
-        var updatedUser = genUpdatedUserDAO(id, userDAO);
+    public User updateUser(String id, User user) throws Exception {
+        var updatedUser = genUpdatedUserDAO(id, user);
         var res = db.updateUserById(id, updatedUser);
         int statusCode = res.getStatusCode();
         if (Checks.isStatusOk(statusCode)) {
@@ -104,26 +104,26 @@ public class UsersResource implements UsersService {
      * Returns updated userDAO to the method who's making the request to the database
      *
      * @param id      of the user being accessed
-     * @param userDAO new user attributes
+     * @param user new user attributes
      * @return updated userDAO to the method who's making the request to the database
      * @throws Exception If id is null or if the user does not exist
      */
-    private UserDAO genUpdatedUserDAO(String id, UserDAO userDAO) throws Exception {
+    private UserDAO genUpdatedUserDAO(String id, User user) throws Exception {
         if (id == null) throw new Exception("Error: 400 Bad Request (ID NULL)");
         CosmosPagedIterable<UserDAO> res = db.getUserById(id);
         Optional<UserDAO> result = res.stream().findFirst();
         if (result.isPresent()) {
             UserDAO u = result.get();
 
-            String userDAOName = userDAO.getName();
+            String userDAOName = user.getName();
             if (!u.getName().equals(userDAOName))
                 u.setName(userDAOName);
 
-            String userDAOPwd = Hash.of(userDAO.getPwd());
+            String userDAOPwd = Hash.of(user.getPwd());
             if (!u.getPwd().equals(userDAOPwd))
                 u.setPwd(userDAOName);
 
-            String userDAOPhotoId = userDAO.getPhotoId();
+            String userDAOPhotoId = user.getPhotoId();
             if (!u.getPhotoId().equals(userDAOPhotoId))
                 u.setPhotoId(userDAOPhotoId);
 

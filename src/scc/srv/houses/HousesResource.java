@@ -2,22 +2,24 @@ package scc.srv.houses;
 
 import com.azure.cosmos.models.CosmosItemResponse;
 import com.azure.cosmos.util.CosmosPagedIterable;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import redis.clients.jedis.Jedis;
+import scc.cache.RedisCache;
 import scc.data.House;
 import scc.data.HouseDAO;
-import scc.data.RentalDAO;
+import scc.data.User;
 import scc.data.UserDAO;
 import scc.db.CosmosDBLayer;
 import scc.srv.Checks;
 import scc.srv.media.MediaResource;
+import scc.srv.users.UsersResource;
 import scc.utils.Hash;
 
-import java.time.LocalDate;
-import java.util.ArrayList;
-import java.util.List;
 import java.util.Optional;
 
 public class HousesResource implements HousesService {
     private final CosmosDBLayer db = CosmosDBLayer.getInstance();
+    private final ObjectMapper mapper = new ObjectMapper();
 
     @Override
     public String createHouse(HouseDAO houseDAO) throws Exception {
@@ -37,7 +39,7 @@ public class HousesResource implements HousesService {
         var res = db.createHouse(houseDAO);
         int statusCode = res.getStatusCode();
         if (Checks.isStatusOk(statusCode)) {
-            // TODO - add HouseId to user houses list
+            updateOwner(houseDAO.getId(),houseDAO.getOwnerID());
             return houseDAO.toHouse().toString();
         } else {
             throw new Exception("Error: " + statusCode);
@@ -193,5 +195,20 @@ public class HousesResource implements HousesService {
             throw new Exception("Error: 404");
         }
     }
+
+    /**
+     * Adds the house Id to the uses houses list and updates the DB
+     * @param houseId - the house id
+     * @param ownerId - the owner id
+     */
+    private void updateOwner(String houseId, String ownerId) throws Exception{
+        UsersResource uResource = new UsersResource();
+
+        User user = uResource.getUser(ownerId);
+        user.addHouse(houseId);
+        uResource.updateUser(ownerId,user);
+    }
+
+
 
 }

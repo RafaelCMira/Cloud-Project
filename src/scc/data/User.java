@@ -1,6 +1,8 @@
 package scc.data;
 
+import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.List;
 
 /**
  * Represents a User, as returned to the clients
@@ -13,7 +15,7 @@ public class User {
     private String name;
     private String pwd;
     private String photoId;
-    private String[] houseIds;
+    private List<String> houseIds;
 
     public User(String userID, String name, String pwd, String photoId, String[] houseIds) {
         super();
@@ -21,7 +23,7 @@ public class User {
         this.name = name;
         this.pwd = pwd;
         this.photoId = photoId;
-        this.houseIds = houseIds;
+        this.houseIds = Arrays.stream(houseIds).toList();
     }
 
     public String getUserID() {
@@ -57,17 +59,27 @@ public class User {
     }
 
     public String[] getHouseIds() {
-        return houseIds == null ? new String[0] : houseIds;
+        if (houseIds == null)
+            houseIds = new ArrayList<>();
+        return houseIds.toArray(new String[0]);
+    }
+
+    public void addHouse(String houseId) {
+        houseIds.add(houseId);
     }
 
     public void setHouseIds(String[] houseIds) {
-        this.houseIds = houseIds;
+        this.houseIds = Arrays.stream(houseIds).toList();
+    }
+
+    public UserDAO toUserDAO() {
+        return new UserDAO(this);
     }
 
     @Override
     public String toString() {
         return "User [id=" + userID + ", name=" + name + ", pwd=" + pwd + ", photoId=" + photoId + ", houseIds="
-                + Arrays.toString(houseIds) + "]";
+                + houseIds.toString() + "]";
     }
 
 }

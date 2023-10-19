@@ -38,7 +38,7 @@ public interface UsersService {
     @Path("/{" + ID + "}")
     @Consumes(MediaType.APPLICATION_JSON)
     @Produces(MediaType.APPLICATION_JSON)
-    User updateUser(@PathParam(ID) String id, UserDAO userDAO) throws Exception;
+    User updateUser(@PathParam(ID) String id, User user) throws Exception;
 
 
     @GET
