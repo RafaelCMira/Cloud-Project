@@ -18,6 +18,8 @@ public interface UsersService {
     String HOUSE_IDS = "houseIds";
     String QUERY = "query";
 
+    String CACHE_PREFIX = "user:";
+
 
     @POST
     @Consumes(MediaType.APPLICATION_JSON)

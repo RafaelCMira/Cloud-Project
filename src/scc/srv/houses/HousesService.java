@@ -16,6 +16,8 @@ public interface HousesService {
     String INITIAL_DATE = "initialDate";
     String END_DATE = "endDate";
 
+    String CACHE_PREFIX = "house:";
+
 
     @POST
     @Consumes(MediaType.APPLICATION_JSON)

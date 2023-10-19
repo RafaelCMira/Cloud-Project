@@ -12,7 +12,9 @@ import scc.data.UserDAO;
 import scc.db.CosmosDBLayer;
 import scc.srv.Checks;
 import scc.srv.media.MediaResource;
+import scc.srv.media.MediaService;
 import scc.srv.users.UsersResource;
+import scc.srv.users.UsersService;
 import scc.utils.Hash;
 
 import java.util.Optional;
@@ -28,21 +30,30 @@ public class HousesResource implements HousesService {
             throw new Exception("Error: 400 Bad Request");
         }
 
-        MediaResource media = new MediaResource();
-        if (!media.hasPhotoById(houseDAO.getPhotoId()))
-            throw new Exception("Error: 404 Image not found.");
+        try (Jedis jedis = RedisCache.getCachePool().getResource()) {
 
-        Optional<UserDAO> user = db.getUserById(houseDAO.getOwnerID()).stream().findFirst();
-        if(user.isEmpty())
-            throw new Exception("Error: 404 User not found.");
+            // TODO - Check if the house already exists.
 
-        var res = db.createHouse(houseDAO);
-        int statusCode = res.getStatusCode();
-        if (Checks.isStatusOk(statusCode)) {
-            updateOwner(houseDAO.getId(),houseDAO.getOwnerID());
-            return houseDAO.toHouse().toString();
-        } else {
-            throw new Exception("Error: " + statusCode);
+            MediaResource media = new MediaResource();
+            if (!media.hasPhotoById(houseDAO.getPhotoId()))
+                throw new Exception("Error: 404 Image not found.");
+
+            // Checks if the user exists in cache or in the DB
+            if (jedis.get(UsersService.CACHE_PREFIX+houseDAO.getOwnerID()) == null) {
+                Optional<UserDAO> user = db.getUserById(houseDAO.getOwnerID()).stream().findFirst();
+                if (user.isEmpty())
+                    throw new Exception("Error: 404 User not found.");
+            }
+
+            var res = db.createHouse(houseDAO);
+            int statusCode = res.getStatusCode();
+            if (Checks.isStatusOk(statusCode)) {
+                updateOwner(houseDAO.getId(),houseDAO.getOwnerID());
+                jedis.set(CACHE_PREFIX+houseDAO.getId(), mapper.writeValueAsString(houseDAO));
+                return houseDAO.toHouse().toString();
+            } else {
+                throw new Exception("Error: " + statusCode);
+            }
         }
     }
 
@@ -54,6 +65,9 @@ public class HousesResource implements HousesService {
         int statusCode = res.getStatusCode();
 
         if (Checks.isStatusOk(statusCode)) {
+            try (Jedis jedis = RedisCache.getCachePool().getResource()) {
+                jedis.getDel(CACHE_PREFIX+id);
+            }
             return String.format("StatusCode: %d \nHouse %s was delete", statusCode, id);
         } else {
             throw new Exception("Error: " + statusCode);
@@ -64,12 +78,20 @@ public class HousesResource implements HousesService {
     public House getHouse(String id) throws Exception {
         if (id == null) throw new Exception("Error: 400 Bad Request (ID NULL)");
 
-        CosmosPagedIterable<HouseDAO> res = db.getHouseById(id);
-        Optional<HouseDAO> result = res.stream().findFirst();
-        if (result.isPresent()) {
-            return result.get().toHouse();
-        } else {
-            throw new Exception("Error: 404");
+        try (Jedis jedis = RedisCache.getCachePool().getResource()) {
+
+            String house = jedis.get(CACHE_PREFIX+id);
+            if (house != null) {
+                return mapper.convertValue(house,HouseDAO.class).toHouse();
+            }
+
+            CosmosPagedIterable<HouseDAO> res = db.getHouseById(id);
+            Optional<HouseDAO> result = res.stream().findFirst();
+            if (result.isPresent()) {
+                return result.get().toHouse();
+            } else {
+                throw new Exception("Error: 404");
+            }
         }
     }
 
@@ -79,6 +101,9 @@ public class HousesResource implements HousesService {
         var res = db.updateHouseById(id, updatedHouse);
         int statusCode = res.getStatusCode();
         if (Checks.isStatusOk(res.getStatusCode())) {
+            try (Jedis jedis = RedisCache.getCachePool().getResource()) {
+                jedis.set(CACHE_PREFIX+id, mapper.writeValueAsString(updatedHouse));
+            }
             return updatedHouse.toHouse();
         } else {
             throw new Exception("Error: " + statusCode);

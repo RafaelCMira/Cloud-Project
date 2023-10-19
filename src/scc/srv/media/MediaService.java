@@ -17,6 +17,8 @@ public interface MediaService {
 
     String CONTAINER_NAME = "media";
 
+    String CACHE_PREFIX = "media:";
+
 
     /**
      * Post a new image. The id of the media file is its hash.

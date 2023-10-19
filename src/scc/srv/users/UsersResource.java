@@ -10,6 +10,7 @@ import scc.data.UserDAO;
 import scc.db.CosmosDBLayer;
 import scc.srv.Checks;
 import scc.srv.media.MediaResource;
+import scc.srv.media.MediaService;
 import scc.utils.Hash;
 
 import java.util.List;
@@ -17,8 +18,6 @@ import java.util.Optional;
 
 
 public class UsersResource implements UsersService {
-
-    private final static String CACHE_PREFIX = "user:";
     private final ObjectMapper mapper = new ObjectMapper();
     private final CosmosDBLayer db = CosmosDBLayer.getInstance();
 
@@ -27,16 +26,14 @@ public class UsersResource implements UsersService {
         if (Checks.badParams(userDAO.getId(), userDAO.getName(), userDAO.getPwd(), userDAO.getPhotoId()))
             throw new Exception("Error: 400 Bad Request");
 
+        MediaResource media = new MediaResource();
+        if (!media.hasPhotoById(userDAO.getPhotoId()))
+            throw new Exception("Error: 404 Image not found");
+
+        var res = db.createUser(userDAO);
+        int statusCode = res.getStatusCode();
+
         try (Jedis jedis = RedisCache.getCachePool().getResource()) {
-
-            String photo = jedis.get("media:" + userDAO.getPhotoId());
-            MediaResource media = new MediaResource();
-            if (photo == null && !media.hasPhotoById(userDAO.getPhotoId()))
-                throw new Exception("Error: 404 Image not found");
-
-            var res = db.createUser(userDAO);
-            int statusCode = res.getStatusCode();
-
             if (Checks.isStatusOk(statusCode)) {
                 jedis.set(CACHE_PREFIX + userDAO.getId(), mapper.writeValueAsString(userDAO));
                 return userDAO.toUser().toString();
@@ -110,6 +107,7 @@ public class UsersResource implements UsersService {
      */
     private UserDAO genUpdatedUserDAO(String id, User user) throws Exception {
         if (id == null) throw new Exception("Error: 400 Bad Request (ID NULL)");
+        // TODO - Check cache
         CosmosPagedIterable<UserDAO> res = db.getUserById(id);
         Optional<UserDAO> result = res.stream().findFirst();
         if (result.isPresent()) {
