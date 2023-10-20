@@ -109,6 +109,8 @@ public class HouseDAO {
         rentalsID.add(rentalID);
     }
 
+    public void removeRental(String rentalID) { rentalsID.remove(rentalID); }
+
     public String getOwnerID() {
         return ownerID;
     }

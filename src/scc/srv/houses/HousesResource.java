@@ -32,7 +32,14 @@ public class HousesResource implements HousesService {
 
         try (Jedis jedis = RedisCache.getCachePool().getResource()) {
 
-            // TODO - Check if the house already exists.
+            // Check if house already exists on Cache
+            if(jedis.get(HousesService.CACHE_PREFIX+houseDAO.getId()) != null)
+                throw new Exception("Error: 409 House already exists");
+
+            // Check if house already exists on DB
+            Optional<HouseDAO> house = db.getHouseById(houseDAO.getId()).stream().findFirst();
+            if(!house.isEmpty())
+                throw new Exception("Error: 409 House already exists");
 
             MediaResource media = new MediaResource();
             if (!media.hasPhotoById(houseDAO.getPhotoId()))
@@ -212,7 +219,17 @@ public class HousesResource implements HousesService {
             if (!h.getPhotoId().equals(houseDAOPhotoId))
                 h.setPhotoId(houseDAOPhotoId);
 
-            // TODO - finish refactor
+            String houseDAOId = houseDAO.getId();
+            if(!h.getId().equals(houseDAOId))
+                h.setId(houseDAOId);
+
+            String houseDAODescription = houseDAO.getDescription();
+            if(!h.getDescription().equals(houseDAODescription))
+                h.setId(houseDAODescription);
+
+            String houseDAOOwnerId = houseDAO.getOwnerID();
+            if(!h.getOwnerID().equals(houseDAOOwnerId))
+                h.setId(houseDAOOwnerId);
 
             return h;
 

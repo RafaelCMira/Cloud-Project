@@ -29,7 +29,8 @@ public class RentalResource implements RentalService {
         try (Jedis jedis = RedisCache.getCachePool().getResource()) {
 
             // Verify if house exists
-            if (jedis.get(HousesService.CACHE_PREFIX+houseID) == null) {
+            String houseJson = jedis.get(HousesService.CACHE_PREFIX+houseID);
+            if (houseJson == null) {
                 var houseRes = db.getHouseById(houseID);
                 Optional<HouseDAO> hResult = houseRes.stream().findFirst();
                 if (hResult.isEmpty())
@@ -46,6 +47,9 @@ public class RentalResource implements RentalService {
             }
 
             // TODO - check if the house is available
+            if(houseJson != null) {
+
+            }
 
             var createRental = db.createRental(rentalDAO);
             int statusCode = createRental.getStatusCode();
@@ -105,12 +109,13 @@ public class RentalResource implements RentalService {
     public String deleteRental(String houseID, String id) throws Exception{
         if(id == null) throw new Exception("Error: 400 Bad Request (Null ID");
 
-        // TODO - remove rental from house
-
         CosmosItemResponse<Object> res = db.deleteRentalById(houseID, id);
         int statusCode = res.getStatusCode();
 
         if (Checks.isStatusOk(statusCode)) {
+            HouseDAO houseDAO = db.getHouseById(houseID).stream().findFirst().get();
+            houseDAO.removeRental(id);
+
             try (Jedis jedis = RedisCache.getCachePool().getResource()) {
                 jedis.getDel(CACHE_PREFIX+id);
             }
