@@ -70,7 +70,7 @@ public class RentalResource implements RentalService {
         try (Jedis jedis = RedisCache.getCachePool().getResource()) {
             String rCache = jedis.get(CACHE_PREFIX+id);
             if (rCache != null)
-                return mapper.convertValue(rCache,RentalDAO.class).toRental();
+                return mapper.readValue(rCache,RentalDAO.class).toRental();
         }
 
         CosmosPagedIterable<RentalDAO> res = db.getRentalById(houseID, id);

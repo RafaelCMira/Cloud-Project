@@ -5,10 +5,7 @@ import com.azure.cosmos.util.CosmosPagedIterable;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import redis.clients.jedis.Jedis;
 import scc.cache.RedisCache;
-import scc.data.House;
-import scc.data.HouseDAO;
-import scc.data.User;
-import scc.data.UserDAO;
+import scc.data.*;
 import scc.db.CosmosDBLayer;
 import scc.srv.Checks;
 import scc.srv.media.MediaResource;
@@ -17,6 +14,9 @@ import scc.srv.users.UsersResource;
 import scc.srv.users.UsersService;
 import scc.utils.Hash;
 
+import java.time.LocalDate;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Optional;
 
 public class HousesResource implements HousesService {
@@ -46,16 +46,20 @@ public class HousesResource implements HousesService {
                 throw new Exception("Error: 404 Image not found.");
 
             // Checks if the user exists in cache or in the DB
-            if (jedis.get(UsersService.CACHE_PREFIX+houseDAO.getOwnerID()) == null) {
-                Optional<UserDAO> user = db.getUserById(houseDAO.getOwnerID()).stream().findFirst();
-                if (user.isEmpty())
+
+            UserDAO user = mapper.readValue(jedis.get(UsersService.CACHE_PREFIX+houseDAO.getOwnerID()),UserDAO.class);
+            if ( user == null) {
+                Optional<UserDAO> dbUser = db.getUserById(houseDAO.getOwnerID()).stream().findFirst();
+                if (dbUser.isEmpty())
                     throw new Exception("Error: 404 User not found.");
+                user = dbUser.get();
             }
 
             var res = db.createHouse(houseDAO);
             int statusCode = res.getStatusCode();
             if (Checks.isStatusOk(statusCode)) {
-                updateOwner(houseDAO.getId(),houseDAO.getOwnerID());
+                user.addHouseId(houseDAO.getId());
+                db.updateUserById(user.getId(),user);
                 jedis.set(CACHE_PREFIX+houseDAO.getId(), mapper.writeValueAsString(houseDAO));
                 return houseDAO.toHouse().toString();
             } else {
@@ -89,7 +93,7 @@ public class HousesResource implements HousesService {
 
             String house = jedis.get(CACHE_PREFIX+id);
             if (house != null) {
-                return mapper.convertValue(house,HouseDAO.class).toHouse();
+                return mapper.readValue(house,HouseDAO.class).toHouse();
             }
 
             CosmosPagedIterable<HouseDAO> res = db.getHouseById(id);
@@ -117,7 +121,7 @@ public class HousesResource implements HousesService {
         }
     }
 
-/*
+
     @Override
     public List<House> getAvailHouseByLocation(String location) throws Exception {
         var cDate = java.time.LocalDate.now(); // Get current date
@@ -125,15 +129,17 @@ public class HousesResource implements HousesService {
 
         CosmosPagedIterable<HouseDAO> res = db.getHousesLocation(location);
         List<HouseDAO> houses = res.stream().toList();
+        if (houses.isEmpty())
+            throw new Exception("There is no available houses in this location: 404");
 
         // Check if house is available
          for ( HouseDAO h: houses) {
              boolean available = true;
-            for (String id: h.getRentalsID()) {
-                Optional<RentalDAO>  rental = db.getRentalById(id).stream().findFirst();
-                if (rental.isEmpty() || rental.get().getInitialDate() != cDate)
+             for (String id: h.getRentalsID()) {
+                Optional<RentalDAO>  rental = db.getRentalById(h.getId(),id).stream().findFirst();
+                if (!rental.isEmpty() && rental.get().getInitialDate() != cDate)
                     available = false;
-            }
+             }
             if (available)
                 result.add(h.toHouse());
         }
@@ -146,7 +152,10 @@ public class HousesResource implements HousesService {
     }
 
     @Override
-    public List<House> getHouseByLocationPeriod(String location, LocalDate initialDate, LocalDate endDate) throws Exception {
+    public List<House> getHouseByLocationPeriod(String location, String initialDate, String endDate) throws Exception {
+        LocalDate iniDate = LocalDate.parse(initialDate);
+        LocalDate eDate = LocalDate.parse(endDate);
+
         List<House> result = new ArrayList<>();
 
         CosmosPagedIterable<HouseDAO> res = db.getHousesLocation(location);
@@ -156,12 +165,12 @@ public class HousesResource implements HousesService {
         for ( HouseDAO h: houses) {
             boolean available = true;
             for (String id: h.getRentalsID()) {
-                Optional<RentalDAO>  rental = db.getRentalById(id).stream().findFirst();
+                Optional<RentalDAO>  rental = db.getRentalById(h.getId(),id).stream().findFirst();
                 if (rental.isEmpty()) {
                     available = false;
                 } else {
                     RentalDAO r = rental.get();
-                    available = r.getInitialDate().isAfter(endDate) || r.getEndDate().isBefore(initialDate);
+                    available = r.getInitialDate().isAfter(eDate) || r.getEndDate().isBefore(iniDate);
                 }
 
             }
@@ -175,7 +184,7 @@ public class HousesResource implements HousesService {
             throw new Exception("Error: 404");
         }
     }
-*/
+
 
 
     /**

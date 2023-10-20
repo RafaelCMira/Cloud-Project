@@ -36,9 +36,6 @@ scenarios:
                 pwd: "{{ pwd }}"
                 photoId: "{{ imageId }}"
                 houseIds: [ ]
-              capture:
-                regexp: "(.+)"
-                as: "ownerID"              # capture the reply as image id to be used in user creation
               afterResponse: "genNewUserReply"    # capture result and store in file
           - function: "genNewHouse"
           - post:
@@ -47,13 +44,13 @@ scenarios:
                     Content-Type: application/json
                     Accept: application/json
                 json:
-                  id: "{{ id }}"
+                  id: "{{ Houseid }}"
                   name: "{{ name }}"
-                  location: "Portugal"
+                  location: "Almada"
                   description: " Done "
                   photoId: "{{ imageId }}"
                   rentalsID: [ ]
-                  ownerID: "{{ ownerID }}"
+                  ownerID: "Eryn.Leuschke"
                   priceByPeriod: [ [ ] ]
                 afterResponse: "genNewHouseReply"
         count: 50

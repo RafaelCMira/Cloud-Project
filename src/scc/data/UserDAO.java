@@ -85,7 +85,7 @@ public class UserDAO {
     }
 
     public void addHouseId(String houseId) {
-        int n = houseId.length();
+        int n = houseIds.length;
         String[] nList = new String[n+1];
         for (int i=0; i<n; i++) {
             nList[i] = houseIds[i];

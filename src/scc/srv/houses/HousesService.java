@@ -40,14 +40,14 @@ public interface HousesService {
     @Produces(MediaType.APPLICATION_JSON)
     House updateHouse(@PathParam(ID) String id, HouseDAO houseDAO) throws Exception;
 
-   /* @GET
-    @Path("/{" + LOCATION + "}")
+    @GET
+    @Path("/")
     @Produces(MediaType.APPLICATION_JSON)
-    List<House> getAvailHouseByLocation(@PathParam(LOCATION) String location) throws Exception;
+    List<House> getAvailHouseByLocation(@QueryParam(LOCATION) String location) throws Exception;
 
     @GET
-    @Path("/{" + LOCATION + "}")
+    @Path("/")
     @Produces(MediaType.APPLICATION_JSON)
-    List<House> getHouseByLocationPeriod(@PathParam(LOCATION) String location,@QueryParam(INITIAL_DATE) LocalDate initialDate,
-                                         @QueryParam(END_DATE) LocalDate endDate) throws Exception;*/
+    List<House> getHouseByLocationPeriod(@QueryParam(LOCATION) String location,@QueryParam(INITIAL_DATE) String initialDate,
+                                         @QueryParam(END_DATE) String endDate) throws Exception;
 }

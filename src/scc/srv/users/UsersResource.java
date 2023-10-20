@@ -65,7 +65,7 @@ public class UsersResource implements UsersService {
         try (Jedis jedis = RedisCache.getCachePool().getResource()) {
             String user = jedis.get(CACHE_PREFIX+id);
             if (user != null)
-                return mapper.convertValue(user,UserDAO.class).toUser();
+                return mapper.readValue(user,UserDAO.class).toUser();
 
             CosmosPagedIterable<UserDAO> res = db.getUserById(id);
             Optional<UserDAO> result = res.stream().findFirst();

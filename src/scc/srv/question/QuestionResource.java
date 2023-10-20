@@ -50,7 +50,7 @@ public class QuestionResource implements QuestionService {
 
         try (Jedis jedis = RedisCache.getCachePool().getResource()) {
             // Verify if house exists
-            HouseDAO house = mapper.convertValue(jedis.get(HousesService.CACHE_PREFIX + houseID),HouseDAO.class);
+            HouseDAO house = mapper.readValue(jedis.get(HousesService.CACHE_PREFIX + houseID),HouseDAO.class);
             if ( house == null) {
                 var houseRes = db.getHouseById(houseID);
                 Optional<HouseDAO> hResult = houseRes.stream().findFirst();
