@@ -54,12 +54,19 @@ public class HousesResource implements HousesService {
                 user = dbUser.get();
             }
 
+            user.addHouse(houseDAO.getId());
+
+            //TODO: colocar o user updated na chache
+            var resUpdate = db.updateUserById(user.getId(), user);
+            int statusCode = resUpdate.getStatusCode();
+
+            if (!Checks.isStatusOk(statusCode)) {
+                throw new Exception("Error: " + statusCode);
+            }
+
             var res = db.createHouse(houseDAO);
-            int statusCode = res.getStatusCode();
+            statusCode = res.getStatusCode();
             if (Checks.isStatusOk(statusCode)) {
-                var u = user.toUser();
-                //u.addHouse(houseDAO.getId());
-                new UsersResource().updateUser(user.getId(), u);
                 jedis.set(CACHE_PREFIX + houseDAO.getId(), mapper.writeValueAsString(houseDAO));
                 return houseDAO.toHouse().toString();
             } else {
@@ -70,6 +77,8 @@ public class HousesResource implements HousesService {
 
     @Override
     public String deleteHouse(String id) throws Exception {
+        //TODO: remover a casa da cache
+        //TODO: e colocar updated user cache ou remove-lo
         if (id == null) throw new Exception("Error: 400 Bad Request (ID NULL)");
 
         CosmosItemResponse<Object> res = db.delHouseById(id);
@@ -77,7 +86,7 @@ public class HousesResource implements HousesService {
 
         if (Checks.isStatusOk(statusCode)) {
             try (Jedis jedis = RedisCache.getCachePool().getResource()) {
-                jedis.getDel(CACHE_PREFIX + id);
+                jedis.del(CACHE_PREFIX + id);
             }
             return String.format("StatusCode: %d \nHouse %s was delete", statusCode, id);
         } else {
@@ -89,6 +98,7 @@ public class HousesResource implements HousesService {
     public House getHouse(String id) throws Exception {
         if (id == null) throw new Exception("Error: 400 Bad Request (ID NULL)");
 
+        //TODO: colocar na chache se ainda nao estiver
         try (Jedis jedis = RedisCache.getCachePool().getResource()) {
 
             String house = jedis.get(CACHE_PREFIX + id);
@@ -124,6 +134,8 @@ public class HousesResource implements HousesService {
 
     @Override
     public List<House> getAvailHouseByLocation(String location) throws Exception {
+        //TODO: chache
+
         var cDate = java.time.LocalDate.now(); // Get current date
         List<House> result = new ArrayList<>();
 
@@ -153,6 +165,7 @@ public class HousesResource implements HousesService {
 
     @Override
     public List<House> getHouseByLocationPeriod(String location, String initialDate, String endDate) throws Exception {
+        //TODO: chache
         LocalDate iniDate = LocalDate.parse(initialDate);
         LocalDate eDate = LocalDate.parse(endDate);
 

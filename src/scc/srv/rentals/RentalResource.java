@@ -24,13 +24,14 @@ public class RentalResource implements RentalService {
 
     @Override
     public String createRental(String houseID, RentalDAO rentalDAO) throws Exception {
-        if(Checks.badParams(rentalDAO.getId(), rentalDAO.getHouseID(), rentalDAO.getUserID()))
+        if (Checks.badParams(rentalDAO.getId(), rentalDAO.getHouseID(), rentalDAO.getUserID()))
             throw new Exception("Error: 400 Bad Request");
 
         try (Jedis jedis = RedisCache.getCachePool().getResource()) {
+            //TODO: adicionar o rental à casa
 
             // Verify if house exists
-            String houseJson = jedis.get(HousesService.CACHE_PREFIX+houseID);
+            String houseJson = jedis.get(HousesService.CACHE_PREFIX + houseID);
             if (houseJson == null) {
                 var houseRes = db.getHouseById(houseID);
                 Optional<HouseDAO> hResult = houseRes.stream().findFirst();
@@ -39,16 +40,15 @@ public class RentalResource implements RentalService {
             }
 
             // Verify if user exists
-            if (jedis.get(UsersService.CACHE_PREFIX+rentalDAO.getUserID()) == null) {
+            if (jedis.get(UsersService.CACHE_PREFIX + rentalDAO.getUserID()) == null) {
                 var userRes = db.getUserById(rentalDAO.getUserID());
                 Optional<UserDAO> uResult = userRes.stream().findFirst();
                 if (uResult.isEmpty())
                     throw new Exception("Error: 404 User Not Found ");
-
             }
 
             // TODO - check if the house is available
-            if(houseJson != null) {
+            if (houseJson != null) {
 
             }
 
@@ -65,14 +65,16 @@ public class RentalResource implements RentalService {
 
     @Override
     public Rental getRental(String houseID, String id) throws Exception {
-        if(id == null) throw new Exception("Error: 400 Bad Request (Null ID)");
+        if (id == null) throw new Exception("Error: 400 Bad Request (Null ID)");
 
         // Check if it is in Cache
         try (Jedis jedis = RedisCache.getCachePool().getResource()) {
-            String rCache = jedis.get(CACHE_PREFIX+id);
+            String rCache = jedis.get(CACHE_PREFIX + id);
             if (rCache != null)
-                return mapper.readValue(rCache,RentalDAO.class).toRental();
+                return mapper.readValue(rCache, RentalDAO.class).toRental();
         }
+
+        //TODO: se nao estiver na chache por lá
 
         CosmosPagedIterable<RentalDAO> res = db.getRentalById(houseID, id);
         Optional<RentalDAO> result = res.stream().findFirst();
@@ -89,8 +91,8 @@ public class RentalResource implements RentalService {
         var res = db.updateRentalById(id, updatedRental);
         int statusCode = res.getStatusCode();
         if (Checks.isStatusOk(res.getStatusCode())) {
-            try (Jedis jedis = RedisCache.getCachePool().getResource()){
-                jedis.set(CACHE_PREFIX+id,mapper.writeValueAsString(updatedRental));
+            try (Jedis jedis = RedisCache.getCachePool().getResource()) {
+                jedis.set(CACHE_PREFIX + id, mapper.writeValueAsString(updatedRental));
             }
             return updatedRental.toRental();
         } else {
@@ -100,6 +102,7 @@ public class RentalResource implements RentalService {
 
     @Override
     public List<Rental> listRentals(String houseID) {
+        //TODO: chache
         CosmosPagedIterable<RentalDAO> rentalsDAO = db.getRentals(houseID);
         return rentalsDAO.stream()
                 .map(RentalDAO::toRental)
@@ -107,8 +110,8 @@ public class RentalResource implements RentalService {
     }
 
     @Override
-    public String deleteRental(String houseID, String id) throws Exception{
-        if(id == null) throw new Exception("Error: 400 Bad Request (Null ID");
+    public String deleteRental(String houseID, String id) throws Exception {
+        if (id == null) throw new Exception("Error: 400 Bad Request (Null ID");
 
         CosmosItemResponse<Object> res = db.deleteRentalById(houseID, id);
         int statusCode = res.getStatusCode();
@@ -116,9 +119,9 @@ public class RentalResource implements RentalService {
         if (Checks.isStatusOk(statusCode)) {
             HouseDAO houseDAO = db.getHouseById(houseID).stream().findFirst().get();
             houseDAO.removeRental(id);
-
+            //TODO: delete do rental na casa chache
             try (Jedis jedis = RedisCache.getCachePool().getResource()) {
-                jedis.getDel(CACHE_PREFIX+id);
+                jedis.del(CACHE_PREFIX + id);
             }
             return String.format("StatusCode: %d \nRental %s was delete", statusCode, id);
         } else {
@@ -127,8 +130,8 @@ public class RentalResource implements RentalService {
     }
 
 
-    private RentalDAO refactorRental(String houseID, String id, RentalDAO rentalDAO) throws Exception{
-        if(id == null) throw new Exception("Error: 400 Bad Request (Null ID)");
+    private RentalDAO refactorRental(String houseID, String id, RentalDAO rentalDAO) throws Exception {
+        if (id == null) throw new Exception("Error: 400 Bad Request (Null ID)");
 
         CosmosPagedIterable<RentalDAO> res = db.getRentalById(houseID, id);
         Optional<RentalDAO> result = res.stream().findFirst();
@@ -168,9 +171,10 @@ public class RentalResource implements RentalService {
 
     @Override
     public List<Rental> getDiscountedRentals(String houseID) throws Exception {
+        //TODO: chache & tem ser updated de x em x tempo
         CosmosPagedIterable<RentalDAO> rentalsDAO = db.getRentals(houseID);
         List<Rental> res = new ArrayList<>();
-        for (RentalDAO r: rentalsDAO) {
+        for (RentalDAO r : rentalsDAO) {
             if (r.getDiscount() > 0 && !r.getInitialDate().isBefore(LocalDate.now()))
                 res.add(r.toRental());
         }

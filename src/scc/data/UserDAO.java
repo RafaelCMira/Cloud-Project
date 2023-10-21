@@ -89,6 +89,11 @@ public class UserDAO {
         this.houseIds = houseIds;
     }
 
+    public void addHouse(String houseId) {
+        if (!houseIds.contains(houseId))
+            houseIds.add(houseId);
+    }
+
     public User toUser() {
         return new User(id, name, pwd, photoId, houseIds);
     }

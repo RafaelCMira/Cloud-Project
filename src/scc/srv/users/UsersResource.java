@@ -22,6 +22,8 @@ public class UsersResource implements UsersService {
     private final ObjectMapper mapper = new ObjectMapper();
     private final CosmosDBLayer db = CosmosDBLayer.getInstance();
 
+    // TODO: chache quando fazemos gets
+
     @Override
     public String createUser(UserDAO userDAO) throws Exception {
         if (Checks.badParams(userDAO.getId(), userDAO.getName(), userDAO.getPwd(), userDAO.getPhotoId()))
@@ -87,18 +89,19 @@ public class UsersResource implements UsersService {
                 jedis.set(CACHE_PREFIX + id, mapper.writeValueAsString(updatedUser));
             }
             return res.getItem().toUser();
-            //   return updatedUser.toUser(); // se isto nao estiver bem usar o acima
         } else
             throw new Exception("Error: " + statusCode);
     }
 
     @Override
     public List<User> listUsers() throws Exception {
+        //TODO: Chache
         return db.listUsers().stream().map(UserDAO::toUser).toList();
     }
 
     @Override
     public List<String> getUserHouses(String id) throws Exception {
+        //TODO: colocar se nao estiverem na Chache
         if (id == null) throw new Exception("Error: 400 Bad Request (ID NULL)");
         try (Jedis jedis = RedisCache.getCachePool().getResource()) {
             String user = jedis.get(CACHE_PREFIX + id);

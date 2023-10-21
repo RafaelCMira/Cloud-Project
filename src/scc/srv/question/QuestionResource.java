@@ -20,6 +20,8 @@ public class QuestionResource implements QuestionService {
 
     @Override
     public String createQuestion(QuestionDAO questionDAO) throws Exception {
+        //TODO: chache
+
         if (Checks.badParams(questionDAO.getUserID(), questionDAO.getHouseID(), questionDAO.getText()))
             throw new Exception("Error: 400 Bad Request");
 
@@ -46,12 +48,10 @@ public class QuestionResource implements QuestionService {
 
     @Override
     public Question replyToQuestion(String houseID, String questionID, String replierID, QuestionDAO questionDAO) throws Exception {
-
-
         try (Jedis jedis = RedisCache.getCachePool().getResource()) {
             // Verify if house exists
-            HouseDAO house = mapper.readValue(jedis.get(HousesService.CACHE_PREFIX + houseID),HouseDAO.class);
-            if ( house == null) {
+            HouseDAO house = mapper.readValue(jedis.get(HousesService.CACHE_PREFIX + houseID), HouseDAO.class);
+            if (house == null) {
                 var houseRes = db.getHouseById(houseID);
                 Optional<HouseDAO> hResult = houseRes.stream().findFirst();
                 if (hResult.isEmpty())
@@ -77,14 +77,16 @@ public class QuestionResource implements QuestionService {
 
     @Override
     public List<Question> listQuestions(String houseID) throws Exception {
+        // TODO: ver se questions estao na cache
+        //  se nao estiverem, por na chache
+
         try (Jedis jedis = RedisCache.getCachePool().getResource()) {
             // Verify if house exists
-            if (jedis.get(HousesService.CACHE_PREFIX+houseID) == null) {
+            if (jedis.get(HousesService.CACHE_PREFIX + houseID) == null) {
                 var houseRes = db.getHouseById(houseID);
                 Optional<HouseDAO> result = houseRes.stream().findFirst();
                 if (result.isEmpty())
                     throw new Exception("Error: 404 House Not Found");
-
             }
 
             var queryRes = db.listHouseQuestions(houseID);
