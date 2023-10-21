@@ -65,7 +65,8 @@ public class User {
     }
 
     public void addHouse(String houseId) {
-        houseIds.add(houseId);
+        if (! houseIds.contains(houseId))
+            houseIds.add(houseId);
     }
 
     public void setHouseIds(String[] houseIds) {

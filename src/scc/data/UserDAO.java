@@ -84,16 +84,6 @@ public class UserDAO {
         return houseIds == null ? new String[0] : houseIds;
     }
 
-    public void addHouseId(String houseId) {
-        int n = houseIds.length;
-        String[] nList = new String[n+1];
-        for (int i=0; i<n; i++) {
-            nList[i] = houseIds[i];
-        }
-        nList[n] = houseId;
-        houseIds = nList;
-    }
-
     public void setHouseIds(String[] houseIds) {
         this.houseIds = houseIds;
     }

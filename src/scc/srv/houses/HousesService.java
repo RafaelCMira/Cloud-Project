@@ -4,8 +4,6 @@ import jakarta.ws.rs.*;
 import jakarta.ws.rs.core.MediaType;
 import scc.data.HouseDAO;
 import scc.data.House;
-
-import java.time.LocalDate;
 import java.util.List;
 
 @Path(HousesService.PATH)
@@ -46,7 +44,7 @@ public interface HousesService {
     List<House> getAvailHouseByLocation(@QueryParam(LOCATION) String location) throws Exception;
 
     @GET
-    @Path("/")
+    @Path("/Available/")
     @Produces(MediaType.APPLICATION_JSON)
     List<House> getHouseByLocationPeriod(@QueryParam(LOCATION) String location,@QueryParam(INITIAL_DATE) String initialDate,
                                          @QueryParam(END_DATE) String endDate) throws Exception;

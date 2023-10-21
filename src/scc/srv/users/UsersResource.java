@@ -10,9 +10,9 @@ import scc.data.UserDAO;
 import scc.db.CosmosDBLayer;
 import scc.srv.Checks;
 import scc.srv.media.MediaResource;
-import scc.srv.media.MediaService;
 import scc.utils.Hash;
 
+import java.util.Arrays;
 import java.util.List;
 import java.util.Optional;
 
@@ -107,28 +107,39 @@ public class UsersResource implements UsersService {
      */
     private UserDAO genUpdatedUserDAO(String id, User user) throws Exception {
         if (id == null) throw new Exception("Error: 400 Bad Request (ID NULL)");
-        // TODO - Check cache
-        CosmosPagedIterable<UserDAO> res = db.getUserById(id);
-        Optional<UserDAO> result = res.stream().findFirst();
-        if (result.isPresent()) {
-            UserDAO u = result.get();
 
-            String userDAOName = user.getName();
-            if (!u.getName().equals(userDAOName))
-                u.setName(userDAOName);
+        UserDAO uDAO;
+        try (Jedis jedis = RedisCache.getCachePool().getResource()){
+            uDAO = mapper.readValue(jedis.get(CACHE_PREFIX+id),UserDAO.class);
+            if (uDAO == null) {
+                CosmosPagedIterable<UserDAO> res = db.getUserById(id);
+                Optional<UserDAO> result = res.stream().findFirst();
+                 if (result.isEmpty())
+                    throw new Exception("Error: 404");
 
-            String userDAOPwd = Hash.of(user.getPwd());
-            if (!u.getPwd().equals(userDAOPwd))
-                u.setPwd(userDAOName);
-
-            String userDAOPhotoId = user.getPhotoId();
-            if (!u.getPhotoId().equals(userDAOPhotoId))
-                u.setPhotoId(userDAOPhotoId);
-
-            return u;
-
-        } else {
-            throw new Exception("Error: 404");
+                 uDAO = result.get();
+            }
         }
+
+        User u = uDAO.toUser();
+        String userDAOName = user.getName();
+        if (!u.getName().equals(userDAOName))
+            u.setName(userDAOName);
+
+        String userDAOPwd = Hash.of(user.getPwd());
+        if (!u.getPwd().equals(userDAOPwd))
+            u.setPwd(userDAOName);
+
+        String userDAOPhotoId = user.getPhotoId();
+        if (!u.getPhotoId().equals(userDAOPhotoId))
+            u.setPhotoId(userDAOPhotoId);
+
+        String[] houses = user.getHouseIds();
+        if (!Arrays.equals(u.getHouseIds(),houses))
+            for (String h: houses) {
+                   u.addHouse(h);
+            }
+
+        return u.toUserDAO();
     }
 }

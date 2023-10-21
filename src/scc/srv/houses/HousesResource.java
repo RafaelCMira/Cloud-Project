@@ -9,7 +9,6 @@ import scc.data.*;
 import scc.db.CosmosDBLayer;
 import scc.srv.Checks;
 import scc.srv.media.MediaResource;
-import scc.srv.media.MediaService;
 import scc.srv.users.UsersResource;
 import scc.srv.users.UsersService;
 import scc.utils.Hash;
@@ -58,8 +57,9 @@ public class HousesResource implements HousesService {
             var res = db.createHouse(houseDAO);
             int statusCode = res.getStatusCode();
             if (Checks.isStatusOk(statusCode)) {
-                user.addHouseId(houseDAO.getId());
-                db.updateUserById(user.getId(),user);
+                var u = user.toUser();
+                u.addHouse(houseDAO.getId());
+                new UsersResource().updateUser(user.getId(),u);
                 jedis.set(CACHE_PREFIX+houseDAO.getId(), mapper.writeValueAsString(houseDAO));
                 return houseDAO.toHouse().toString();
             } else {
@@ -246,20 +246,4 @@ public class HousesResource implements HousesService {
             throw new Exception("Error: 404");
         }
     }
-
-    /**
-     * Adds the house Id to the uses houses list and updates the DB
-     * @param houseId - the house id
-     * @param ownerId - the owner id
-     */
-    private void updateOwner(String houseId, String ownerId) throws Exception{
-        UsersResource uResource = new UsersResource();
-
-        User user = uResource.getUser(ownerId);
-        user.addHouse(houseId);
-        uResource.updateUser(ownerId,user);
-    }
-
-
-
 }
