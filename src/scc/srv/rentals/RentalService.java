@@ -16,6 +16,8 @@ public interface RentalService {
     String RENTAL_ID = "id";
     String RENTAL = "/rental";
 
+    String DISCOUNT = "discount";
+
     String CACHE_PREFIX = "rental:";
 
 
@@ -49,4 +51,11 @@ public interface RentalService {
     @Produces(MediaType.APPLICATION_JSON)
     @Consumes(MediaType.APPLICATION_JSON)
     String deleteRental(@PathParam(HOUSE_ID) String houseID, @PathParam(RENTAL_ID) String id) throws Exception;
+
+    @GET
+    @Path("/{" + HOUSE_ID + "}" + RENTAL + "/{" + DISCOUNT + "}")
+    @Produces(MediaType.APPLICATION_JSON)
+    @Consumes(MediaType.APPLICATION_JSON)
+    List<Rental> getDiscountedRentals(@PathParam(HOUSE_ID) String houseID) throws Exception;
+
 }

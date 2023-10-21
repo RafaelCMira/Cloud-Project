@@ -14,7 +14,9 @@ public class Rental {
     private LocalDate initialDate;
     private LocalDate endDate;
 
-    public Rental(String id, String houseID, String userID, double price, LocalDate initialDate, LocalDate endDate) {
+    private double discount;
+
+    public Rental(String id, String houseID, String userID, double price, LocalDate initialDate, LocalDate endDate, double discount) {
         super();
         this.id = id;
         this.houseID = houseID;
@@ -22,6 +24,7 @@ public class Rental {
         this.price = price;
         this.initialDate = initialDate;
         this.endDate = endDate;
+        this.discount = discount;
     }
 
     public void setId(String id) {
@@ -71,4 +74,8 @@ public class Rental {
     public LocalDate getEndDate() {
         return endDate;
     }
+
+    public double getDiscount() { return discount; }
+
+    public void setDiscount(double discount) { this.discount = discount; }
 }
