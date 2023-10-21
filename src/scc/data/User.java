@@ -1,7 +1,5 @@
 package scc.data;
 
-import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.List;
 
 /**
@@ -17,13 +15,17 @@ public class User {
     private String photoId;
     private List<String> houseIds;
 
-    public User(String userID, String name, String pwd, String photoId, String[] houseIds) {
+    public User() {
+        // Construtor padrão sem argumentos
+    }
+
+    public User(String userID, String name, String pwd, String photoId, List<String> houseIds) {
         super();
         this.userID = userID;
         this.name = name;
         this.pwd = pwd;
         this.photoId = photoId;
-        this.houseIds = Arrays.stream(houseIds).toList();
+        this.houseIds = houseIds;
     }
 
     public String getUserID() {
@@ -58,29 +60,22 @@ public class User {
         this.photoId = photoId;
     }
 
-    public String[] getHouseIds() {
-        if (houseIds == null)
-            houseIds = new ArrayList<>();
-        return houseIds.toArray(new String[0]);
+    public List<String> getHouseIds() {
+        return houseIds == null ? List.of(new String[0]) : houseIds;
     }
 
-    public void addHouse(String houseId) {
-        if (! houseIds.contains(houseId))
-            houseIds.add(houseId);
-    }
-
-    public void setHouseIds(String[] houseIds) {
-        this.houseIds = Arrays.stream(houseIds).toList();
-    }
-
-    public UserDAO toUserDAO() {
-        return new UserDAO(this);
+    public void setHouseIds(List<String> houseIds) {
+        this.houseIds = houseIds;
     }
 
     @Override
     public String toString() {
-        return "User [id=" + userID + ", name=" + name + ", pwd=" + pwd + ", photoId=" + photoId + ", houseIds="
-                + houseIds.toString() + "]";
+        return "User{" +
+                "userID='" + userID + '\'' +
+                ", name='" + name + '\'' +
+                ", pwd='" + pwd + '\'' +
+                ", photoId='" + photoId + '\'' +
+                ", houseIds=" + houseIds +
+                '}';
     }
-
 }

@@ -26,7 +26,7 @@ public class TestCache {
             u.setName("SCC " + id);
             u.setPwd("super_secret");
             u.setPhotoId("0:34253455");
-            u.setHouseIds(new String[0]);
+            //    u.setHouseIds(new String[0]);
 
             try (Jedis jedis = RedisCache.getCachePool().getResource()) {
                 jedis.set("user:" + id, mapper.writeValueAsString(u));

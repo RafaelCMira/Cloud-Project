@@ -32,12 +32,12 @@ public class HousesResource implements HousesService {
         try (Jedis jedis = RedisCache.getCachePool().getResource()) {
 
             // Check if house already exists on Cache
-            if(jedis.get(HousesService.CACHE_PREFIX+houseDAO.getId()) != null)
+            if (jedis.get(HousesService.CACHE_PREFIX + houseDAO.getId()) != null)
                 throw new Exception("Error: 409 House already exists");
 
             // Check if house already exists on DB
             Optional<HouseDAO> house = db.getHouseById(houseDAO.getId()).stream().findFirst();
-            if(!house.isEmpty())
+            if (!house.isEmpty())
                 throw new Exception("Error: 409 House already exists");
 
             MediaResource media = new MediaResource();
@@ -46,8 +46,8 @@ public class HousesResource implements HousesService {
 
             // Checks if the user exists in cache or in the DB
 
-            UserDAO user = mapper.readValue(jedis.get(UsersService.CACHE_PREFIX+houseDAO.getOwnerID()),UserDAO.class);
-            if ( user == null) {
+            UserDAO user = mapper.readValue(jedis.get(UsersService.CACHE_PREFIX + houseDAO.getOwnerID()), UserDAO.class);
+            if (user == null) {
                 Optional<UserDAO> dbUser = db.getUserById(houseDAO.getOwnerID()).stream().findFirst();
                 if (dbUser.isEmpty())
                     throw new Exception("Error: 404 User not found.");
@@ -58,9 +58,9 @@ public class HousesResource implements HousesService {
             int statusCode = res.getStatusCode();
             if (Checks.isStatusOk(statusCode)) {
                 var u = user.toUser();
-                u.addHouse(houseDAO.getId());
-                new UsersResource().updateUser(user.getId(),u);
-                jedis.set(CACHE_PREFIX+houseDAO.getId(), mapper.writeValueAsString(houseDAO));
+                //u.addHouse(houseDAO.getId());
+                new UsersResource().updateUser(user.getId(), u);
+                jedis.set(CACHE_PREFIX + houseDAO.getId(), mapper.writeValueAsString(houseDAO));
                 return houseDAO.toHouse().toString();
             } else {
                 throw new Exception("Error: " + statusCode);
@@ -77,7 +77,7 @@ public class HousesResource implements HousesService {
 
         if (Checks.isStatusOk(statusCode)) {
             try (Jedis jedis = RedisCache.getCachePool().getResource()) {
-                jedis.getDel(CACHE_PREFIX+id);
+                jedis.getDel(CACHE_PREFIX + id);
             }
             return String.format("StatusCode: %d \nHouse %s was delete", statusCode, id);
         } else {
@@ -91,9 +91,9 @@ public class HousesResource implements HousesService {
 
         try (Jedis jedis = RedisCache.getCachePool().getResource()) {
 
-            String house = jedis.get(CACHE_PREFIX+id);
+            String house = jedis.get(CACHE_PREFIX + id);
             if (house != null) {
-                return mapper.readValue(house,HouseDAO.class).toHouse();
+                return mapper.readValue(house, HouseDAO.class).toHouse();
             }
 
             CosmosPagedIterable<HouseDAO> res = db.getHouseById(id);
@@ -113,7 +113,7 @@ public class HousesResource implements HousesService {
         int statusCode = res.getStatusCode();
         if (Checks.isStatusOk(res.getStatusCode())) {
             try (Jedis jedis = RedisCache.getCachePool().getResource()) {
-                jedis.set(CACHE_PREFIX+id, mapper.writeValueAsString(updatedHouse));
+                jedis.set(CACHE_PREFIX + id, mapper.writeValueAsString(updatedHouse));
             }
             return updatedHouse.toHouse();
         } else {
@@ -133,13 +133,13 @@ public class HousesResource implements HousesService {
             throw new Exception("There is no available houses in this location: 404");
 
         // Check if house is available
-         for ( HouseDAO h: houses) {
-             boolean available = true;
-             for (String id: h.getRentalsID()) {
-                Optional<RentalDAO>  rental = db.getRentalById(h.getId(),id).stream().findFirst();
+        for (HouseDAO h : houses) {
+            boolean available = true;
+            for (String id : h.getRentalsID()) {
+                Optional<RentalDAO> rental = db.getRentalById(h.getId(), id).stream().findFirst();
                 if (!rental.isEmpty() && rental.get().getInitialDate() != cDate)
                     available = false;
-             }
+            }
             if (available)
                 result.add(h.toHouse());
         }
@@ -162,10 +162,10 @@ public class HousesResource implements HousesService {
         List<HouseDAO> houses = res.stream().toList();
 
         // Check if house is available in the given timeframe
-        for ( HouseDAO h: houses) {
+        for (HouseDAO h : houses) {
             boolean available = true;
-            for (String id: h.getRentalsID()) {
-                Optional<RentalDAO>  rental = db.getRentalById(h.getId(),id).stream().findFirst();
+            for (String id : h.getRentalsID()) {
+                Optional<RentalDAO> rental = db.getRentalById(h.getId(), id).stream().findFirst();
                 if (rental.isEmpty()) {
                     available = false;
                 } else {
@@ -184,7 +184,6 @@ public class HousesResource implements HousesService {
             throw new Exception("Error: 404");
         }
     }
-
 
 
     /**
@@ -229,15 +228,15 @@ public class HousesResource implements HousesService {
                 h.setPhotoId(houseDAOPhotoId);
 
             String houseDAOId = houseDAO.getId();
-            if(!h.getId().equals(houseDAOId))
+            if (!h.getId().equals(houseDAOId))
                 h.setId(houseDAOId);
 
             String houseDAODescription = houseDAO.getDescription();
-            if(!h.getDescription().equals(houseDAODescription))
+            if (!h.getDescription().equals(houseDAODescription))
                 h.setId(houseDAODescription);
 
             String houseDAOOwnerId = houseDAO.getOwnerID();
-            if(!h.getOwnerID().equals(houseDAOOwnerId))
+            if (!h.getOwnerID().equals(houseDAOOwnerId))
                 h.setId(houseDAOOwnerId);
 
             return h;

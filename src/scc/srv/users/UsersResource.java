@@ -103,12 +103,12 @@ public class UsersResource implements UsersService {
         try (Jedis jedis = RedisCache.getCachePool().getResource()) {
             String user = jedis.get(CACHE_PREFIX + id);
             if (user != null) {
-                return List.of(mapper.readValue(user, UserDAO.class).getHouseIds());
+                return mapper.readValue(user, UserDAO.class).getHouseIds();
             }
 
             var res = db.getUserById(id).stream().findFirst();
             if (res.isPresent())
-                return List.of(res.get().getHouseIds());
+                return res.get().getHouseIds();
             else
                 throw new Exception("Error: 404");
         }
@@ -125,40 +125,28 @@ public class UsersResource implements UsersService {
      */
     private UserDAO genUpdatedUserDAO(String id, User user) throws Exception {
         if (id == null) throw new Exception("Error: 400 Bad Request (ID NULL)");
+        CosmosPagedIterable<UserDAO> res = db.getUserById(id);
+        Optional<UserDAO> result = res.stream().findFirst();
+        if (result.isPresent()) {
+            UserDAO u = result.get();
 
-        UserDAO uDAO;
-        try (Jedis jedis = RedisCache.getCachePool().getResource()) {
-            uDAO = mapper.readValue(jedis.get(CACHE_PREFIX + id), UserDAO.class);
-            if (uDAO == null) {
-                CosmosPagedIterable<UserDAO> res = db.getUserById(id);
-                Optional<UserDAO> result = res.stream().findFirst();
-                if (result.isEmpty())
-                    throw new Exception("Error: 404");
+            String userDAOName = user.getName();
+            if (!u.getName().equals(userDAOName))
+                u.setName(userDAOName);
 
-                uDAO = result.get();
-            }
+            String userDAOPwd = Hash.of(user.getPwd());
+            if (!u.getPwd().equals(userDAOPwd))
+                u.setPwd(userDAOName);
+
+            String userDAOPhotoId = user.getPhotoId();
+            if (!u.getPhotoId().equals(userDAOPhotoId))
+                u.setPhotoId(userDAOPhotoId);
+
+            return u;
+
+        } else {
+            throw new Exception("Error: 404");
         }
-
-        User u = uDAO.toUser();
-        String userDAOName = user.getName();
-        if (!u.getName().equals(userDAOName))
-            u.setName(userDAOName);
-
-        String userDAOPwd = Hash.of(user.getPwd());
-        if (!u.getPwd().equals(userDAOPwd))
-            u.setPwd(userDAOName);
-
-        String userDAOPhotoId = user.getPhotoId();
-        if (!u.getPhotoId().equals(userDAOPhotoId))
-            u.setPhotoId(userDAOPhotoId);
-
-        String[] houses = user.getHouseIds();
-        if (!Arrays.equals(u.getHouseIds(), houses))
-            for (String h : houses) {
-                u.addHouse(h);
-            }
-
-        return u.toUserDAO();
     }
 
 

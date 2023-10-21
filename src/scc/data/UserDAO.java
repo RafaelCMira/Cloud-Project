@@ -1,6 +1,7 @@
 package scc.data;
 
 import java.util.Arrays;
+import java.util.List;
 
 import scc.utils.Hash;
 
@@ -14,7 +15,7 @@ public class UserDAO {
     private String name;
     private String pwd;
     private String photoId;
-    private String[] houseIds;
+    private List<String> houseIds;
 
     public UserDAO() {
     }
@@ -23,7 +24,7 @@ public class UserDAO {
         this(u.getUserID(), u.getName(), u.getPwd(), u.getPhotoId(), u.getHouseIds());
     }
 
-    public UserDAO(String userID, String name, String pwd, String photoId, String[] houseIds) {
+    public UserDAO(String userID, String name, String pwd, String photoId, List<String> houseIds) {
         super();
         this.id = userID;
         this.name = name;
@@ -80,22 +81,28 @@ public class UserDAO {
         this.photoId = photoId;
     }
 
-    public String[] getHouseIds() {
-        return houseIds == null ? new String[0] : houseIds;
+    public List<String> getHouseIds() {
+        return houseIds;
     }
 
-    public void setHouseIds(String[] houseIds) {
+    public void setHouseIds(List<String> houseIds) {
         this.houseIds = houseIds;
     }
 
     public User toUser() {
-        return new User(id, name, pwd, photoId, houseIds == null ? null : Arrays.copyOf(houseIds, houseIds.length));
+        return new User(id, name, pwd, photoId, houseIds);
     }
 
     @Override
     public String toString() {
-        return "UserDAO [_rid=" + _rid + ", _ts=" + _ts + ", id=" + id + ", name=" + name + ", pwd=" + pwd
-                + ", photoId=" + photoId + ", houseIds=" + Arrays.toString(houseIds) + "]";
+        return "UserDAO{" +
+                "_rid='" + _rid + '\'' +
+                ", _ts='" + _ts + '\'' +
+                ", id='" + id + '\'' +
+                ", name='" + name + '\'' +
+                ", pwd='" + pwd + '\'' +
+                ", photoId='" + photoId + '\'' +
+                ", houseIds=" + houseIds +
+                '}';
     }
-
 }
