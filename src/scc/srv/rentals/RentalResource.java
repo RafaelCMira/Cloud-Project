@@ -12,6 +12,7 @@ import scc.srv.houses.HousesService;
 import scc.srv.users.UsersService;
 
 import java.time.LocalDate;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 
@@ -125,6 +126,7 @@ public class RentalResource implements RentalService {
         }
     }
 
+
     private RentalDAO refactorRental(String houseID, String id, RentalDAO rentalDAO) throws Exception{
         if(id == null) throw new Exception("Error: 400 Bad Request (Null ID)");
 
@@ -162,5 +164,16 @@ public class RentalResource implements RentalService {
         } else {
             throw new Exception("Error: 404 Rental Not Found");
         }
+    }
+
+    @Override
+    public List<Rental> getDiscountedRentals(String houseID) throws Exception {
+        CosmosPagedIterable<RentalDAO> rentalsDAO = db.getRentals(houseID);
+        List<Rental> res = new ArrayList<>();
+        for (RentalDAO r: rentalsDAO) {
+            if (r.getDiscount() > 0 && !r.getInitialDate().isBefore(LocalDate.now()))
+                res.add(r.toRental());
+        }
+        return res;
     }
 }
