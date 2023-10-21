@@ -72,10 +72,14 @@ public class CosmosDBLayer {
         return db.getContainer(USERS_CONTAINER).createItem(user);
     }
 
-    public CosmosItemResponse<Object> delUserById(String id) {
+    public CosmosItemResponse<Object> delUserById(String id) throws Exception {
         init();
         PartitionKey key = new PartitionKey(id);
-        return db.getContainer(USERS_CONTAINER).deleteItem(id, key, new CosmosItemRequestOptions());
+        try {
+            return db.getContainer(USERS_CONTAINER).deleteItem(id, key, new CosmosItemRequestOptions());
+        } catch (Exception e) {
+            throw new Exception("Error: " + e.getCause());
+        }
     }
 
     /*public CosmosItemResponse<Object> delUser(UserDAO user) {
@@ -105,6 +109,13 @@ public class CosmosDBLayer {
         init();
         String query = "SELECT * FROM users";
         return db.getContainer(USERS_CONTAINER).queryItems(query, new CosmosQueryRequestOptions(), UserDAO.class);
+    }
+
+    // TODO: Perguntar se no listar casas de um user podemos só listar o id da casa OU se temos de listar o JSON das casas
+    public CosmosPagedIterable<String> listUserHouses(String id) {
+        init();
+        String query = String.format("SELECT housesIds FROM users WHERE users.id=\"%s\"", id);
+        return db.getContainer(USERS_CONTAINER).queryItems(query, new CosmosQueryRequestOptions(), String.class);
     }
 
 

@@ -2,6 +2,7 @@ package scc.srv.users;
 
 import jakarta.ws.rs.*;
 import jakarta.ws.rs.core.MediaType;
+import scc.data.House;
 import scc.data.User;
 import scc.data.UserDAO;
 
@@ -15,7 +16,7 @@ public interface UsersService {
     String NAME = "name";
     String PWD = "pwd";
     String PHOTO_ID = "photoId";
-    String HOUSE_IDS = "houseIds";
+    String HOUSES = "/houses";
     String QUERY = "query";
 
     String CACHE_PREFIX = "user:";
@@ -47,5 +48,9 @@ public interface UsersService {
     @Produces(MediaType.APPLICATION_JSON)
     List<User> listUsers() throws Exception;
 
+    @GET
+    @Path("/{" + ID + "}" + HOUSES)
+    @Produces(MediaType.APPLICATION_JSON)
+    List<String> getUserHouses(@PathParam(ID) String id) throws Exception;
 
 }

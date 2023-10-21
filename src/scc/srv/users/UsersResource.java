@@ -5,6 +5,7 @@ import com.azure.cosmos.util.CosmosPagedIterable;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import redis.clients.jedis.Jedis;
 import scc.cache.RedisCache;
+import scc.data.House;
 import scc.data.User;
 import scc.data.UserDAO;
 import scc.db.CosmosDBLayer;
@@ -51,7 +52,8 @@ public class UsersResource implements UsersService {
             int statusCode = res.getStatusCode();
 
             if (Checks.isStatusOk(statusCode)) {
-                jedis.getDel(CACHE_PREFIX + id);
+                jedis.del(CACHE_PREFIX + id);
+                // jedis.getDel(CACHE_PREFIX + id);
                 return String.format("StatusCode: %d \nUser %s was delete", statusCode, id);
             } else
                 throw new Exception("Error: " + statusCode);
@@ -63,12 +65,11 @@ public class UsersResource implements UsersService {
         if (id == null) throw new Exception("Error: 400 Bad Request (ID NULL)");
 
         try (Jedis jedis = RedisCache.getCachePool().getResource()) {
-            String user = jedis.get(CACHE_PREFIX+id);
+            String user = jedis.get(CACHE_PREFIX + id);
             if (user != null)
-                return mapper.readValue(user,UserDAO.class).toUser();
+                return mapper.readValue(user, UserDAO.class).toUser();
 
-            CosmosPagedIterable<UserDAO> res = db.getUserById(id);
-            Optional<UserDAO> result = res.stream().findFirst();
+            var result = db.getUserById(id).stream().findFirst();
             if (result.isPresent())
                 return result.get().toUser();
             else
@@ -83,7 +84,7 @@ public class UsersResource implements UsersService {
         int statusCode = res.getStatusCode();
         if (Checks.isStatusOk(statusCode)) {
             try (Jedis jedis = RedisCache.getCachePool().getResource()) {
-                jedis.set(CACHE_PREFIX+id, mapper.writeValueAsString(updatedUser));
+                jedis.set(CACHE_PREFIX + id, mapper.writeValueAsString(updatedUser));
             }
             return res.getItem().toUser();
             //   return updatedUser.toUser(); // se isto nao estiver bem usar o acima
@@ -96,11 +97,28 @@ public class UsersResource implements UsersService {
         return db.listUsers().stream().map(UserDAO::toUser).toList();
     }
 
+    @Override
+    public List<String> getUserHouses(String id) throws Exception {
+        if (id == null) throw new Exception("Error: 400 Bad Request (ID NULL)");
+        try (Jedis jedis = RedisCache.getCachePool().getResource()) {
+            String user = jedis.get(CACHE_PREFIX + id);
+            if (user != null) {
+                return List.of(mapper.readValue(user, UserDAO.class).getHouseIds());
+            }
+
+            var res = db.getUserById(id).stream().findFirst();
+            if (res.isPresent())
+                return List.of(res.get().getHouseIds());
+            else
+                throw new Exception("Error: 404");
+        }
+    }
+
 
     /**
      * Returns updated userDAO to the method who's making the request to the database
      *
-     * @param id      of the user being accessed
+     * @param id   of the user being accessed
      * @param user new user attributes
      * @return updated userDAO to the method who's making the request to the database
      * @throws Exception If id is null or if the user does not exist
@@ -109,15 +127,15 @@ public class UsersResource implements UsersService {
         if (id == null) throw new Exception("Error: 400 Bad Request (ID NULL)");
 
         UserDAO uDAO;
-        try (Jedis jedis = RedisCache.getCachePool().getResource()){
-            uDAO = mapper.readValue(jedis.get(CACHE_PREFIX+id),UserDAO.class);
+        try (Jedis jedis = RedisCache.getCachePool().getResource()) {
+            uDAO = mapper.readValue(jedis.get(CACHE_PREFIX + id), UserDAO.class);
             if (uDAO == null) {
                 CosmosPagedIterable<UserDAO> res = db.getUserById(id);
                 Optional<UserDAO> result = res.stream().findFirst();
-                 if (result.isEmpty())
+                if (result.isEmpty())
                     throw new Exception("Error: 404");
 
-                 uDAO = result.get();
+                uDAO = result.get();
             }
         }
 
@@ -135,11 +153,13 @@ public class UsersResource implements UsersService {
             u.setPhotoId(userDAOPhotoId);
 
         String[] houses = user.getHouseIds();
-        if (!Arrays.equals(u.getHouseIds(),houses))
-            for (String h: houses) {
-                   u.addHouse(h);
+        if (!Arrays.equals(u.getHouseIds(), houses))
+            for (String h : houses) {
+                u.addHouse(h);
             }
 
         return u.toUserDAO();
     }
+
+
 }
