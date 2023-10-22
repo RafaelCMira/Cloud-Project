@@ -5,13 +5,11 @@ import redis.clients.jedis.Jedis;
 import scc.cache.RedisCache;
 import scc.data.*;
 import scc.db.CosmosDBLayer;
-import scc.srv.Checks;
+import scc.srv.utils.Checks;
 import scc.srv.houses.HousesService;
 
-import javax.naming.LinkException;
 import java.util.List;
 import java.util.Optional;
-import java.util.stream.Collectors;
 
 public class QuestionResource implements QuestionService {
 
@@ -50,7 +48,7 @@ public class QuestionResource implements QuestionService {
     public Question replyToQuestion(String houseID, String questionID, String replierID, QuestionDAO questionDAO) throws Exception {
         try (Jedis jedis = RedisCache.getCachePool().getResource()) {
             // Verify if house exists
-            HouseDAO house = mapper.readValue(jedis.get(HousesService.CACHE_PREFIX + houseID), HouseDAO.class);
+            HouseDAO house = mapper.readValue(jedis.get(HousesService.HOUSE_PREFIX + houseID), HouseDAO.class);
             if (house == null) {
                 var houseRes = db.getHouseById(houseID);
                 Optional<HouseDAO> hResult = houseRes.stream().findFirst();
@@ -82,7 +80,7 @@ public class QuestionResource implements QuestionService {
 
         try (Jedis jedis = RedisCache.getCachePool().getResource()) {
             // Verify if house exists
-            if (jedis.get(HousesService.CACHE_PREFIX + houseID) == null) {
+            if (jedis.get(HousesService.HOUSE_PREFIX + houseID) == null) {
                 var houseRes = db.getHouseById(houseID);
                 Optional<HouseDAO> result = houseRes.stream().findFirst();
                 if (result.isEmpty())

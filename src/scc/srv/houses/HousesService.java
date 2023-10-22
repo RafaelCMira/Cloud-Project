@@ -4,6 +4,7 @@ import jakarta.ws.rs.*;
 import jakarta.ws.rs.core.MediaType;
 import scc.data.HouseDAO;
 import scc.data.House;
+
 import java.util.List;
 
 @Path(HousesService.PATH)
@@ -14,7 +15,7 @@ public interface HousesService {
     String INITIAL_DATE = "initialDate";
     String END_DATE = "endDate";
 
-    String CACHE_PREFIX = "house:";
+    String HOUSE_PREFIX = "house:";
 
 
     @POST
@@ -36,7 +37,7 @@ public interface HousesService {
     @Path("/{" + ID + "}")
     @Consumes(MediaType.APPLICATION_JSON)
     @Produces(MediaType.APPLICATION_JSON)
-    House updateHouse(@PathParam(ID) String id, HouseDAO houseDAO) throws Exception;
+    House updateHouse(@PathParam(ID) String id, House house) throws Exception;
 
     @GET
     @Path("/")
@@ -46,6 +47,6 @@ public interface HousesService {
     @GET
     @Path("/Available/")
     @Produces(MediaType.APPLICATION_JSON)
-    List<House> getHouseByLocationPeriod(@QueryParam(LOCATION) String location,@QueryParam(INITIAL_DATE) String initialDate,
+    List<House> getHouseByLocationPeriod(@QueryParam(LOCATION) String location, @QueryParam(INITIAL_DATE) String initialDate,
                                          @QueryParam(END_DATE) String endDate) throws Exception;
 }

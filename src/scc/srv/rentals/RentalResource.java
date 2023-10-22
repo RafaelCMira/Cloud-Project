@@ -7,7 +7,7 @@ import redis.clients.jedis.Jedis;
 import scc.cache.RedisCache;
 import scc.data.*;
 import scc.db.CosmosDBLayer;
-import scc.srv.Checks;
+import scc.srv.utils.Checks;
 import scc.srv.houses.HousesService;
 import scc.srv.users.UsersService;
 
@@ -31,7 +31,7 @@ public class RentalResource implements RentalService {
             //TODO: adicionar o rental à casa
 
             // Verify if house exists
-            String houseJson = jedis.get(HousesService.CACHE_PREFIX + houseID);
+            String houseJson = jedis.get(HousesService.HOUSE_PREFIX + houseID);
             if (houseJson == null) {
                 var houseRes = db.getHouseById(houseID);
                 Optional<HouseDAO> hResult = houseRes.stream().findFirst();
@@ -40,7 +40,7 @@ public class RentalResource implements RentalService {
             }
 
             // Verify if user exists
-            if (jedis.get(UsersService.CACHE_PREFIX + rentalDAO.getUserID()) == null) {
+            if (jedis.get(UsersService.USER_PREFIX + rentalDAO.getUserID()) == null) {
                 var userRes = db.getUserById(rentalDAO.getUserID());
                 Optional<UserDAO> uResult = userRes.stream().findFirst();
                 if (uResult.isEmpty())
