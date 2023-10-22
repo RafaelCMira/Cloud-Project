@@ -1,14 +1,14 @@
 package scc.data;
 
-import java.util.Arrays;
 import java.util.List;
 
+import scc.srv.utils.HasId;
 import scc.utils.Hash;
 
 /**
  * Represents a User, as stored in the database
  */
-public class UserDAO {
+public class UserDAO implements HasId {
     private String _rid;
     private String _ts;
     private String id;
@@ -21,7 +21,7 @@ public class UserDAO {
     }
 
     public UserDAO(User u) {
-        this(u.getUserID(), u.getName(), u.getPwd(), u.getPhotoId(), u.getHouseIds());
+        this(u.getId(), u.getName(), u.getPwd(), u.getPhotoId(), u.getHouseIds());
     }
 
     public UserDAO(String userID, String name, String pwd, String photoId, List<String> houseIds) {
@@ -49,6 +49,7 @@ public class UserDAO {
         this._ts = _ts;
     }
 
+    @Override
     public String getId() {
         return id;
     }
@@ -92,6 +93,10 @@ public class UserDAO {
     public void addHouse(String houseId) {
         if (!houseIds.contains(houseId))
             houseIds.add(houseId);
+    }
+
+    public void removeHouse(String houseId) {
+        houseIds.remove(houseId);
     }
 
     public User toUser() {

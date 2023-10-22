@@ -1,5 +1,7 @@
 package scc.data;
 
+import scc.srv.utils.HasId;
+
 import java.util.List;
 
 /**
@@ -8,32 +10,32 @@ import java.util.List;
  * NOTE: array of house ids is shown as an example of how to store a list of elements and
  * handle the empty list.
  */
-public class User {
-    private String userID;
+public class User implements HasId {
+    private String id;
     private String name;
     private String pwd;
     private String photoId;
     private List<String> houseIds;
 
     public User() {
-        // Construtor padrão sem argumentos
     }
 
-    public User(String userID, String name, String pwd, String photoId, List<String> houseIds) {
+    public User(String id, String name, String pwd, String photoId, List<String> houseIds) {
         super();
-        this.userID = userID;
+        this.id = id;
         this.name = name;
         this.pwd = pwd;
         this.photoId = photoId;
         this.houseIds = houseIds;
     }
 
-    public String getUserID() {
-        return userID;
+    @Override
+    public String getId() {
+        return id;
     }
 
-    public void setUserID(String userID) {
-        this.userID = userID;
+    public void setId(String id) {
+        this.id = id;
     }
 
     public String getName() {
@@ -71,7 +73,7 @@ public class User {
     @Override
     public String toString() {
         return "User{" +
-                "userID='" + userID + '\'' +
+                "userID='" + id + '\'' +
                 ", name='" + name + '\'' +
                 ", pwd='" + pwd + '\'' +
                 ", photoId='" + photoId + '\'' +

@@ -2,7 +2,6 @@ package scc.srv.users;
 
 import jakarta.ws.rs.*;
 import jakarta.ws.rs.core.MediaType;
-import scc.data.House;
 import scc.data.User;
 import scc.data.UserDAO;
 
@@ -19,8 +18,9 @@ public interface UsersService {
     String HOUSES = "/houses";
     String QUERY = "query";
 
-    String CACHE_PREFIX = "user:";
+    String USER_PREFIX = "u:";
 
+    String USER_HOUSES_PREFIX = "h:";
 
     @POST
     @Consumes(MediaType.APPLICATION_JSON)
