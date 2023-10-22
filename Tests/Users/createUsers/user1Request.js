@@ -4,7 +4,7 @@
  * Exported functions to be used in the testing scripts.
  */
 module.exports = {
-	uploadImageBody,
+    selectRandomImage,
 	genNewUser,
 	genNewUserReply,
 };
@@ -12,14 +12,11 @@ module.exports = {
 const faker = require("faker");
 const fs = require("fs");
 
-var imagesIds = [];
 var images = [];
 var users = [];
 
 // All endpoints starting with the following prefixes will be aggregated in the same for the statistics
 var statsPrefix = [
-	["/rest/media/", "GET"],
-	["/rest/media", "POST"],
 	["/rest/user/", "GET"],
 	["/rest/user/", "POST"],
 ];
@@ -33,15 +30,17 @@ global.myProcessEndpoint = function (str, method) {
 	return method + ":" + str;
 };
 
-// Auxiliary function to select an element from an array
-Array.prototype.sample = function () {
-	return this[Math.floor(Math.random() * this.length)];
-};
 
 // Returns a random value, from 0 to val
 function random(val) {
-	return Math.floor(Math.random() * val);
+    return Math.floor(Math.random() * val);
 }
+
+// Auxiliary function to select an element from an array
+Array.prototype.sample = function () {
+	return this[random(this.length)];
+};
+
 
 // Loads data about images from disk
 function loadData() {
@@ -62,47 +61,10 @@ function loadData() {
 
 loadData();
 
-/**
- * Sets the body to an image, when using images.
- */
-function uploadImageBody(requestParams, context, ee, next) {
-	requestParams.body = images.sample();
-	return next();
-}
 
-/**
- * Process reply of the download of an image.
- * Update the next image to read.
- */
-function processUploadReply(requestParams, response, context, ee, next) {
-	if (typeof response.body !== "undefined" && response.body.length > 0) {
-		imagesIds.push(response.body);
-	}
-	return next();
-}
-
-/**
- * Select an image to download.
- */
-function selectImageToDownload(context, events, done) {
-	if (imagesIds.length > 0) {
-		context.vars.imageId = imagesIds.sample();
-	} else {
-		delete context.vars.imageId;
-	}
-	return done();
-}
-
-/**
- * Select an image to download.
- */
-function selectUser(context, events, done) {
-	if (userIDs.length > 0) {
-		context.vars.id = userIDs.sample();
-	} else {
-		delete context.vars.id;
-	}
-	return done();
+function selectRandomImage(userContext, events, done) {
+    userContext.vars.image = images.sample();
+    return done();
 }
 
 
@@ -112,6 +74,7 @@ function genNewUser(context, events, done) {
 	context.vars.id = first + "." + last;
 	context.vars.name = first + " " + last;
 	context.vars.pwd = `${faker.internet.password()}`;
+	context.vars.photoId = images.sample;
 	return done();
 }
 
@@ -119,12 +82,12 @@ function genNewUser(context, events, done) {
  * Process reply for of new users to store the id on file
  */
 function genNewUserReply(requestParams, response, context, ee, next) {
-
 	if (response.statusCode >= 200 && response.statusCode < 300 && response.body.length > 0) {
 		let u = response.body;
 		users.push(u);
 		fs.writeFileSync("users.data", JSON.stringify(users));
 	} else
 	    console.log(response.body)
+
 	return next();
 }

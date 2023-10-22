@@ -1,7 +1,6 @@
 ## Coisas a pensar
 
-- Quando criamos uma <b> HOUSE </b>, <b> QUESTION </b>, <b> RENTAL </b> temos de ir à BASE DE DADOS porque podemos tar a mudar algo que já não
-  está em cache? Ou assumimos que o tempo que lá vai estar é tão pouco que não vale a pena?
+- Quando criamos uma <b> HOUSE </b>, <b> QUESTION </b>, <b> RENTAL </b> temos de ir à BASE DE DADOS ver se o user existe porque podemos tar a mudar algo que já não está em cache? Ou assumimos que o tempo que lá vai estar é tão pouco que não vale a pena?
 
 
 - Ver se é possível guardar apenas o User em vez do UserDAO no Redis cache. Verficar se é compatível com as outras operações.

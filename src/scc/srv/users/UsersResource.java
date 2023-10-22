@@ -3,6 +3,7 @@ package scc.srv.users;
 import com.azure.cosmos.util.CosmosPagedIterable;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import org.glassfish.jersey.media.multipart.FormDataContentDisposition;
 import redis.clients.jedis.Jedis;
 import scc.cache.RedisCache;
 import scc.data.User;
@@ -13,6 +14,8 @@ import scc.srv.utils.Cache;
 import scc.srv.media.MediaResource;
 import scc.utils.Hash;
 
+import java.io.InputStream;
+import java.util.ArrayList;
 import java.util.List;
 
 
@@ -20,7 +23,7 @@ public class UsersResource implements UsersService {
     private final ObjectMapper mapper = new ObjectMapper();
     private final CosmosDBLayer db = CosmosDBLayer.getInstance();
 
-    @Override
+/*    @Override
     public String createUser(UserDAO userDAO) throws Exception {
         if (Checks.badParams(userDAO.getId(), userDAO.getName(), userDAO.getPwd(), userDAO.getPhotoId()))
             throw new Exception("Error: 400 Bad Request");
@@ -35,6 +38,33 @@ public class UsersResource implements UsersService {
         if (Checks.isStatusOk(statusCode)) {
             try (Jedis jedis = RedisCache.getCachePool().getResource()) {
                 // putUserInCache(userDAO, jedis);
+                Cache.putInCache(userDAO, USER_PREFIX, jedis);
+                return userDAO.toUser().toString();
+            }
+        } else
+            throw new Exception("Error: " + statusCode);
+    }*/
+
+
+    @Override
+    public String createUser(UserDAO userDAO, InputStream imageStream) throws Exception {
+        if (Checks.badParams(userDAO.getId(), userDAO.getName(), userDAO.getPwd(), userDAO.getPhotoId()))
+            throw new Exception("Error: 400 Bad Request");
+
+        MediaResource media = new MediaResource();
+        byte[] photo = imageStream.readAllBytes();
+        imageStream.close();
+        String photoId = media.upload(photo);
+        if (!media.hasPhotoById(photoId))
+            throw new Exception("Error: 404 Image not found");
+        else
+            userDAO.setPhotoId(photoId);
+
+        var res = db.createUser(userDAO);
+        int statusCode = res.getStatusCode();
+
+        if (Checks.isStatusOk(statusCode)) {
+            try (Jedis jedis = RedisCache.getCachePool().getResource()) {
                 Cache.putInCache(userDAO, USER_PREFIX, jedis);
                 return userDAO.toUser().toString();
             }
@@ -95,7 +125,11 @@ public class UsersResource implements UsersService {
 
     @Override
     public List<User> listUsers() throws Exception {
-        return db.listUsers().stream().map(UserDAO::toUser).toList();
+        var res = db.listUsers().stream().map(UserDAO::toUser).toList();
+        if (!res.isEmpty())
+            return res;
+        else
+            return new ArrayList<>();
     }
 
     @Override

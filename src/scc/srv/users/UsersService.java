@@ -2,9 +2,12 @@ package scc.srv.users;
 
 import jakarta.ws.rs.*;
 import jakarta.ws.rs.core.MediaType;
+import org.glassfish.jersey.media.multipart.FormDataContentDisposition;
+import org.glassfish.jersey.media.multipart.FormDataParam;
 import scc.data.User;
 import scc.data.UserDAO;
 
+import java.io.InputStream;
 import java.util.List;
 
 
@@ -22,10 +25,16 @@ public interface UsersService {
 
     String USER_HOUSES_PREFIX = "h:";
 
-    @POST
+    /*@POST
     @Consumes(MediaType.APPLICATION_JSON)
     @Produces(MediaType.APPLICATION_JSON)
-    String createUser(UserDAO userDAO) throws Exception;
+    String createUser(UserDAO userDAO) throws Exception;*/
+
+    @POST
+    @Consumes(MediaType.MULTIPART_FORM_DATA)
+    @Produces(MediaType.APPLICATION_JSON)
+    String createUser(@FormDataParam("userDAO") UserDAO userDAO,
+                      @FormDataParam("image") InputStream imageStream) throws Exception;
 
     @DELETE
     @Path("/{" + ID + "}")

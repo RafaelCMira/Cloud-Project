@@ -1,8 +1,8 @@
 config:
-  target: 'https://scc24app-westeurope-60700.azurewebsites.net/rest'
+  target: 'https://scc24app-westeurope-59243.azurewebsites.net/rest'
   plugins:
     metrics-by-endpoint: { }
-  processor: "./test-utils.js"
+  processor: "./users.js"
   variables:
     metricsProcessEndpoint: "myProcessEndpoint"  # function used to aggregate endpoints for statistics
   phases:

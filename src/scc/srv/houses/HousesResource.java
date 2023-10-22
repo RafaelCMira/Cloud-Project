@@ -23,7 +23,6 @@ public class HousesResource implements HousesService {
 
     @Override
     public String createHouse(HouseDAO houseDAO) throws Exception {
-
         try (Jedis jedis = RedisCache.getCachePool().getResource()) {
 
             var user = checksHouseCreation(houseDAO, jedis);
@@ -67,7 +66,7 @@ public class HousesResource implements HousesService {
         var user = db.getUserById(userId).stream().findFirst();
         if (user.isPresent()) {
             // acho que esta verificaçao do user.isPresent é necessaria para alteraçoes em paralelo
-            // (podem remover o user mesmo antes de se começar a fazer o delete da casa
+            // (podem remover o user mesmo antes de se começar a fazer o delete da casa)
             var updatedUser = user.get();
             updatedUser.removeHouse(id);
             try (Jedis jedis = RedisCache.getCachePool().getResource()) {
