@@ -25,16 +25,16 @@ public interface UsersService {
 
     String USER_HOUSES_PREFIX = "h:";
 
-    /*@POST
+    @POST
     @Consumes(MediaType.APPLICATION_JSON)
     @Produces(MediaType.APPLICATION_JSON)
-    String createUser(UserDAO userDAO) throws Exception;*/
+    String createUser(UserDAO userDAO) throws Exception;
 
-    @POST
+/*    @POST
     @Consumes(MediaType.MULTIPART_FORM_DATA)
     @Produces(MediaType.APPLICATION_JSON)
     String createUser(@FormDataParam("userDAO") UserDAO userDAO,
-                      @FormDataParam("image") InputStream imageStream) throws Exception;
+                      @FormDataParam("image") InputStream imageStream) throws Exception;*/
 
     @DELETE
     @Path("/{" + ID + "}")

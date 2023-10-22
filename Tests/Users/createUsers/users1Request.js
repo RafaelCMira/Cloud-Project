@@ -74,7 +74,7 @@ function genNewUser(context, events, done) {
 	context.vars.id = first + "." + last;
 	context.vars.name = first + " " + last;
 	context.vars.pwd = `${faker.internet.password()}`;
-	context.vars.photoId = images.sample;
+	context.vars.image = images.sample();
 	return done();
 }
 

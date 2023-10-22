@@ -23,7 +23,7 @@ public class UsersResource implements UsersService {
     private final ObjectMapper mapper = new ObjectMapper();
     private final CosmosDBLayer db = CosmosDBLayer.getInstance();
 
-/*    @Override
+    @Override
     public String createUser(UserDAO userDAO) throws Exception {
         if (Checks.badParams(userDAO.getId(), userDAO.getName(), userDAO.getPwd(), userDAO.getPhotoId()))
             throw new Exception("Error: 400 Bad Request");
@@ -43,10 +43,10 @@ public class UsersResource implements UsersService {
             }
         } else
             throw new Exception("Error: " + statusCode);
-    }*/
+    }
 
 
-    @Override
+    /*@Override
     public String createUser(UserDAO userDAO, InputStream imageStream) throws Exception {
         if (Checks.badParams(userDAO.getId(), userDAO.getName(), userDAO.getPwd(), userDAO.getPhotoId()))
             throw new Exception("Error: 400 Bad Request");
@@ -66,11 +66,12 @@ public class UsersResource implements UsersService {
         if (Checks.isStatusOk(statusCode)) {
             try (Jedis jedis = RedisCache.getCachePool().getResource()) {
                 Cache.putInCache(userDAO, USER_PREFIX, jedis);
-                return userDAO.toUser().toString();
             }
+            return userDAO.toUser().toString();
+
         } else
             throw new Exception("Error: " + statusCode);
-    }
+    }*/
 
     @Override
     public String deleteUser(String id) throws Exception {

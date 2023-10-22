@@ -23,7 +23,7 @@ scenarios:
                 Content-Type: multipart/form-data
                 Accept: application/json
               data:
-                - field: "json_data"
+                - field: "userDAO"
                   value: '{"id": "{{ id }}", "name": "{{ name }}", "pwd": "{{ pwd }}", "houseIds": []}'
                 - field: "image"
                   type: "file"
