@@ -1,14 +1,16 @@
 package scc.data;
 
+import scc.srv.utils.HasId;
+
 import java.util.List;
 
 /**
  * Represents a House, as returned to the clients
  */
 
-public class House {
+public class House implements HasId {
 
-    private String houseID;
+    private String id;
 
     private String name;
 
@@ -25,10 +27,10 @@ public class House {
     private int[][] priceByPeriod;
 
 
-    public House(String houseID, String name, String location, String description,
+    public House(String id, String name, String location, String description,
                  String photoId, List<String> rentalsID, String ownerID, int[][] priceByPeriod) {
         super();
-        this.houseID = houseID;
+        this.id = id;
         this.name = name;
         this.location = location;
         this.description = description;
@@ -38,12 +40,13 @@ public class House {
         this.priceByPeriod = priceByPeriod;
     }
 
-    public String getHouseID() {
-        return houseID;
+    @Override
+    public String getId() {
+        return id;
     }
 
-    public void setHouseID(String houseID) {
-        this.houseID = houseID;
+    public void setId(String id) {
+        this.id = id;
     }
 
     public String getName() {
@@ -86,7 +89,9 @@ public class House {
         rentalsID.add(rentalID);
     }
 
-    public void removeRental(String rentalID) { rentalsID.remove(rentalID); }
+    public void removeRental(String rentalID) {
+        rentalsID.remove(rentalID);
+    }
 
     public String getOwnerID() {
         return ownerID;
@@ -124,7 +129,9 @@ public class House {
 
     @Override
     public String toString() {
-        return "House [id=" + houseID + ", name=" + name + ", location=" + location + ", description=" + description + ", photoId=" + photoId + ", ownerID="
+        return "House [id=" + id + ", name=" + name + ", location=" + location + ", description=" + description + ", photoId=" + photoId + ", ownerID="
                 + ownerID + "]";
     }
+
+
 }

@@ -1,15 +1,14 @@
 package scc.srv.houses;
 
-import com.azure.cosmos.models.CosmosItemResponse;
 import com.azure.cosmos.util.CosmosPagedIterable;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import redis.clients.jedis.Jedis;
 import scc.cache.RedisCache;
 import scc.data.*;
 import scc.db.CosmosDBLayer;
-import scc.srv.Checks;
+import scc.srv.utils.Checks;
+import scc.srv.utils.Cache;
 import scc.srv.media.MediaResource;
-import scc.srv.users.UsersResource;
 import scc.srv.users.UsersService;
 import scc.utils.Hash;
 
@@ -24,50 +23,27 @@ public class HousesResource implements HousesService {
 
     @Override
     public String createHouse(HouseDAO houseDAO) throws Exception {
-        if (Checks.badParams(houseDAO.getId(), houseDAO.getName(), houseDAO.getLocation(),
-                houseDAO.getPhotoId()) && !hasPricesByPeriod(houseDAO)) {
-            throw new Exception("Error: 400 Bad Request");
-        }
 
         try (Jedis jedis = RedisCache.getCachePool().getResource()) {
 
-            // Check if house already exists on Cache
-            if (jedis.get(HousesService.CACHE_PREFIX + houseDAO.getId()) != null)
-                throw new Exception("Error: 409 House already exists");
-
-            // Check if house already exists on DB
-            Optional<HouseDAO> house = db.getHouseById(houseDAO.getId()).stream().findFirst();
-            if (!house.isEmpty())
-                throw new Exception("Error: 409 House already exists");
-
-            MediaResource media = new MediaResource();
-            if (!media.hasPhotoById(houseDAO.getPhotoId()))
-                throw new Exception("Error: 404 Image not found.");
-
-            // Checks if the user exists in cache or in the DB
-
-            UserDAO user = mapper.readValue(jedis.get(UsersService.CACHE_PREFIX + houseDAO.getOwnerID()), UserDAO.class);
-            if (user == null) {
-                Optional<UserDAO> dbUser = db.getUserById(houseDAO.getOwnerID()).stream().findFirst();
-                if (dbUser.isEmpty())
-                    throw new Exception("Error: 404 User not found.");
-                user = dbUser.get();
-            }
+            var user = checksHouseCreation(houseDAO, jedis);
 
             user.addHouse(houseDAO.getId());
 
-            //TODO: colocar o user updated na chache
-            var resUpdate = db.updateUserById(user.getId(), user);
-            int statusCode = resUpdate.getStatusCode();
+            var resUpdateUser = db.updateUserById(user.getId(), user);
+            int statusCode = resUpdateUser.getStatusCode();
 
-            if (!Checks.isStatusOk(statusCode)) {
+            if (!Checks.isStatusOk(statusCode))
                 throw new Exception("Error: " + statusCode);
-            }
 
-            var res = db.createHouse(houseDAO);
-            statusCode = res.getStatusCode();
+            var resCreateHouse = db.createHouse(houseDAO);
+            statusCode = resCreateHouse.getStatusCode();
+
+            // If all operations succeeded, put in cache the updates
+            // TODO: enviar ambos os pedidos para a cache de uma vez, o stor disse que dava para fazer
             if (Checks.isStatusOk(statusCode)) {
-                jedis.set(CACHE_PREFIX + houseDAO.getId(), mapper.writeValueAsString(houseDAO));
+                Cache.putInCache(houseDAO, HOUSE_PREFIX, jedis);
+                Cache.putInCache(user, UsersService.USER_PREFIX, jedis);
                 return houseDAO.toHouse().toString();
             } else {
                 throw new Exception("Error: " + statusCode);
@@ -77,16 +53,27 @@ public class HousesResource implements HousesService {
 
     @Override
     public String deleteHouse(String id) throws Exception {
-        //TODO: remover a casa da cache
-        //TODO: e colocar updated user cache ou remove-lo
-        if (id == null) throw new Exception("Error: 400 Bad Request (ID NULL)");
+        if (Checks.badParams(id))
+            throw new Exception("Error: 400 Bad Request (ID NULL)");
 
-        CosmosItemResponse<Object> res = db.delHouseById(id);
+        var res = db.delHouseById(id);
         int statusCode = res.getStatusCode();
 
-        if (Checks.isStatusOk(statusCode)) {
+        if (!Checks.isStatusOk(statusCode))
+            throw new Exception("Error: " + statusCode);
+
+        // TODO: POSSIVEL PROBLEMA AQUI, PODEMOS TER DE ALTERAR A COSMOS DB e ativar o soft delete
+        String userId = ((House) res.getItem()).getOwnerID();
+        var user = db.getUserById(userId).stream().findFirst();
+        if (user.isPresent()) {
+            // acho que esta verificaçao do user.isPresent é necessaria para alteraçoes em paralelo
+            // (podem remover o user mesmo antes de se começar a fazer o delete da casa
+            var updatedUser = user.get();
+            updatedUser.removeHouse(id);
             try (Jedis jedis = RedisCache.getCachePool().getResource()) {
-                jedis.del(CACHE_PREFIX + id);
+                //jedis.del(HOUSE_PREFIX + id);
+                Cache.deleteFromCache(HOUSE_PREFIX, id, jedis);
+                Cache.putInCache(updatedUser, UsersService.USER_PREFIX, jedis);
             }
             return String.format("StatusCode: %d \nHouse %s was delete", statusCode, id);
         } else {
@@ -96,20 +83,23 @@ public class HousesResource implements HousesService {
 
     @Override
     public House getHouse(String id) throws Exception {
-        if (id == null) throw new Exception("Error: 400 Bad Request (ID NULL)");
+        if (Checks.badParams(id))
+            throw new Exception("Error: 400 Bad Request (ID NULL)");
 
-        //TODO: colocar na chache se ainda nao estiver
         try (Jedis jedis = RedisCache.getCachePool().getResource()) {
 
-            String house = jedis.get(CACHE_PREFIX + id);
+            String house = Cache.getFromCache(HOUSE_PREFIX, id, jedis);
             if (house != null) {
                 return mapper.readValue(house, HouseDAO.class).toHouse();
             }
 
-            CosmosPagedIterable<HouseDAO> res = db.getHouseById(id);
-            Optional<HouseDAO> result = res.stream().findFirst();
+            var res = db.getHouseById(id);
+            var result = res.stream().findFirst();
+
             if (result.isPresent()) {
-                return result.get().toHouse();
+                var houseToCACHE = result.get();
+                Cache.putInCache(houseToCACHE, HOUSE_PREFIX, jedis);
+                return houseToCACHE.toHouse();
             } else {
                 throw new Exception("Error: 404");
             }
@@ -117,13 +107,13 @@ public class HousesResource implements HousesService {
     }
 
     @Override
-    public House updateHouse(String id, HouseDAO houseDAO) throws Exception {
-        HouseDAO updatedHouse = refactorHouse(id, houseDAO);
+    public House updateHouse(String id, House house) throws Exception {
+        HouseDAO updatedHouse = refactorHouse(id, house);
         var res = db.updateHouseById(id, updatedHouse);
         int statusCode = res.getStatusCode();
-        if (Checks.isStatusOk(res.getStatusCode())) {
+        if (Checks.isStatusOk(statusCode)) {
             try (Jedis jedis = RedisCache.getCachePool().getResource()) {
-                jedis.set(CACHE_PREFIX + id, mapper.writeValueAsString(updatedHouse));
+                Cache.putInCache(updatedHouse, HOUSE_PREFIX, jedis);
             }
             return updatedHouse.toHouse();
         } else {
@@ -149,7 +139,7 @@ public class HousesResource implements HousesService {
             boolean available = true;
             for (String id : h.getRentalsID()) {
                 Optional<RentalDAO> rental = db.getRentalById(h.getId(), id).stream().findFirst();
-                if (!rental.isEmpty() && rental.get().getInitialDate() != cDate)
+                if (rental.isPresent() && rental.get().getInitialDate() != cDate)
                     available = false;
             }
             if (available)
@@ -216,46 +206,75 @@ public class HousesResource implements HousesService {
     /**
      * Returns updated houseDAO to the method who's making the request to the database
      *
-     * @param id       of the house being accessed
-     * @param houseDAO new house attributes
+     * @param id    of the house being accessed
+     * @param house new house attributes
      * @return updated userDAO to the method who's making the request to the database
      * @throws Exception If id is null or if the user does not exist
      */
-    private HouseDAO refactorHouse(String id, HouseDAO houseDAO) throws Exception {
-        if (id == null) throw new Exception("Error: 400 Bad Request (ID NULL)");
-        CosmosPagedIterable<HouseDAO> res = db.getHouseById(id);
-        Optional<HouseDAO> result = res.stream().findFirst();
+    private HouseDAO refactorHouse(String id, House house) throws Exception {
+        if (Checks.badParams(id))
+            throw new Exception("Error: 400 Bad Request (ID NULL)");
+
+        var res = db.getHouseById(id);
+        var result = res.stream().findFirst();
         if (result.isPresent()) {
-            HouseDAO h = result.get();
+            HouseDAO houseDAO = result.get();
 
-            String houseDAOName = houseDAO.getName();
-            if (!h.getName().equals(houseDAOName))
-                h.setName(houseDAOName);
+            String newName = house.getName();
+            if (!newName.isBlank())
+                houseDAO.setName(newName);
 
-            String houseDAOloc = Hash.of(houseDAO.getLocation());
-            if (!h.getLocation().equals(houseDAOloc))
-                h.setLocation(houseDAOloc);
+            String newLocation = Hash.of(house.getLocation());
+            if (!newLocation.isBlank())
+                houseDAO.setLocation(newLocation);
 
-            String houseDAOPhotoId = houseDAO.getPhotoId();
-            if (!h.getPhotoId().equals(houseDAOPhotoId))
-                h.setPhotoId(houseDAOPhotoId);
+            String newPhoto = house.getPhotoId();
+            MediaResource media = new MediaResource();
+            if (!media.hasPhotoById(newPhoto))
+                throw new Exception("Error: 404 Image not found");
+            else
+                houseDAO.setPhotoId(newPhoto);
 
-            String houseDAOId = houseDAO.getId();
-            if (!h.getId().equals(houseDAOId))
-                h.setId(houseDAOId);
+            String newDescription = house.getDescription();
+            if (!newDescription.isBlank())
+                houseDAO.setDescription(newDescription);
 
-            String houseDAODescription = houseDAO.getDescription();
-            if (!h.getDescription().equals(houseDAODescription))
-                h.setId(houseDAODescription);
-
-            String houseDAOOwnerId = houseDAO.getOwnerID();
-            if (!h.getOwnerID().equals(houseDAOOwnerId))
-                h.setId(houseDAOOwnerId);
-
-            return h;
-
+            return houseDAO;
         } else {
             throw new Exception("Error: 404");
         }
     }
+
+    private UserDAO checksHouseCreation(HouseDAO houseDAO, Jedis jedis) throws Exception {
+        if (Checks.badParams(houseDAO.getId(), houseDAO.getName(), houseDAO.getLocation(),
+                houseDAO.getPhotoId()) && !hasPricesByPeriod(houseDAO)) {
+            throw new Exception("Error: 400 Bad Request");
+        }
+
+        // Check if house already exists on Cache
+        if (jedis.get(HousesService.HOUSE_PREFIX + houseDAO.getId()) != null)
+            throw new Exception("Error: 409 House already exists");
+
+        // Check if house already exists on DB
+        Optional<HouseDAO> house = db.getHouseById(houseDAO.getId()).stream().findFirst();
+        if (house.isPresent())
+            throw new Exception("Error: 409 House already exists");
+
+        MediaResource media = new MediaResource();
+        if (!media.hasPhotoById(houseDAO.getPhotoId()))
+            throw new Exception("Error: 404 Image not found.");
+
+        // Checks if the user exists in cache
+        UserDAO user = mapper.readValue(jedis.get(UsersService.USER_PREFIX + houseDAO.getOwnerID()), UserDAO.class);
+        if (user != null) return user;
+
+        // Checks if the user exists in DB
+        var dbUser = db.getUserById(houseDAO.getOwnerID()).stream().findFirst();
+        if (dbUser.isEmpty())
+            throw new Exception("Error: 404 User not found.");
+
+        return dbUser.get();
+    }
+
+
 }

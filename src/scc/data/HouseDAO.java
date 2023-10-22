@@ -1,8 +1,10 @@
 package scc.data;
 
+import scc.srv.utils.HasId;
+
 import java.util.List;
 
-public class HouseDAO {
+public class HouseDAO implements HasId {
 
     private String _rid;
 
@@ -28,7 +30,7 @@ public class HouseDAO {
     }
 
     public HouseDAO(House h) {
-        this(h.getHouseID(), h.getName(), h.getLocation(), h.getDescription(),
+        this(h.getId(), h.getName(), h.getLocation(), h.getDescription(),
                 h.getPhotoId(), h.getRentalsID(), h.getOwnerID(), h.getPriceByPeriod());
     }
 
@@ -61,6 +63,7 @@ public class HouseDAO {
         this._ts = _ts;
     }
 
+    @Override
     public String getId() {
         return id;
     }
@@ -109,7 +112,9 @@ public class HouseDAO {
         rentalsID.add(rentalID);
     }
 
-    public void removeRental(String rentalID) { rentalsID.remove(rentalID); }
+    public void removeRental(String rentalID) {
+        rentalsID.remove(rentalID);
+    }
 
     public String getOwnerID() {
         return ownerID;
