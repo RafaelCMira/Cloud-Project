@@ -41,7 +41,7 @@ public class AzureManagement {
     // TODO: These variable allow you to control what is being created
     static final boolean CREATE_STORAGE = true;
     static final boolean CREATE_COSMOSDB = true;
-    static final boolean CREATE_REDIS = false;
+    static final boolean CREATE_REDIS = true;
 
     // TODO: change your suffix and other names if you want
     static final String MY_SUFFIX = "59243"; // Add your suffix here
@@ -470,8 +470,8 @@ public class AzureManagement {
                             //TODO: create the collections you have in your application
                             createCosmosCollection(cosmosClient, AZURE_COSMOSDB_DATABASE, CosmosDBLayer.USERS_CONTAINER, CosmosDBLayer.USERS_PARTITION_KEY, null);
                             createCosmosCollection(cosmosClient, AZURE_COSMOSDB_DATABASE, CosmosDBLayer.HOUSES_CONTAINER, CosmosDBLayer.HOUSES_PARTITION_KEY, null);
-                           /* createCosmosCollection(cosmosClient, AZURE_COSMOSDB_DATABASE, CosmosDBLayer.RENTALS_CONTAINER, CosmosDBLayer.RENTALS_PARTITION_KEY, null);
-                            createCosmosCollection(cosmosClient, AZURE_COSMOSDB_DATABASE, CosmosDBLayer.QUESTIONS_CONTAINER, CosmosDBLayer.QUESTIONS_PARTITION_KEY, null);*/
+                            createCosmosCollection(cosmosClient, AZURE_COSMOSDB_DATABASE, CosmosDBLayer.RENTALS_CONTAINER, CosmosDBLayer.RENTALS_PARTITION_KEY, null);
+                            createCosmosCollection(cosmosClient, AZURE_COSMOSDB_DATABASE, CosmosDBLayer.QUESTIONS_CONTAINER, CosmosDBLayer.QUESTIONS_PARTITION_KEY, null);
 
                             System.err.println("Azure Cosmos DB resources created with success");
 
@@ -503,7 +503,7 @@ public class AzureManagement {
                     th.start();
                     threads.add(th);
                 }
-
+                modifyBatchFile("azureprops-westeurope.bat");
             }
             for (Thread th : threads) {
                 th.join();
@@ -512,7 +512,6 @@ public class AzureManagement {
             System.err.println("Error while creating resources");
             e.printStackTrace();
         }
-        modifyBatchFile("azureprops-westeurope.bat");
         System.exit(0);
     }
 }
