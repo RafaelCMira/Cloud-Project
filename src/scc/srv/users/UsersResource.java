@@ -9,6 +9,7 @@ import scc.cache.RedisCache;
 import scc.data.User;
 import scc.data.UserDAO;
 import scc.db.CosmosDBLayer;
+import scc.srv.houses.HousesResource;
 import scc.srv.utils.Checks;
 import scc.srv.utils.Cache;
 import scc.srv.media.MediaResource;
@@ -20,6 +21,8 @@ import java.util.List;
 
 
 public class UsersResource implements UsersService {
+
+    public static final String PARTITION_KEY = "/id";
     public static final String CONTAINER = "users";
     private final ObjectMapper mapper = new ObjectMapper();
     private final CosmosDBLayer db = CosmosDBLayer.getInstance();
@@ -46,7 +49,6 @@ public class UsersResource implements UsersService {
         } else
             throw new Exception("Error: " + statusCode);
     }
-
 
     /*@Override
     public String createUser(UserDAO userDAO, InputStream imageStream) throws Exception {
@@ -80,7 +82,7 @@ public class UsersResource implements UsersService {
         if (Checks.badParams(id))
             throw new Exception("Error: 400 Bad Request (ID NULL)");
 
-        var res = db.deleteById(id, CONTAINER, id);
+        var res = db.deleteById(id, CONTAINER, PARTITION_KEY);
         int statusCode = res.getStatusCode();
 
         if (Checks.isStatusOk(statusCode)) {
@@ -128,8 +130,8 @@ public class UsersResource implements UsersService {
     }
 
     @Override
-    public List<User> listUsers() throws Exception {
-        var res = db.listUsers().stream().map(UserDAO::toUser).toList();
+    public List<User> listUsers() {
+        var res = db.getItems(CONTAINER, UserDAO.class).stream().map(UserDAO::toUser).toList();
         if (!res.isEmpty())
             return res;
         else
@@ -168,10 +170,10 @@ public class UsersResource implements UsersService {
      * @throws Exception If id is null or if the user does not exist
      */
     private UserDAO genUpdatedUserDAO(String id, User user) throws Exception {
-        if (id == null) throw new Exception("Error: 400 Bad Request (ID NULL)");
-        CosmosPagedIterable<UserDAO> res = db.getById(id, CONTAINER, UserDAO.class);
-        var result = res.stream().findFirst();
+        if (id == null)
+            throw new Exception("Error: 400 Bad Request (ID NULL)");
 
+        var result = db.getById(id, CONTAINER, UserDAO.class).stream().findFirst();
         if (result.isPresent()) {
             UserDAO userDAO = result.get();
 

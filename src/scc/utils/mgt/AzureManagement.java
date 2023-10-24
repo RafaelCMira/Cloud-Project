@@ -34,7 +34,11 @@ import com.azure.cosmos.models.ThroughputProperties;
 import com.azure.cosmos.models.UniqueKey;
 import com.azure.cosmos.models.UniqueKeyPolicy;
 import scc.db.CosmosDBLayer;
+import scc.srv.houses.HousesResource;
 import scc.srv.media.MediaService;
+import scc.srv.question.QuestionResource;
+import scc.srv.rentals.RentalResource;
+import scc.srv.users.UsersResource;
 
 
 public class AzureManagement {
@@ -468,10 +472,10 @@ public class AzureManagement {
                             createCosmosDatabase(cosmosClient, AZURE_COSMOSDB_DATABASE);
 
                             //TODO: create the collections you have in your application
-                            createCosmosCollection(cosmosClient, AZURE_COSMOSDB_DATABASE, CosmosDBLayer.USERS_CONTAINER, CosmosDBLayer.USERS_PARTITION_KEY, null);
-                            createCosmosCollection(cosmosClient, AZURE_COSMOSDB_DATABASE, CosmosDBLayer.HOUSES_CONTAINER, CosmosDBLayer.HOUSES_PARTITION_KEY, null);
-                            createCosmosCollection(cosmosClient, AZURE_COSMOSDB_DATABASE, CosmosDBLayer.RENTALS_CONTAINER, CosmosDBLayer.RENTALS_PARTITION_KEY, null);
-                            createCosmosCollection(cosmosClient, AZURE_COSMOSDB_DATABASE, CosmosDBLayer.QUESTIONS_CONTAINER, CosmosDBLayer.QUESTIONS_PARTITION_KEY, null);
+                            createCosmosCollection(cosmosClient, AZURE_COSMOSDB_DATABASE, UsersResource.CONTAINER, UsersResource.PARTITION_KEY, null);
+                            createCosmosCollection(cosmosClient, AZURE_COSMOSDB_DATABASE, HousesResource.CONTAINER, HousesResource.PARTITION_KEY, null);
+                            createCosmosCollection(cosmosClient, AZURE_COSMOSDB_DATABASE, RentalResource.CONTAINER, RentalResource.PARTITION_KEY, null);
+                            createCosmosCollection(cosmosClient, AZURE_COSMOSDB_DATABASE, QuestionResource.CONTAINER, QuestionResource.PARTITION_KEY, null);
 
                             System.err.println("Azure Cosmos DB resources created with success");
 

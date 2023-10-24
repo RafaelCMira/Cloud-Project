@@ -19,6 +19,9 @@ import java.util.List;
 import java.util.Optional;
 
 public class HousesResource implements HousesService {
+
+    public static final String CONTAINER = "houses";
+    public static final String PARTITION_KEY = "/id";
     private final CosmosDBLayer db = CosmosDBLayer.getInstance();
     private final ObjectMapper mapper = new ObjectMapper();
 
@@ -36,7 +39,7 @@ public class HousesResource implements HousesService {
             if (!Checks.isStatusOk(statusCode))
                 throw new Exception("Error: " + statusCode);
 
-            var resCreateHouse = db.createHouse(houseDAO);
+            var resCreateHouse = db.createItem(houseDAO, HousesResource.CONTAINER);
             statusCode = resCreateHouse.getStatusCode();
 
             // If all operations succeeded, put in cache the updates
@@ -56,14 +59,14 @@ public class HousesResource implements HousesService {
         if (Checks.badParams(id))
             throw new Exception("Error: 400 Bad Request (ID NULL)");
 
-        var item = db.getHouseById(id).stream().findFirst();
+        var item = db.getById(id, CONTAINER, HouseDAO.class).stream().findFirst();
         String ownerId = null;
         if (item.isPresent())
             ownerId = item.get().getOwnerId();
         else
             throw new Exception("Error: 404");
 
-        var res = db.delHouseById(id);
+        var res = db.deleteById(id, CONTAINER, PARTITION_KEY);
         int statusCode = res.getStatusCode();
 
         if (!Checks.isStatusOk(statusCode))
@@ -77,11 +80,10 @@ public class HousesResource implements HousesService {
             var updatedUser = user.get();
             updatedUser.removeHouse(id);
             try (Jedis jedis = RedisCache.getCachePool().getResource()) {
-                //jedis.del(HOUSE_PREFIX + id);
                 Cache.deleteFromCache(HOUSE_PREFIX, id, jedis);
                 Cache.putInCache(updatedUser, UsersService.USER_PREFIX, jedis);
             }
-            return String.format("StatusCode: %d \nHouse %s was delete", statusCode, id);
+            return String.format("StatusCode: %d \nHouse %s was deleted", statusCode, id);
         } else {
             throw new Exception("Error: " + statusCode);
         }
@@ -99,7 +101,7 @@ public class HousesResource implements HousesService {
                 return mapper.readValue(house, HouseDAO.class).toHouse();
             }
 
-            var res = db.getHouseById(id);
+            var res = db.getById(id, CONTAINER, HouseDAO.class);
             var result = res.stream().findFirst();
 
             if (result.isPresent()) {
@@ -232,7 +234,7 @@ public class HousesResource implements HousesService {
         if (Checks.badParams(id))
             throw new Exception("Error: 400 Bad Request (ID NULL)");
 
-        var res = db.getHouseById(id);
+        var res = db.getById(id, CONTAINER, HouseDAO.class);
         var result = res.stream().findFirst();
         if (result.isPresent()) {
             HouseDAO houseDAO = result.get();
@@ -273,7 +275,7 @@ public class HousesResource implements HousesService {
             throw new Exception("Error: 409 House already exists");
 
         // Check if house already exists on DB
-        Optional<HouseDAO> house = db.getHouseById(houseDAO.getId()).stream().findFirst();
+        Optional<HouseDAO> house = db.getById(houseDAO.getId(), CONTAINER, HouseDAO.class).stream().findFirst();
         if (house.isPresent())
             throw new Exception("Error: 409 House already exists");
 

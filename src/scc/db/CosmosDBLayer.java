@@ -9,19 +9,10 @@ import scc.utils.props.AzureProperties;
 
 public class CosmosDBLayer {
 
-
-    public static final String USERS_PARTITION_KEY = "/id";
-
     public static final String USERS_CONTAINER = "users";
-
     public static final String HOUSES_CONTAINER = "houses";
-    public static final String HOUSES_PARTITION_KEY = "/id";
-
     public static final String RENTALS_CONTAINER = "rentals";
-    public static final String RENTALS_PARTITION_KEY = "/id";
-
     public static final String QUESTIONS_CONTAINER = "questions";
-    public static final String QUESTIONS_PARTITION_KEY = "/id";
 
 
     private static final String CONNECTION_URL = System.getenv(AzureProperties.COSMOSDB_URL);
@@ -87,6 +78,13 @@ public class CosmosDBLayer {
         return db.getContainer(container).queryItems(query, new CosmosQueryRequestOptions(), c);
     }
 
+    public <T> CosmosPagedIterable<T> getItems(String container, Class<T> c) {
+        init();
+        String query = String.format("SELECT * FROM %s", container);
+        return db.getContainer(container).queryItems(query, new CosmosQueryRequestOptions(), c);
+        // return db.getContainer(container).readAllItems(key, c);
+    }
+
     /*public CosmosItemResponse<Object> delUser(UserDAO user) {
         init();
         return container.deleteItem(user, new CosmosItemRequestOptions());
@@ -104,11 +102,11 @@ public class CosmosDBLayer {
         return container.patchItem(id, key, new CosmosPatchItemRequestOptions(), UserDAO.class);
     }*/
 
-    public CosmosPagedIterable<UserDAO> listUsers() {
+/*    public CosmosPagedIterable<UserDAO> listUsers() {
         init();
         String query = "SELECT * FROM users";
         return db.getContainer(USERS_CONTAINER).queryItems(query, new CosmosQueryRequestOptions(), UserDAO.class);
-    }
+    }*/
 
     // TODO: Perguntar se no listar casas de um user podemos só listar o id da casa OU se temos de listar o JSON das casas
     public CosmosPagedIterable<String> listUserHouses(String id) {
@@ -122,23 +120,6 @@ public class CosmosDBLayer {
     ////////////////////////////// HOUSES
     ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
-
-    public CosmosItemResponse<HouseDAO> createHouse(HouseDAO house) {
-        init();
-        return db.getContainer(HOUSES_CONTAINER).createItem(house);
-    }
-
-    public CosmosItemResponse<Object> delHouseById(String id) {
-        init();
-        PartitionKey key = new PartitionKey(id);
-        return db.getContainer(HOUSES_CONTAINER).deleteItem(id, key, new CosmosItemRequestOptions());
-    }
-
-    public CosmosPagedIterable<HouseDAO> getHouseById(String id) {
-        init();
-        String query = String.format("SELECT * FROM houses WHERE houses.id=\"%s\"", id);
-        return db.getContainer(HOUSES_CONTAINER).queryItems(query, new CosmosQueryRequestOptions(), HouseDAO.class);
-    }
 
     public CosmosItemResponse<HouseDAO> updateHouseById(String id, HouseDAO house) {
         init();
@@ -155,11 +136,6 @@ public class CosmosDBLayer {
     ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
     ////////////////////////////// RENTALS
     ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-
-    public CosmosItemResponse<RentalDAO> createRental(RentalDAO rentalDAO) {
-        init();
-        return db.getContainer(RENTALS_CONTAINER).createItem(rentalDAO);
-    }
 
     public CosmosPagedIterable<RentalDAO> getRentalById(String houseID, String id) {
         init();
@@ -179,20 +155,9 @@ public class CosmosDBLayer {
         return db.getContainer(RENTALS_CONTAINER).replaceItem(rentalDAO, houseId, key, new CosmosItemRequestOptions());
     }
 
-    public CosmosItemResponse<Object> deleteRentalById(String houseID, String id) {
-        init();
-        PartitionKey key = new PartitionKey(houseID);
-        return db.getContainer(RENTALS_CONTAINER).deleteItem(id, key, new CosmosItemRequestOptions());
-    }
-
     ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
     ////////////////////////////// QUESTIONS
     ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-
-    public CosmosItemResponse<QuestionDAO> createQuestion(QuestionDAO questionDAO) {
-        init();
-        return db.getContainer(QUESTIONS_CONTAINER).createItem(questionDAO);
-    }
 
     public CosmosItemResponse<QuestionDAO> replyToQuestion(String houseID, String questionID, String answer) throws Exception {
         init();
