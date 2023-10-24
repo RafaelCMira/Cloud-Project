@@ -20,17 +20,17 @@ public class QuestionResource implements QuestionService {
     public String createQuestion(QuestionDAO questionDAO) throws Exception {
         //TODO: chache
 
-        if (Checks.badParams(questionDAO.getUserID(), questionDAO.getHouseID(), questionDAO.getText()))
+        if (Checks.badParams(questionDAO.getUserId(), questionDAO.getHouseId(), questionDAO.getText()))
             throw new Exception("Error: 400 Bad Request");
 
         // Verify if house exists
-        var houseRes = db.getHouseById(questionDAO.getHouseID());
+        var houseRes = db.getHouseById(questionDAO.getHouseId());
         Optional<HouseDAO> result = houseRes.stream().findFirst();
         if (result.isEmpty())
             throw new Exception("Error: 404 House Not Found ");
 
         // Verify if user of makes the question exists
-        var userRes = db.getUserById(questionDAO.getUserID());
+        var userRes = db.getUserById(questionDAO.getUserId());
         var userResult = userRes.stream().findFirst();
         if (userResult.isEmpty())
             throw new Exception("Error: 404 User Not Found");
@@ -58,7 +58,7 @@ public class QuestionResource implements QuestionService {
             }
 
             // Verify if user who replies is the owner
-            String ownerID = house.getOwnerID();
+            String ownerID = house.getOwnerId();
             if (!ownerID.equals(replierID))
                 throw new Exception("Error: 403 You're not the owner");
 

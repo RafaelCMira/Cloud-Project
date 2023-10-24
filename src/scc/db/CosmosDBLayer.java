@@ -147,7 +147,7 @@ public class CosmosDBLayer {
         return db.getContainer(HOUSES_CONTAINER).replaceItem(house, id, key, new CosmosItemRequestOptions());
     }
 
-    public CosmosPagedIterable<HouseDAO> getHousesLocation(String location) {
+    public CosmosPagedIterable<HouseDAO> getHousesByLocation(String location) {
         init();
         String query = String.format("SELECT * FROM houses WHERE houses.location=\"%s\"", location);
         return db.getContainer(HOUSES_CONTAINER).queryItems(query, new CosmosQueryRequestOptions(), HouseDAO.class);

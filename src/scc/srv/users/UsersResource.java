@@ -98,7 +98,7 @@ public class UsersResource implements UsersService {
         try (Jedis jedis = RedisCache.getCachePool().getResource()) {
             String userString = jedis.get(USER_PREFIX + id);
             if (userString != null)
-                return mapper.readValue(userString, User.class);
+                return mapper.readValue(userString, UserDAO.class).toUser();
 
             var result = db.getUserById(id).stream().findFirst();
             if (result.isPresent()) {
@@ -141,7 +141,7 @@ public class UsersResource implements UsersService {
         try (Jedis jedis = RedisCache.getCachePool().getResource()) {
             String user = Cache.getFromCache(USER_PREFIX, id, jedis);
             if (user != null) {
-                return mapper.readValue(user, User.class).getHouseIds();
+                return mapper.readValue(user, UserDAO.class).getHouseIds();
             }
 
             var res = db.getUserById(id).stream().findFirst();

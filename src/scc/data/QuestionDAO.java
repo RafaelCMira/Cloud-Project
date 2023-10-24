@@ -5,8 +5,8 @@ public class QuestionDAO {
     private String _rid;
     private String _ts;
     private String id;
-    private String userID;
-    private String houseID;
+    private String userId;
+    private String houseId;
     private String text;
     private String answer;
 
@@ -14,14 +14,14 @@ public class QuestionDAO {
     }
 
     public QuestionDAO(Question q) {
-        this(q.getQuestionID(), q.getUserID(), q.getHouseID(), q.getText(), q.getAnswer());
+        this(q.getQuestionId(), q.getuserId(), q.getHouseId(), q.getText(), q.getAnswer());
     }
 
-    public QuestionDAO(String id, String userID, String houseID, String text, String answer) {
+    public QuestionDAO(String id, String userId, String houseId, String text, String answer) {
         super();
         this.id = id;
-        this.userID = userID;
-        this.houseID = houseID;
+        this.userId = userId;
+        this.houseId = houseId;
         this.text = text;
         this.answer = answer;
     }
@@ -50,20 +50,20 @@ public class QuestionDAO {
         this._ts = _ts;
     }
 
-    public String getUserID() {
-        return userID;
+    public String getUserId() {
+        return userId;
     }
 
-    public void setUserID(String userID) {
-        this.userID = userID;
+    public void setUserId(String userId) {
+        this.userId = userId;
     }
 
-    public String getHouseID() {
-        return houseID;
+    public String getHouseId() {
+        return houseId;
     }
 
-    public void setHouseID(String houseID) {
-        this.houseID = houseID;
+    public void setHouseId(String houseId) {
+        this.houseId = houseId;
     }
 
     public String getText() {
@@ -83,7 +83,7 @@ public class QuestionDAO {
     }
 
     public Question toQuestion() {
-        return new Question(id, userID, houseID, text, answer);
+        return new Question(id, userId, houseId, text, answer);
     }
 
     @Override
@@ -91,9 +91,9 @@ public class QuestionDAO {
         return "QuestionDAO{" +
                 "_rid='" + _rid + '\'' +
                 ", _ts='" + _ts + '\'' +
-                ", questionID='" + id + '\'' +
-                ", userID='" + userID + '\'' +
-                ", houseID='" + houseID + '\'' +
+                ", id='" + id + '\'' +
+                ", userId='" + userId + '\'' +
+                ", houseId='" + houseId + '\'' +
                 ", text='" + text + '\'' +
                 ", answer='" + answer + '\'' +
                 '}';

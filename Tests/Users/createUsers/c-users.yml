@@ -37,4 +37,4 @@ scenarios:
                 photoId: "{{ imageId }}"
                 houseIds: [ ]
               afterResponse: "genNewUserReply"    # capture result and store in file
-        count: 50
+        count: 2

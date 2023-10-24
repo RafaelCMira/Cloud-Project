@@ -1,2 +1,2 @@
 @echo off
-artillery run create-users.yml
+artillery run c-users.yml

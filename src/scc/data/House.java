@@ -2,6 +2,7 @@ package scc.data;
 
 import scc.srv.utils.HasId;
 
+import java.util.Arrays;
 import java.util.List;
 
 /**
@@ -22,13 +23,13 @@ public class House implements HasId {
 
     private List<String> rentalsID;
 
-    private String ownerID;
+    private String ownerId;
 
     private int[][] priceByPeriod;
 
 
     public House(String id, String name, String location, String description,
-                 String photoId, List<String> rentalsID, String ownerID, int[][] priceByPeriod) {
+                 String photoId, List<String> rentalsID, String ownerId, int[][] priceByPeriod) {
         super();
         this.id = id;
         this.name = name;
@@ -36,7 +37,7 @@ public class House implements HasId {
         this.description = description;
         this.photoId = photoId;
         this.rentalsID = rentalsID;
-        this.ownerID = ownerID;
+        this.ownerId = ownerId;
         this.priceByPeriod = priceByPeriod;
     }
 
@@ -93,12 +94,12 @@ public class House implements HasId {
         rentalsID.remove(rentalID);
     }
 
-    public String getOwnerID() {
-        return ownerID;
+    public String getOwnerId() {
+        return ownerId;
     }
 
-    public void setOwnerID(String ownerID) {
-        this.ownerID = ownerID;
+    public void setOwnerId(String ownerId) {
+        this.ownerId = ownerId;
     }
 
     public int[][] getPriceByPeriod() {
@@ -129,9 +130,15 @@ public class House implements HasId {
 
     @Override
     public String toString() {
-        return "House [id=" + id + ", name=" + name + ", location=" + location + ", description=" + description + ", photoId=" + photoId + ", ownerID="
-                + ownerID + "]";
+        return "House{" +
+                "id='" + id + '\'' +
+                ", name='" + name + '\'' +
+                ", location='" + location + '\'' +
+                ", description='" + description + '\'' +
+                ", photoId='" + photoId + '\'' +
+                ", rentalsID=" + rentalsID +
+                ", ownerId='" + ownerId + '\'' +
+                ", priceByPeriod=" + Arrays.toString(priceByPeriod) +
+                '}';
     }
-
-
 }

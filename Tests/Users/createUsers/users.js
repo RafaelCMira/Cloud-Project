@@ -15,6 +15,7 @@ const fs = require("fs");
 var imagesIds = [];
 var images = [];
 var users = [];
+var usersIds = [];
 
 // All endpoints starting with the following prefixes will be aggregated in the same for the statistics
 var statsPrefix = [
@@ -94,7 +95,7 @@ function selectImageToDownload(context, events, done) {
 }
 
 /**
- * Select an image to download.
+ * Select an user
  */
 function selectUser(context, events, done) {
 	if (userIDs.length > 0) {
@@ -104,7 +105,6 @@ function selectUser(context, events, done) {
 	}
 	return done();
 }
-
 
 function genNewUser(context, events, done) {
 	const first = `${faker.name.firstName()}`;
@@ -119,12 +119,15 @@ function genNewUser(context, events, done) {
  * Process reply for of new users to store the id on file
  */
 function genNewUserReply(requestParams, response, context, ee, next) {
-
 	if (response.statusCode >= 200 && response.statusCode < 300 && response.body.length > 0) {
 		let u = response.body;
 		users.push(u);
-		fs.writeFileSync("users.data", JSON.stringify(users));
+		fs.writeFileSync("../../Data/users.data", JSON.stringify(users));
 	} else
 	    console.log(response.body)
 	return next();
 }
+
+
+
+

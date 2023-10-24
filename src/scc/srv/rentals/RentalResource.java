@@ -24,7 +24,7 @@ public class RentalResource implements RentalService {
 
     @Override
     public String createRental(String houseID, RentalDAO rentalDAO) throws Exception {
-        if (Checks.badParams(rentalDAO.getId(), rentalDAO.getHouseID(), rentalDAO.getUserID()))
+        if (Checks.badParams(rentalDAO.getId(), rentalDAO.getHouseId(), rentalDAO.getUserId()))
             throw new Exception("Error: 400 Bad Request");
 
         try (Jedis jedis = RedisCache.getCachePool().getResource()) {
@@ -40,8 +40,8 @@ public class RentalResource implements RentalService {
             }
 
             // Verify if user exists
-            if (jedis.get(UsersService.USER_PREFIX + rentalDAO.getUserID()) == null) {
-                var userRes = db.getUserById(rentalDAO.getUserID());
+            if (jedis.get(UsersService.USER_PREFIX + rentalDAO.getUserId()) == null) {
+                var userRes = db.getUserById(rentalDAO.getUserId());
                 Optional<UserDAO> uResult = userRes.stream().findFirst();
                 if (uResult.isEmpty())
                     throw new Exception("Error: 404 User Not Found ");
@@ -142,13 +142,13 @@ public class RentalResource implements RentalService {
             if (!r.getId().equals(rentalDAOId))
                 r.setId(rentalDAOId);
 
-            String rentalDAOHouseId = rentalDAO.getHouseID();
-            if (!r.getHouseID().equals(rentalDAOHouseId))
-                r.setHouseID(rentalDAOHouseId);
+            String rentalDAOHouseId = rentalDAO.getHouseId();
+            if (!r.getHouseId().equals(rentalDAOHouseId))
+                r.setHouseId(rentalDAOHouseId);
 
-            String rentalDAOUserId = rentalDAO.getUserID();
-            if (!r.getUserID().equals(rentalDAOUserId))
-                r.setUserID(rentalDAOUserId);
+            String rentalDAOUserId = rentalDAO.getUserId();
+            if (!r.getUserId().equals(rentalDAOUserId))
+                r.setUserId(rentalDAOUserId);
 
             double rentalDAOPrice = rentalDAO.getPrice();
             if (r.getPrice() != (rentalDAOPrice))

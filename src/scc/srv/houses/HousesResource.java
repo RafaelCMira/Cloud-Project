@@ -55,15 +55,21 @@ public class HousesResource implements HousesService {
         if (Checks.badParams(id))
             throw new Exception("Error: 400 Bad Request (ID NULL)");
 
+        var item = db.getHouseById(id).stream().findFirst();
+        String ownerId;
+        if (item.isPresent())
+            ownerId = item.get().getOwnerId();
+        else
+            throw new Exception("Error: 404");
+
         var res = db.delHouseById(id);
         int statusCode = res.getStatusCode();
 
         if (!Checks.isStatusOk(statusCode))
             throw new Exception("Error: " + statusCode);
 
-        // TODO: POSSIVEL PROBLEMA AQUI, PODEMOS TER DE ALTERAR A COSMOS DB e ativar o soft delete
-        String userId = ((House) res.getItem()).getOwnerID();
-        var user = db.getUserById(userId).stream().findFirst();
+        // TODO: DÁ ERRO PORQUE O DELETE DEVOLVE NULL, PODEMOS TER DE ALTERAR A COSMOS DB e ativar o soft delete
+        var user = db.getUserById(ownerId).stream().findFirst();
         if (user.isPresent()) {
             // acho que esta verificaçao do user.isPresent é necessaria para alteraçoes em paralelo
             // (podem remover o user mesmo antes de se começar a fazer o delete da casa)
@@ -125,20 +131,21 @@ public class HousesResource implements HousesService {
     public List<House> getAvailHouseByLocation(String location) throws Exception {
         //TODO: chache
 
-        var cDate = java.time.LocalDate.now(); // Get current date
         List<House> result = new ArrayList<>();
 
-        CosmosPagedIterable<HouseDAO> res = db.getHousesLocation(location);
-        List<HouseDAO> houses = res.stream().toList();
+        var res = db.getHousesByLocation(location);
+        var houses = res.stream().toList();
         if (houses.isEmpty())
             throw new Exception("There is no available houses in this location: 404");
 
         // Check if house is available
+        // TODO: há uma forma melhor de fazer isto
+
         for (HouseDAO h : houses) {
             boolean available = true;
-            for (String id : h.getRentalsID()) {
-                Optional<RentalDAO> rental = db.getRentalById(h.getId(), id).stream().findFirst();
-                if (rental.isPresent() && rental.get().getInitialDate() != cDate)
+            for (String rentalId : h.getRentalsIds()) {
+                var rental = db.getRentalById(h.getId(), rentalId).stream().findFirst();
+                if (rental.isPresent() && rental.get().getEndDate().isBefore(LocalDate.now()))
                     available = false;
             }
             if (available)
@@ -152,6 +159,16 @@ public class HousesResource implements HousesService {
         }
     }
 
+    private boolean isDateInBetween(LocalDate start, LocalDate end) {
+        var currentDate = LocalDate.now();
+        return !currentDate.isBefore(start) && !currentDate.isAfter(end);
+    }
+
+    private boolean doDatesIntersect(LocalDate start1, LocalDate end1, LocalDate start2, LocalDate end2) {
+        return !end1.isBefore(start2) && !end2.isBefore(start1);
+    }
+
+
     @Override
     public List<House> getHouseByLocationPeriod(String location, String initialDate, String endDate) throws Exception {
         //TODO: chache
@@ -160,13 +177,13 @@ public class HousesResource implements HousesService {
 
         List<House> result = new ArrayList<>();
 
-        CosmosPagedIterable<HouseDAO> res = db.getHousesLocation(location);
+        CosmosPagedIterable<HouseDAO> res = db.getHousesByLocation(location);
         List<HouseDAO> houses = res.stream().toList();
 
         // Check if house is available in the given timeframe
         for (HouseDAO h : houses) {
             boolean available = true;
-            for (String id : h.getRentalsID()) {
+            for (String id : h.getRentalsIds()) {
                 Optional<RentalDAO> rental = db.getRentalById(h.getId(), id).stream().findFirst();
                 if (rental.isEmpty()) {
                     available = false;
@@ -264,11 +281,11 @@ public class HousesResource implements HousesService {
             throw new Exception("Error: 404 Image not found.");
 
         // Checks if the user exists in cache
-        UserDAO user = mapper.readValue(jedis.get(UsersService.USER_PREFIX + houseDAO.getOwnerID()), UserDAO.class);
+        UserDAO user = mapper.readValue(jedis.get(UsersService.USER_PREFIX + houseDAO.getOwnerId()), UserDAO.class);
         if (user != null) return user;
 
         // Checks if the user exists in DB
-        var dbUser = db.getUserById(houseDAO.getOwnerID()).stream().findFirst();
+        var dbUser = db.getUserById(houseDAO.getOwnerId()).stream().findFirst();
         if (dbUser.isEmpty())
             throw new Exception("Error: 404 User not found.");
 

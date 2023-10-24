@@ -73,7 +73,7 @@ public class User implements HasId {
     @Override
     public String toString() {
         return "User{" +
-                "userID='" + id + '\'' +
+                "id='" + id + '\'' +
                 ", name='" + name + '\'' +
                 ", pwd='" + pwd + '\'' +
                 ", photoId='" + photoId + '\'' +

@@ -8,19 +8,19 @@ import java.time.LocalDate;
 
 public class Rental {
     private String id;
-    private String houseID;
-    private String userID;
+    private String houseId;
+    private String userId;
     private double price;
     private LocalDate initialDate;
     private LocalDate endDate;
 
     private double discount;
 
-    public Rental(String id, String houseID, String userID, double price, LocalDate initialDate, LocalDate endDate, double discount) {
+    public Rental(String id, String houseId, String userId, double price, LocalDate initialDate, LocalDate endDate, double discount) {
         super();
         this.id = id;
-        this.houseID = houseID;
-        this.userID = userID;
+        this.houseId = houseId;
+        this.userId = userId;
         this.price = price;
         this.initialDate = initialDate;
         this.endDate = endDate;
@@ -35,20 +35,20 @@ public class Rental {
         return id;
     }
 
-    public void setHouseID(String houseID) {
-        this.houseID = houseID;
+    public void setHouseId(String houseId) {
+        this.houseId = houseId;
     }
 
-    public String getHouseID() {
-        return houseID;
+    public String getHouseId() {
+        return houseId;
     }
 
-    public void setUserID(String userID) {
-        this.userID = userID;
+    public void setUserId(String userId) {
+        this.userId = userId;
     }
 
-    public String getUserID() {
-        return userID;
+    public String getUserId() {
+        return userId;
     }
 
     public void setPrice(double price) {
@@ -75,7 +75,24 @@ public class Rental {
         return endDate;
     }
 
-    public double getDiscount() { return discount; }
+    public double getDiscount() {
+        return discount;
+    }
 
-    public void setDiscount(double discount) { this.discount = discount; }
+    public void setDiscount(double discount) {
+        this.discount = discount;
+    }
+
+    @Override
+    public String toString() {
+        return "Rental{" +
+                "id='" + id + '\'' +
+                ", houseId='" + houseId + '\'' +
+                ", userId='" + userId + '\'' +
+                ", price=" + price +
+                ", initialDate=" + initialDate +
+                ", endDate=" + endDate +
+                ", discount=" + discount +
+                '}';
+    }
 }

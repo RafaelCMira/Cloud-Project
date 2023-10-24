@@ -1,4 +1,5 @@
 const faker = require('faker');
+const fs = require("fs");
 /*
 // Generate a random name
 const randomName = faker.name.firstName();
