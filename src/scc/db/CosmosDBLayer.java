@@ -9,8 +9,10 @@ import scc.utils.props.AzureProperties;
 
 public class CosmosDBLayer {
 
-    public static final String USERS_CONTAINER = "users";
+
     public static final String USERS_PARTITION_KEY = "/id";
+
+    public static final String USERS_CONTAINER = "users";
 
     public static final String HOUSES_CONTAINER = "houses";
     public static final String HOUSES_PARTITION_KEY = "/id";
@@ -23,13 +25,10 @@ public class CosmosDBLayer {
 
 
     private static final String CONNECTION_URL = System.getenv(AzureProperties.COSMOSDB_URL);
-    //private static final String CONNECTION_URL = "https://scc24account60700.documents.azure.com:443/";
 
     private static final String DB_KEY = System.getenv(AzureProperties.COSMOSDB_KEY);
-    //private static final String DB_KEY = "Km0YTZA2am4j5XUC26S9PxaFw0kbK8eic2mg4KagndPUzCiZ01slWV1LyXtpSBvyM5qlUVg0IFxkACDbgoEXeQ==";
 
     private static final String DB_NAME = System.getenv(AzureProperties.COSMOSDB_DATABASE);
-    //private static final String DB_NAME = "scc24db60700";
 
 
     private static CosmosDBLayer instance;
@@ -67,31 +66,31 @@ public class CosmosDBLayer {
     ////////////////////////////// USERS
     ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
-    public CosmosItemResponse<UserDAO> createUser(UserDAO user) {
+    public CosmosItemResponse<Object> createItem(Object item, String container) {
         init();
-        return db.getContainer(USERS_CONTAINER).createItem(user);
+        return db.getContainer(container).createItem(item);
     }
 
-    public CosmosItemResponse<Object> delUserById(String id) throws Exception {
+    public CosmosItemResponse<Object> deleteById(String id, String container, String partitionKey) throws Exception {
         init();
-        PartitionKey key = new PartitionKey(id);
+        PartitionKey key = new PartitionKey(partitionKey);
         try {
-            return db.getContainer(USERS_CONTAINER).deleteItem(id, key, new CosmosItemRequestOptions());
+            return db.getContainer(container).deleteItem(id, key, new CosmosItemRequestOptions());
         } catch (Exception e) {
             throw new Exception("Error: " + e.getCause());
         }
+    }
+
+    public <T> CosmosPagedIterable<T> getById(String id, String container, Class<T> c) {
+        init();
+        String query = String.format("SELECT * FROM %s WHERE %s.id=\"%s\"", container, container, id);
+        return db.getContainer(container).queryItems(query, new CosmosQueryRequestOptions(), c);
     }
 
     /*public CosmosItemResponse<Object> delUser(UserDAO user) {
         init();
         return container.deleteItem(user, new CosmosItemRequestOptions());
     }*/
-
-    public CosmosPagedIterable<UserDAO> getUserById(String id) {
-        init();
-        String query = String.format("SELECT * FROM users WHERE users.id=\"%s\"", id);
-        return db.getContainer(USERS_CONTAINER).queryItems(query, new CosmosQueryRequestOptions(), UserDAO.class);
-    }
 
     public CosmosItemResponse<UserDAO> updateUserById(String id, UserDAO user) {
         init();

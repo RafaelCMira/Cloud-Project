@@ -13,6 +13,8 @@ import java.util.Optional;
 
 public class QuestionResource implements QuestionService {
 
+    public static final String CONTAINER = "questions";
+
     private final CosmosDBLayer db = CosmosDBLayer.getInstance();
     private final ObjectMapper mapper = new ObjectMapper();
 
@@ -30,7 +32,7 @@ public class QuestionResource implements QuestionService {
             throw new Exception("Error: 404 House Not Found ");
 
         // Verify if user of makes the question exists
-        var userRes = db.getUserById(questionDAO.getUserId());
+        var userRes = db.getById(questionDAO.getUserId(), CONTAINER, QuestionDAO.class);
         var userResult = userRes.stream().findFirst();
         if (userResult.isEmpty())
             throw new Exception("Error: 404 User Not Found");

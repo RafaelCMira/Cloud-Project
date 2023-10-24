@@ -6,6 +6,7 @@ import redis.clients.jedis.Jedis;
 import scc.cache.RedisCache;
 import scc.data.*;
 import scc.db.CosmosDBLayer;
+import scc.srv.users.UsersResource;
 import scc.srv.utils.Checks;
 import scc.srv.utils.Cache;
 import scc.srv.media.MediaResource;
@@ -56,7 +57,7 @@ public class HousesResource implements HousesService {
             throw new Exception("Error: 400 Bad Request (ID NULL)");
 
         var item = db.getHouseById(id).stream().findFirst();
-        String ownerId;
+        String ownerId = null;
         if (item.isPresent())
             ownerId = item.get().getOwnerId();
         else
@@ -69,7 +70,7 @@ public class HousesResource implements HousesService {
             throw new Exception("Error: " + statusCode);
 
         // TODO: DÁ ERRO PORQUE O DELETE DEVOLVE NULL, PODEMOS TER DE ALTERAR A COSMOS DB e ativar o soft delete
-        var user = db.getUserById(ownerId).stream().findFirst();
+        var user = db.getById(ownerId, UsersResource.CONTAINER, UserDAO.class).stream().findFirst();
         if (user.isPresent()) {
             // acho que esta verificaçao do user.isPresent é necessaria para alteraçoes em paralelo
             // (podem remover o user mesmo antes de se começar a fazer o delete da casa)
@@ -285,7 +286,7 @@ public class HousesResource implements HousesService {
         if (user != null) return user;
 
         // Checks if the user exists in DB
-        var dbUser = db.getUserById(houseDAO.getOwnerId()).stream().findFirst();
+        var dbUser = db.getById(houseDAO.getOwnerId(), UsersResource.CONTAINER, UserDAO.class).stream().findFirst();
         if (dbUser.isEmpty())
             throw new Exception("Error: 404 User not found.");
 

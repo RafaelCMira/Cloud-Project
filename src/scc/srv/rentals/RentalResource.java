@@ -17,6 +17,7 @@ import java.util.List;
 import java.util.Optional;
 
 public class RentalResource implements RentalService {
+    public static final String CONTAINER = "rentals";
 
     private final CosmosDBLayer db = CosmosDBLayer.getInstance();
 
@@ -41,7 +42,7 @@ public class RentalResource implements RentalService {
 
             // Verify if user exists
             if (jedis.get(UsersService.USER_PREFIX + rentalDAO.getUserId()) == null) {
-                var userRes = db.getUserById(rentalDAO.getUserId());
+                var userRes = db.getById(rentalDAO.getUserId(), CONTAINER, UserDAO.class);
                 Optional<UserDAO> uResult = userRes.stream().findFirst();
                 if (uResult.isEmpty())
                     throw new Exception("Error: 404 User Not Found ");

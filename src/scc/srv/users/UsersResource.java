@@ -20,6 +20,7 @@ import java.util.List;
 
 
 public class UsersResource implements UsersService {
+    public static final String CONTAINER = "users";
     private final ObjectMapper mapper = new ObjectMapper();
     private final CosmosDBLayer db = CosmosDBLayer.getInstance();
 
@@ -32,7 +33,8 @@ public class UsersResource implements UsersService {
         if (!media.hasPhotoById(userDAO.getPhotoId()))
             throw new Exception("Error: 404 Image not found");
 
-        var res = db.createUser(userDAO);
+        /*var res = db.createUser(userDAO);*/
+        var res = db.createItem(userDAO, CONTAINER);
         int statusCode = res.getStatusCode();
 
         if (Checks.isStatusOk(statusCode)) {
@@ -78,7 +80,7 @@ public class UsersResource implements UsersService {
         if (Checks.badParams(id))
             throw new Exception("Error: 400 Bad Request (ID NULL)");
 
-        var res = db.delUserById(id);
+        var res = db.deleteById(id, CONTAINER, id);
         int statusCode = res.getStatusCode();
 
         if (Checks.isStatusOk(statusCode)) {
@@ -100,7 +102,8 @@ public class UsersResource implements UsersService {
             if (userString != null)
                 return mapper.readValue(userString, UserDAO.class).toUser();
 
-            var result = db.getUserById(id).stream().findFirst();
+            /* var result = db.getUserById(id).stream().findFirst();*/
+            var result = db.getById(id, CONTAINER, UserDAO.class).stream().findFirst();
             if (result.isPresent()) {
                 var user = result.get();
                 Cache.putInCache(user, USER_PREFIX, jedis);
@@ -144,7 +147,7 @@ public class UsersResource implements UsersService {
                 return mapper.readValue(user, UserDAO.class).getHouseIds();
             }
 
-            var res = db.getUserById(id).stream().findFirst();
+            var res = db.getById(id, CONTAINER, UserDAO.class).stream().findFirst();
             if (res.isPresent()) {
                 var dbUser = res.get();
                 //putListInCache(USER_HOUSES_PREFIX + id, houses, jedis);
@@ -166,7 +169,7 @@ public class UsersResource implements UsersService {
      */
     private UserDAO genUpdatedUserDAO(String id, User user) throws Exception {
         if (id == null) throw new Exception("Error: 400 Bad Request (ID NULL)");
-        CosmosPagedIterable<UserDAO> res = db.getUserById(id);
+        CosmosPagedIterable<UserDAO> res = db.getById(id, CONTAINER, UserDAO.class);
         var result = res.stream().findFirst();
 
         if (result.isPresent()) {
