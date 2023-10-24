@@ -4,6 +4,8 @@ import com.azure.cosmos.*;
 import com.azure.cosmos.models.*;
 import com.azure.cosmos.util.CosmosPagedIterable;
 
+import jakarta.ws.rs.ForbiddenException;
+import jakarta.ws.rs.NotFoundException;
 import scc.data.*;
 import scc.utils.props.AzureProperties;
 
@@ -169,12 +171,12 @@ public class CosmosDBLayer {
 
         // Check if the query returned any results.
         if (question.isEmpty())
-            throw new Exception("Error: 404 Question Not Found");
+            throw new NotFoundException("Question Not Found");
 
         // Verify if it has already been answered
         QuestionDAO existingQuestion = question.get();
         if (existingQuestion.getAnswer().isEmpty())
-            throw new Exception("Error: 403 Question Already Answered");
+            throw new ForbiddenException("Question Already Answered") ;
 
         // Update the answer
         existingQuestion.setAnswer(answer);

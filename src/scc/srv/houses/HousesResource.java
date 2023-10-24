@@ -2,6 +2,9 @@ package scc.srv.houses;
 
 import com.azure.cosmos.util.CosmosPagedIterable;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import jakarta.ws.rs.BadRequestException;
+import jakarta.ws.rs.InternalServerErrorException;
+import jakarta.ws.rs.NotFoundException;
 import redis.clients.jedis.Jedis;
 import scc.cache.RedisCache;
 import scc.data.*;
@@ -37,7 +40,7 @@ public class HousesResource implements HousesService {
             int statusCode = resUpdateUser.getStatusCode();
 
             if (!Checks.isStatusOk(statusCode))
-                throw new Exception("Error: " + statusCode);
+                throw new InternalServerErrorException("Internal Server Error: " + statusCode);
 
             var resCreateHouse = db.createItem(houseDAO, HousesResource.CONTAINER);
             statusCode = resCreateHouse.getStatusCode();
@@ -49,7 +52,7 @@ public class HousesResource implements HousesService {
                 Cache.putInCache(user, UsersService.USER_PREFIX, jedis);
                 return houseDAO.toHouse().toString();
             } else {
-                throw new Exception("Error: " + statusCode);
+                throw new InternalServerErrorException("Internal Server Error: " + statusCode);
             }
         }
     }
@@ -57,20 +60,20 @@ public class HousesResource implements HousesService {
     @Override
     public String deleteHouse(String id) throws Exception {
         if (Checks.badParams(id))
-            throw new Exception("Error: 400 Bad Request (ID NULL)");
+            throw new BadRequestException("Bad Request (ID NULL)");
 
         var item = db.getById(id, CONTAINER, HouseDAO.class).stream().findFirst();
         String ownerId = null;
         if (item.isPresent())
             ownerId = item.get().getOwnerId();
         else
-            throw new Exception("Error: 404");
+            throw new NotFoundException("House not found");
 
         var res = db.deleteById(id, CONTAINER, PARTITION_KEY);
         int statusCode = res.getStatusCode();
 
         if (!Checks.isStatusOk(statusCode))
-            throw new Exception("Error: " + statusCode);
+            throw new InternalServerErrorException("Internal Server Error: " + statusCode);
 
         // TODO: DÁ ERRO PORQUE O DELETE DEVOLVE NULL, PODEMOS TER DE ALTERAR A COSMOS DB e ativar o soft delete
         var user = db.getById(ownerId, UsersResource.CONTAINER, UserDAO.class).stream().findFirst();
@@ -85,7 +88,8 @@ public class HousesResource implements HousesService {
             }
             return String.format("StatusCode: %d \nHouse %s was deleted", statusCode, id);
         } else {
-            throw new Exception("Error: " + statusCode);
+            // Não tenho a certeza se esta exception é not found ou nao
+            throw new NotFoundException("User not found");
         }
     }
 
@@ -215,9 +219,11 @@ public class HousesResource implements HousesService {
      * @return true if all month has a valid price, false otherwise.
      */
     private boolean hasPricesByPeriod(HouseDAO house) {
-        int[][] p = house.getPriceByPeriod();
+        double[][] p = house.getPriceByPeriod();
         for (int i = 0; i < 12; i++) {
-            if (p[0][i] <= 0) return false;
+            if (p[i][0] <= 0) return false;
+            if (p[i][1] <= 0) return false;
+            if (p[i][2] <= 0) return false;
         }
         return true;
     }

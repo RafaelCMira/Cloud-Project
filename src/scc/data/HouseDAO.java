@@ -25,18 +25,20 @@ public class HouseDAO implements HasId {
 
     private String ownerId;
 
-    private int[][] priceByPeriod;
+    private double[][] priceByPeriod;
+
+    private double discount;
 
     public HouseDAO() {
     }
 
     public HouseDAO(House h) {
         this(h.getId(), h.getName(), h.getLocation(), h.getDescription(),
-                h.getPhotoId(), h.getRentalsID(), h.getOwnerId(), h.getPriceByPeriod());
+                h.getPhotoId(), h.getRentalsID(), h.getOwnerId(), h.getPriceByPeriod(), h.getDiscount());
     }
 
     public HouseDAO(String id, String name, String location, String description, String photoId,
-                    List<String> rentalsIds, String ownerId, int[][] priceByPeriod) {
+                    List<String> rentalsIds, String ownerId, double[][] priceByPeriod, double discount) {
         super();
         this.id = id;
         this.name = name;
@@ -46,6 +48,7 @@ public class HouseDAO implements HasId {
         this.rentalsIds = rentalsIds;
         this.ownerId = ownerId;
         this.priceByPeriod = priceByPeriod;
+        this.discount = discount;
     }
 
     public String get_rid() {
@@ -125,34 +128,34 @@ public class HouseDAO implements HasId {
         this.ownerId = ownerId;
     }
 
-    public int[][] getPriceByPeriod() {
+    public double[][] getPriceByPeriod() {
         return priceByPeriod;
     }
 
     /**
      * Returns the Price of the given Month, it can be the discount or the normal price.
      *
-     * @param typeOfPrice - type of the Price ( 0 = Normal Price; 1 = Discount Price)
-     * @param month
+     * @param month ( 0 - January ... 11 - December )
+     * @param period - booking period ( 0 - day; 1 - week; 2 - month )
      * @return the price of the given Month.
      */
-    public int getPeriodPrice(int typeOfPrice, int month) {
-        return priceByPeriod[typeOfPrice][month];
+    public double getPeriodPrice(int month, int period) {
+        return (priceByPeriod[month][period] * (1 - discount));
     }
 
     /**
      * Change the price of a particular type in a given month.
      *
-     * @param typeOfPrice - type of the Price ( 0 = Normal Price; 1 = Discount Price)
-     * @param month
-     * @param newPrice    - the new Price
+     * @param month ( 0 - January ... 11 - December )
+     * @param period - booking period ( 0 - day; 1 - week; 2 - month )
+     * @param newPrice - the new Price
      */
-    public void setPeriodPrice(int typeOfPrice, int month, int newPrice) {
-        priceByPeriod[typeOfPrice][month] = newPrice;
+    public void setPeriodPrice(int month, int period, int newPrice) {
+        priceByPeriod[month][period] = newPrice;
     }
 
     public House toHouse() {
-        return new House(id, name, location, description, photoId, rentalsIds, ownerId, priceByPeriod);
+        return new House(id, name, location, description, photoId, rentalsIds, ownerId, priceByPeriod, discount);
     }
 
     @Override
@@ -168,6 +171,7 @@ public class HouseDAO implements HasId {
                 ", rentalsIds=" + rentalsIds +
                 ", ownerId='" + ownerId + '\'' +
                 ", priceByPeriod=" + Arrays.toString(priceByPeriod) +
+                ", discount='" + discount + '\'' +
                 '}';
     }
 }
