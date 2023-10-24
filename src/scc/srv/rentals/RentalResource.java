@@ -20,7 +20,6 @@ import java.util.Optional;
 
 public class RentalResource implements RentalService {
     public static final String CONTAINER = "rentals";
-
     public static final String PARTITION_KEY = "/id";
 
     private final CosmosDBLayer db = CosmosDBLayer.getInstance();
@@ -107,18 +106,20 @@ public class RentalResource implements RentalService {
 
     @Override
     public List<Rental> listRentals(String houseID) {
-        //TODO: chache
-        CosmosPagedIterable<RentalDAO> rentalsDAO = db.getRentals(houseID);
-        return rentalsDAO.stream()
-                .map(RentalDAO::toRental)
-                .toList();
+        //TODO: chache ?
+        var res = db.getItems(CONTAINER, RentalDAO.class).stream().map(RentalDAO::toRental).toList();
+        if (!res.isEmpty())
+            return res;
+        else
+            return new ArrayList<>();
     }
 
     @Override
     public String deleteRental(String houseId, String id) throws Exception {
-        if (id == null) throw new Exception("Error: 400 Bad Request (Null ID");
+        if (id == null)
+            throw new Exception("Error: 400 Bad Request (Null ID");
 
-        CosmosItemResponse<Object> res = db.deleteById(id, CONTAINER, houseId);
+        var res = db.deleteById(id, CONTAINER, houseId);
         int statusCode = res.getStatusCode();
 
         if (Checks.isStatusOk(statusCode)) {
@@ -177,7 +178,7 @@ public class RentalResource implements RentalService {
     @Override
     public List<Rental> getDiscountedRentals(String houseID) throws Exception {
         //TODO: chache & tem ser updated de x em x tempo
-        CosmosPagedIterable<RentalDAO> rentalsDAO = db.getRentals(houseID);
+        var rentalsDAO = db.getRentals(houseID);
         List<Rental> res = new ArrayList<>();
         for (RentalDAO r : rentalsDAO) {
             if (r.getDiscount() > 0 && !r.getInitialDate().isBefore(LocalDate.now()))
