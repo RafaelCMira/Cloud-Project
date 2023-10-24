@@ -1,0 +1,32 @@
+config:
+  target: 'https://scc24app-westeurope-59243.azurewebsites.net/rest'
+  plugins:
+    metrics-by-endpoint: { }
+  processor: "./users1Request.js"
+  variables:
+    metricsProcessEndpoint: "myProcessEndpoint"  # function used to aggregate endpoints for statistics
+  phases:
+    - name: "Create users"  # Create users
+      duration: 1
+      arrivalCount: 1
+
+scenarios:
+  - name: 'Create users'
+    weight: 1
+    flow:
+      - loop: # let's create 50 users - loop ... count
+          - function: "genNewUser"          # Generate the needed information for the user
+          - function: "selectRandomImage"
+          - post: # Single request to create user with image and JSON data
+              url: "/user"                  # Adjust to your actual combined endpoint
+              headers:
+                Content-Type: multipart/form-data
+                Accept: application/json
+              data:
+                - field: "userDAO"
+                  value: '{"id": "{{ id }}", "name": "{{ name }}", "pwd": "{{ pwd }}", "houseIds": []}'
+                - field: "image"
+                  type: "file"
+                  value: "{{ image }}"
+              afterResponse: "genNewUserReply"    # capture result and store in file
+        count: 10

@@ -6,7 +6,6 @@ import jakarta.ws.rs.core.Link;
 import jakarta.ws.rs.core.MediaType;
 import scc.data.*;
 
-import javax.print.attribute.standard.Media;
 import java.util.List;
 
 @Path(RentalService.PATH)
@@ -16,6 +15,10 @@ public interface RentalService {
     String HOUSE_ID = "houseId";
     String RENTAL_ID = "id";
     String RENTAL = "/rental";
+
+    String DISCOUNT = "discount";
+
+    String CACHE_PREFIX = "rental:";
 
 
     @POST
@@ -48,4 +51,11 @@ public interface RentalService {
     @Produces(MediaType.APPLICATION_JSON)
     @Consumes(MediaType.APPLICATION_JSON)
     String deleteRental(@PathParam(HOUSE_ID) String houseID, @PathParam(RENTAL_ID) String id) throws Exception;
+
+    @GET
+    @Path("/{" + HOUSE_ID + "}" + RENTAL + "/{" + DISCOUNT + "}")
+    @Produces(MediaType.APPLICATION_JSON)
+    @Consumes(MediaType.APPLICATION_JSON)
+    List<Rental> getDiscountedRentals(@PathParam(HOUSE_ID) String houseID) throws Exception;
+
 }

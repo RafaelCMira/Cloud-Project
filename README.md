@@ -1,21 +1,16 @@
 # SCC_P1_59243_60602_60700
 
-Firs Project from SCC
+First Project from SCC
 
 ## Before execution
 
 Before running, you need to change the keys/URL used in the java files to access Azure and the DB.
 
-## Compilation and execution
+## Group Members
 
-To compile use
+Rafael Mira - 59243 - rs.mira@campus.fct.unl.pt
+<br>
+Rafael Pereira - 60700 - rl.pereira@campus.fct.unl.pt
+<br>
+Rafael Martins - 60602 - rlo.martins@campus.fct.unl.pt
 
-```
-mvn clean compile assembly:single
-```
-
-To run the programme, you can use the following command:
-
-```
-java -cp target/scc2324-1.0-jar-with-dependencies.jar <MainFile>
-```

@@ -1,14 +1,17 @@
 package scc.data;
 
+import scc.srv.utils.HasId;
+
+import java.util.Arrays;
 import java.util.List;
 
 /**
  * Represents a House, as returned to the clients
  */
 
-public class House {
+public class House implements HasId {
 
-    private String houseID;
+    private String id;
 
     private String name;
 
@@ -20,30 +23,31 @@ public class House {
 
     private List<String> rentalsID;
 
-    private String ownerID;
+    private String ownerId;
 
     private int[][] priceByPeriod;
 
 
-    public House(String houseID, String name, String location, String description,
-                 String photoId, List<String> rentalsID, String ownerID, int[][] priceByPeriod) {
+    public House(String id, String name, String location, String description,
+                 String photoId, List<String> rentalsID, String ownerId, int[][] priceByPeriod) {
         super();
-        this.houseID = houseID;
+        this.id = id;
         this.name = name;
         this.location = location;
         this.description = description;
         this.photoId = photoId;
         this.rentalsID = rentalsID;
-        this.ownerID = ownerID;
+        this.ownerId = ownerId;
         this.priceByPeriod = priceByPeriod;
     }
 
-    public String getHouseID() {
-        return houseID;
+    @Override
+    public String getId() {
+        return id;
     }
 
-    public void setHouseID(String houseID) {
-        this.houseID = houseID;
+    public void setId(String id) {
+        this.id = id;
     }
 
     public String getName() {
@@ -86,12 +90,16 @@ public class House {
         rentalsID.add(rentalID);
     }
 
-    public String getOwnerID() {
-        return ownerID;
+    public void removeRental(String rentalID) {
+        rentalsID.remove(rentalID);
     }
 
-    public void setOwnerID(String ownerID) {
-        this.ownerID = ownerID;
+    public String getOwnerId() {
+        return ownerId;
+    }
+
+    public void setOwnerId(String ownerId) {
+        this.ownerId = ownerId;
     }
 
     public int[][] getPriceByPeriod() {
@@ -122,7 +130,15 @@ public class House {
 
     @Override
     public String toString() {
-        return "House [id=" + houseID + ", name=" + name + ", location=" + location + ", description=" + description + ", photoId=" + photoId + ", ownerID="
-                + ownerID + "]";
+        return "House{" +
+                "id='" + id + '\'' +
+                ", name='" + name + '\'' +
+                ", location='" + location + '\'' +
+                ", description='" + description + '\'' +
+                ", photoId='" + photoId + '\'' +
+                ", rentalsID=" + rentalsID +
+                ", ownerId='" + ownerId + '\'' +
+                ", priceByPeriod=" + Arrays.toString(priceByPeriod) +
+                '}';
     }
 }

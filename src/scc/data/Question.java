@@ -7,43 +7,43 @@ package scc.data;
 
 public class Question {
 
-    private String questionID;
-    private String userID;
-    private String houseID;
+    private String questionId;
+    private String userId;
+    private String houseId;
     private String text;
     private String answer;
 
-    public Question(String questionID, String userID, String houseID, String text, String answer) {
+    public Question(String questionId, String userId, String houseId, String text, String answer) {
         super();
-        this.questionID = questionID;
-        this.userID = userID;
-        this.houseID = houseID;
+        this.questionId = questionId;
+        this.userId = userId;
+        this.houseId = houseId;
         this.text = text;
         this.answer = answer;
     }
 
-    public String getQuestionID() {
-        return questionID;
+    public String getQuestionId() {
+        return questionId;
     }
 
-    public void setQuestionID(String questionID) {
-        this.questionID = questionID;
+    public void setQuestionId(String questionId) {
+        this.questionId = questionId;
     }
 
-    public String getUserID() {
-        return userID;
+    public String getuserId() {
+        return userId;
     }
 
-    public void setUserID(String userID) {
-        this.userID = userID;
+    public void setuserId(String userId) {
+        this.userId = userId;
     }
 
-    public String getHouseID() {
-        return houseID;
+    public String getHouseId() {
+        return houseId;
     }
 
-    public void setHouseID(String houseID) {
-        this.houseID = houseID;
+    public void setHouseId(String houseId) {
+        this.houseId = houseId;
     }
 
     public String getText() {
@@ -65,9 +65,9 @@ public class Question {
     @Override
     public String toString() {
         return "Question{" +
-                "questionID='" + questionID + '\'' +
-                ", userID='" + userID + '\'' +
-                ", houseID='" + houseID + '\'' +
+                "questionId='" + questionId + '\'' +
+                ", userId='" + userId + '\'' +
+                ", houseId='" + houseId + '\'' +
                 ", text='" + text + '\'' +
                 ", answer='" + answer + '\'' +
                 '}';

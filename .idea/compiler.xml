@@ -7,6 +7,7 @@
         <sourceTestOutputDir name="target/generated-test-sources/test-annotations" />
         <outputRelativeToContentRoot value="true" />
         <module name="scc2324" />
+        <module name="SCC_P1_59243_60602_60700" />
       </profile>
     </annotationProcessing>
   </component>

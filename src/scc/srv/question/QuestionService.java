@@ -18,6 +18,8 @@ public interface QuestionService {
     String QUESTION_ID = "questionID";
     String REPLIER_ID = "replierID";
 
+    String CACHE_PREFIX = "question:";
+
 
     @POST
     @Path("/{" + HOUSE_ID + "}" + QUESTION)

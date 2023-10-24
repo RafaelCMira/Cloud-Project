@@ -1,17 +1,17 @@
 config:
-  target: 'https://scc24app-westeurope-60700.azurewebsites.net/rest'
+  target: 'https://scc24app-westeurope-59243.azurewebsites.net/rest'
   plugins:
     metrics-by-endpoint: { }
-  processor: "./test-utils.js"
+  processor: "./users.js"
   variables:
     metricsProcessEndpoint: "myProcessEndpoint"  # function used to aggregate endpoints for statistics
   phases:
-    - name: "Create Houses"    # Create houses
+    - name: "Create users"    # Create users
       duration: 1
       arrivalCount: 1
 
 scenarios:
-  - name: 'Create Houses'
+  - name: 'Create users'
     weight: 1
     flow:
       - loop: # let's create 50 users - loop ... count
@@ -36,24 +36,5 @@ scenarios:
                 pwd: "{{ pwd }}"
                 photoId: "{{ imageId }}"
                 houseIds: [ ]
-              capture:
-                regexp: "(.+)"
-                as: "ownerID"              # capture the reply as image id to be used in user creation
               afterResponse: "genNewUserReply"    # capture result and store in file
-          - function: "genNewHouse"
-          - post:
-                url: "/house"
-                headers:
-                    Content-Type: application/json
-                    Accept: application/json
-                json:
-                  id: "{{ id }}"
-                  name: "{{ name }}"
-                  location: "Portugal"
-                  description: " Done "
-                  photoId: "{{ imageId }}"
-                  rentalsID: [ ]
-                  ownerID: "{{ ownerID }}"
-                  priceByPeriod: [ [ ] ]
-                afterResponse: "genNewHouseReply"
-        count: 50
+        count: 2

@@ -1,8 +1,11 @@
 package scc.data;
 
+import scc.srv.utils.HasId;
+
+import java.util.Arrays;
 import java.util.List;
 
-public class HouseDAO {
+public class HouseDAO implements HasId {
 
     private String _rid;
 
@@ -18,9 +21,9 @@ public class HouseDAO {
 
     private String photoId;
 
-    private List<String> rentalsID;
+    private List<String> rentalsIds;
 
-    private String ownerID;
+    private String ownerId;
 
     private int[][] priceByPeriod;
 
@@ -28,20 +31,20 @@ public class HouseDAO {
     }
 
     public HouseDAO(House h) {
-        this(h.getHouseID(), h.getName(), h.getLocation(), h.getDescription(),
-                h.getPhotoId(), h.getRentalsID(), h.getOwnerID(), h.getPriceByPeriod());
+        this(h.getId(), h.getName(), h.getLocation(), h.getDescription(),
+                h.getPhotoId(), h.getRentalsID(), h.getOwnerId(), h.getPriceByPeriod());
     }
 
     public HouseDAO(String id, String name, String location, String description, String photoId,
-                    List<String> rentalsID, String ownerID, int[][] priceByPeriod) {
+                    List<String> rentalsIds, String ownerId, int[][] priceByPeriod) {
         super();
         this.id = id;
         this.name = name;
         this.location = location;
         this.description = description;
         this.photoId = photoId;
-        this.rentalsID = rentalsID;
-        this.ownerID = ownerID;
+        this.rentalsIds = rentalsIds;
+        this.ownerId = ownerId;
         this.priceByPeriod = priceByPeriod;
     }
 
@@ -61,6 +64,7 @@ public class HouseDAO {
         this._ts = _ts;
     }
 
+    @Override
     public String getId() {
         return id;
     }
@@ -101,20 +105,24 @@ public class HouseDAO {
         this.photoId = photoId;
     }
 
-    public List<String> getRentalsID() {
-        return rentalsID;
+    public List<String> getRentalsIds() {
+        return rentalsIds;
     }
 
     public void addRental(String rentalID) {
-        rentalsID.add(rentalID);
+        rentalsIds.add(rentalID);
     }
 
-    public String getOwnerID() {
-        return ownerID;
+    public void removeRental(String rentalID) {
+        rentalsIds.remove(rentalID);
     }
 
-    public void setOwnerID(String ownerID) {
-        this.ownerID = ownerID;
+    public String getOwnerId() {
+        return ownerId;
+    }
+
+    public void setOwnerId(String ownerId) {
+        this.ownerId = ownerId;
     }
 
     public int[][] getPriceByPeriod() {
@@ -144,14 +152,22 @@ public class HouseDAO {
     }
 
     public House toHouse() {
-        return new House(id, name, location, description, photoId, rentalsID, ownerID, priceByPeriod);
+        return new House(id, name, location, description, photoId, rentalsIds, ownerId, priceByPeriod);
     }
 
     @Override
     public String toString() {
-        return "House [ _rid=" + _rid + ", _ts=" + _ts +
-                ", id=" + id + ", name=" + name + ", location=" + location + ", description=" + description + ", photoId=" + photoId + ", ownerID="
-                + ownerID + "]";
+        return "HouseDAO{" +
+                "_rid='" + _rid + '\'' +
+                ", _ts='" + _ts + '\'' +
+                ", id='" + id + '\'' +
+                ", name='" + name + '\'' +
+                ", location='" + location + '\'' +
+                ", description='" + description + '\'' +
+                ", photoId='" + photoId + '\'' +
+                ", rentalsIds=" + rentalsIds +
+                ", ownerId='" + ownerId + '\'' +
+                ", priceByPeriod=" + Arrays.toString(priceByPeriod) +
+                '}';
     }
-
 }

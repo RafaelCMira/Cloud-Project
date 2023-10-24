@@ -7,8 +7,6 @@ module.exports = {
 	uploadImageBody,
 	genNewUser,
 	genNewUserReply,
-	genNewHouse,
-	genNewHouseReply,
 };
 
 const faker = require("faker");
@@ -17,6 +15,7 @@ const fs = require("fs");
 var imagesIds = [];
 var images = [];
 var users = [];
+var usersIds = [];
 
 // All endpoints starting with the following prefixes will be aggregated in the same for the statistics
 var statsPrefix = [
@@ -24,8 +23,6 @@ var statsPrefix = [
 	["/rest/media", "POST"],
 	["/rest/user/", "GET"],
 	["/rest/user/", "POST"],
-	["/rest/house/", "GET"],
-    ["/rest/house/", "POST"],
 ];
 
 // Function used to compress statistics
@@ -39,7 +36,7 @@ global.myProcessEndpoint = function (str, method) {
 
 // Auxiliary function to select an element from an array
 Array.prototype.sample = function () {
-	return this[Math.floor(Math.random() * this.length)];
+	return this[random(this.length)];
 };
 
 // Returns a random value, from 0 to val
@@ -51,8 +48,8 @@ function random(val) {
 function loadData() {
 	var i;
 	var basefile;
-	if (fs.existsSync("/../images")) basefile = "/../images/house.";
-	else basefile = "../images/house.";
+	if (fs.existsSync("/../../images")) basefile = "/../../images/house.";
+	else basefile = "../../images/house.";
 	for (i = 1; i <= 40; i++) {
 		var img = fs.readFileSync(basefile + i + ".jpg");
 		images.push(img);
@@ -98,7 +95,7 @@ function selectImageToDownload(context, events, done) {
 }
 
 /**
- * Select an image to download.
+ * Select an user
  */
 function selectUser(context, events, done) {
 	if (userIDs.length > 0) {
@@ -109,7 +106,6 @@ function selectUser(context, events, done) {
 	return done();
 }
 
-
 function genNewUser(context, events, done) {
 	const first = `${faker.name.firstName()}`;
 	const last = `${faker.name.lastName()}`;
@@ -119,32 +115,19 @@ function genNewUser(context, events, done) {
 	return done();
 }
 
-function genNewHouse(context, events, done) {
-	context.vars.id = `${ faker.datatype.uuid()}`;
-	context.vars.name = `${faker.name.firstName()}`;
-	return done();
-}
-
 /**
  * Process reply for of new users to store the id on file
  */
 function genNewUserReply(requestParams, response, context, ee, next) {
-
 	if (response.statusCode >= 200 && response.statusCode < 300 && response.body.length > 0) {
 		let u = response.body;
 		users.push(u);
-		fs.writeFileSync("users.data", JSON.stringify(users));
+		fs.writeFileSync("../../Data/users.data", JSON.stringify(users));
 	} else
 	    console.log(response.body)
 	return next();
 }
 
-function genNewHouseReply(requestParams, response, context, ee, next) {
-    if (response.statusCode >= 200 && response.statusCode < 300 && response.body.length > 0) {
-        let u = response.body;
-        users.push(u);
-        fs.writeFileSync("users.data", JSON.stringify(users));
-    } else
-        console.log(response.body)
-    return next();
-}
+
+
+
