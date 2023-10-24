@@ -1,5 +1,2 @@
-# Date : 15/10/23, 17:10
-BlobStoreConnection=DefaultEndpointsProtocol=https;AccountName=scc24stwesteurope59243;AccountKey=hxQrYvMJpFe9VepO6uNwJglP0snqkQPJHOBiyroioHSlxdOjEhRio+g3ZXzQMrrv402DcVJwSI2h+ASt3TfNzg==;EndpointSuffix=core.windows.net
-COSMOSDB_KEY=5V69jAi5WFxutO9pymG1tVY6NoJ7iNB946vbkRkNdNyDQgesaqkO9bytDkaE5nMnNS78ZYq8dJygACDbNOk4og==
-COSMOSDB_URL=https://scc24account59243.documents.azure.com:443/
-COSMOSDB_DATABASE=scc24db59243
+# Date : 19/10/23, 11:54
+BlobStoreConnection=DefaultEndpointsProtocol=https;AccountName=scc24stwesteurope59243;AccountKey=yuoThA+oHieMURaLUQmILTJ63iZCX46WQ7vfwNPcuXYsAWVYL0DiGtUvUHa6X/hkRc8dffU/uXBR+AStzceDTA==;EndpointSuffix=core.windows.net
