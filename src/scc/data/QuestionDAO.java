@@ -14,7 +14,7 @@ public class QuestionDAO {
     }
 
     public QuestionDAO(Question q) {
-        this(q.getQuestionId(), q.getuserId(), q.getHouseId(), q.getText(), q.getAnswer());
+        this(q.getId(), q.getuserId(), q.getHouseId(), q.getText(), q.getAnswer());
     }
 
     public QuestionDAO(String id, String userId, String houseId, String text, String answer) {

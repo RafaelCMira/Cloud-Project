@@ -211,23 +211,6 @@ public class HousesResource implements HousesService {
         }
     }
 
-
-    /**
-     * Checks if the given House has prices valid for all months.
-     *
-     * @param house - house to be checked
-     * @return true if all month has a valid price, false otherwise.
-     */
-    private boolean hasPricesByPeriod(HouseDAO house) {
-        double[][] p = house.getPriceByPeriod();
-        for (int i = 0; i < 12; i++) {
-            if (p[i][0] <= 0) return false;
-            if (p[i][1] <= 0) return false;
-            if (p[i][2] <= 0) return false;
-        }
-        return true;
-    }
-
     /**
      * Returns updated houseDAO to the method who's making the request to the database
      *
@@ -271,8 +254,7 @@ public class HousesResource implements HousesService {
     }
 
     private UserDAO checksHouseCreation(HouseDAO houseDAO, Jedis jedis) throws Exception {
-        if (Checks.badParams(houseDAO.getId(), houseDAO.getName(), houseDAO.getLocation(),
-                houseDAO.getPhotoId()) && !hasPricesByPeriod(houseDAO)) {
+        if (Checks.badParams(houseDAO.getId(), houseDAO.getName(), houseDAO.getLocation(), houseDAO.getPhotoId())) {
             throw new Exception("Error: 400 Bad Request");
         }
 

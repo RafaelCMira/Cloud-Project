@@ -36,46 +36,17 @@ public class UsersResource implements UsersService {
         if (!media.hasPhotoById(userDAO.getPhotoId()))
             throw new Exception("Error: 404 Image not found");
 
-        /*var res = db.createUser(userDAO);*/
         var res = db.createItem(userDAO, CONTAINER);
         int statusCode = res.getStatusCode();
 
         if (Checks.isStatusOk(statusCode)) {
             try (Jedis jedis = RedisCache.getCachePool().getResource()) {
-                // putUserInCache(userDAO, jedis);
                 Cache.putInCache(userDAO, USER_PREFIX, jedis);
                 return userDAO.toUser().toString();
             }
         } else
             throw new Exception("Error: " + statusCode);
     }
-
-    /*@Override
-    public String createUser(UserDAO userDAO, InputStream imageStream) throws Exception {
-        if (Checks.badParams(userDAO.getId(), userDAO.getName(), userDAO.getPwd(), userDAO.getPhotoId()))
-            throw new Exception("Error: 400 Bad Request");
-
-        MediaResource media = new MediaResource();
-        byte[] photo = imageStream.readAllBytes();
-        imageStream.close();
-        String photoId = media.upload(photo);
-        if (!media.hasPhotoById(photoId))
-            throw new Exception("Error: 404 Image not found");
-        else
-            userDAO.setPhotoId(photoId);
-
-        var res = db.createUser(userDAO);
-        int statusCode = res.getStatusCode();
-
-        if (Checks.isStatusOk(statusCode)) {
-            try (Jedis jedis = RedisCache.getCachePool().getResource()) {
-                Cache.putInCache(userDAO, USER_PREFIX, jedis);
-            }
-            return userDAO.toUser().toString();
-
-        } else
-            throw new Exception("Error: " + statusCode);
-    }*/
 
     @Override
     public String deleteUser(String id) throws Exception {
@@ -104,7 +75,6 @@ public class UsersResource implements UsersService {
             if (userString != null)
                 return mapper.readValue(userString, UserDAO.class).toUser();
 
-            /* var result = db.getUserById(id).stream().findFirst();*/
             var result = db.getById(id, CONTAINER, UserDAO.class).stream().findFirst();
             if (result.isPresent()) {
                 var user = result.get();
@@ -152,7 +122,6 @@ public class UsersResource implements UsersService {
             var res = db.getById(id, CONTAINER, UserDAO.class).stream().findFirst();
             if (res.isPresent()) {
                 var dbUser = res.get();
-                //putListInCache(USER_HOUSES_PREFIX + id, houses, jedis);
                 Cache.putInCache(dbUser, USER_PREFIX, jedis);
                 return dbUser.getHouseIds();
             } else

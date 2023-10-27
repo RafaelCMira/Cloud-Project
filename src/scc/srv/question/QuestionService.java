@@ -15,9 +15,8 @@ public interface QuestionService {
     String PATH = "/house";
     String HOUSE_ID = "id";
     String QUESTION = "/question";
-    String QUESTION_ID = "questionID";
-    String REPLIER_ID = "replierID";
-
+    String QUESTION_ID = "questionId";
+    String REPLIER_ID = "replierId";
     String CACHE_PREFIX = "question:";
 
 

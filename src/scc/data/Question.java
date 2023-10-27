@@ -7,27 +7,27 @@ package scc.data;
 
 public class Question {
 
-    private String questionId;
+    private String id;
     private String userId;
     private String houseId;
     private String text;
     private String answer;
 
-    public Question(String questionId, String userId, String houseId, String text, String answer) {
+    public Question(String id, String userId, String houseId, String text, String answer) {
         super();
-        this.questionId = questionId;
+        this.id = id;
         this.userId = userId;
         this.houseId = houseId;
         this.text = text;
         this.answer = answer;
     }
 
-    public String getQuestionId() {
-        return questionId;
+    public String getId() {
+        return id;
     }
 
-    public void setQuestionId(String questionId) {
-        this.questionId = questionId;
+    public void setId(String id) {
+        this.id = id;
     }
 
     public String getuserId() {
@@ -65,7 +65,7 @@ public class Question {
     @Override
     public String toString() {
         return "Question{" +
-                "questionId='" + questionId + '\'' +
+                "questionId='" + id + '\'' +
                 ", userId='" + userId + '\'' +
                 ", houseId='" + houseId + '\'' +
                 ", text='" + text + '\'' +

@@ -30,12 +30,6 @@ public interface UsersService {
     @Produces(MediaType.APPLICATION_JSON)
     String createUser(UserDAO userDAO) throws Exception;
 
-/*    @POST
-    @Consumes(MediaType.MULTIPART_FORM_DATA)
-    @Produces(MediaType.APPLICATION_JSON)
-    String createUser(@FormDataParam("userDAO") UserDAO userDAO,
-                      @FormDataParam("image") InputStream imageStream) throws Exception;*/
-
     @DELETE
     @Path("/{" + ID + "}")
     @Produces(MediaType.APPLICATION_JSON)

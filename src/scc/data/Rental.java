@@ -9,20 +9,19 @@ import java.time.LocalDate;
 public class Rental {
     private String id;
     private String houseId;
-    private String userId;
+    private String askerId;
     private double price;
-    private LocalDate initialDate;
+    private LocalDate startDate;
     private LocalDate endDate;
-
     private double discount;
 
-    public Rental(String id, String houseId, String userId, double price, LocalDate initialDate, LocalDate endDate, double discount) {
+    public Rental(String id, String houseId, String askerId, double price, LocalDate startDate, LocalDate endDate, double discount) {
         super();
         this.id = id;
         this.houseId = houseId;
-        this.userId = userId;
+        this.askerId = askerId;
         this.price = price;
-        this.initialDate = initialDate;
+        this.startDate = startDate;
         this.endDate = endDate;
         this.discount = discount;
     }
@@ -43,12 +42,12 @@ public class Rental {
         return houseId;
     }
 
-    public void setUserId(String userId) {
-        this.userId = userId;
+    public void setAskerId(String askerId) {
+        this.askerId = askerId;
     }
 
-    public String getUserId() {
-        return userId;
+    public String getAskerId() {
+        return askerId;
     }
 
     public void setPrice(double price) {
@@ -59,12 +58,12 @@ public class Rental {
         return price;
     }
 
-    public void setInitialDate(LocalDate initialDate) {
-        this.initialDate = initialDate;
+    public void setStartDate(LocalDate startDate) {
+        this.startDate = startDate;
     }
 
-    public LocalDate getInitialDate() {
-        return initialDate;
+    public LocalDate getStartDate() {
+        return startDate;
     }
 
     public void setEndDate(LocalDate endDate) {
@@ -88,9 +87,9 @@ public class Rental {
         return "Rental{" +
                 "id='" + id + '\'' +
                 ", houseId='" + houseId + '\'' +
-                ", userId='" + userId + '\'' +
+                ", askerId='" + askerId + '\'' +
                 ", price=" + price +
-                ", initialDate=" + initialDate +
+                ", startDate=" + startDate +
                 ", endDate=" + endDate +
                 ", discount=" + discount +
                 '}';

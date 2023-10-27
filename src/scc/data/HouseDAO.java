@@ -2,7 +2,6 @@ package scc.data;
 
 import scc.srv.utils.HasId;
 
-import java.util.Arrays;
 import java.util.List;
 
 public class HouseDAO implements HasId {
@@ -25,7 +24,7 @@ public class HouseDAO implements HasId {
 
     private String ownerId;
 
-    private double[][] priceByPeriod;
+    private int price;
 
     private double discount;
 
@@ -34,11 +33,11 @@ public class HouseDAO implements HasId {
 
     public HouseDAO(House h) {
         this(h.getId(), h.getName(), h.getLocation(), h.getDescription(),
-                h.getPhotoId(), h.getRentalsID(), h.getOwnerId(), h.getPriceByPeriod(), h.getDiscount());
+                h.getPhotoId(), h.getRentalsIds(), h.getOwnerId(), h.getPrice(), h.getDiscount());
     }
 
     public HouseDAO(String id, String name, String location, String description, String photoId,
-                    List<String> rentalsIds, String ownerId, double[][] priceByPeriod, double discount) {
+                    List<String> rentalsIds, String ownerId, int price, double discount) {
         super();
         this.id = id;
         this.name = name;
@@ -47,7 +46,7 @@ public class HouseDAO implements HasId {
         this.photoId = photoId;
         this.rentalsIds = rentalsIds;
         this.ownerId = ownerId;
-        this.priceByPeriod = priceByPeriod;
+        this.price = price;
         this.discount = discount;
     }
 
@@ -128,35 +127,26 @@ public class HouseDAO implements HasId {
         this.ownerId = ownerId;
     }
 
-    public double[][] getPriceByPeriod() {
-        return priceByPeriod;
+    public int getPrice() {
+        return price;
     }
 
-    /**
-     * Returns the Price of the given Month, it can be the discount or the normal price.
-     *
-     * @param month ( 0 - January ... 11 - December )
-     * @param period - booking period ( 0 - day; 1 - week; 2 - month )
-     * @return the price of the given Month.
-     */
-    public double getPeriodPrice(int month, int period) {
-        return (priceByPeriod[month][period] * (1 - discount));
+    public void setPrice(int price) {
+        this.price = price;
     }
 
-    /**
-     * Change the price of a particular type in a given month.
-     *
-     * @param month ( 0 - January ... 11 - December )
-     * @param period - booking period ( 0 - day; 1 - week; 2 - month )
-     * @param newPrice - the new Price
-     */
-    public void setPeriodPrice(int month, int period, int newPrice) {
-        priceByPeriod[month][period] = newPrice;
+    public double getDiscount() {
+        return discount;
+    }
+
+    public void setDiscount(double discount) {
+        this.discount = discount;
     }
 
     public House toHouse() {
-        return new House(id, name, location, description, photoId, rentalsIds, ownerId, priceByPeriod, discount);
+        return new House(id, name, location, description, photoId, rentalsIds, ownerId, price, discount);
     }
+
 
     @Override
     public String toString() {
@@ -170,8 +160,8 @@ public class HouseDAO implements HasId {
                 ", photoId='" + photoId + '\'' +
                 ", rentalsIds=" + rentalsIds +
                 ", ownerId='" + ownerId + '\'' +
-                ", priceByPeriod=" + Arrays.toString(priceByPeriod) +
-                ", discount='" + discount + '\'' +
+                ", price=" + price +
+                ", discount=" + discount +
                 '}';
     }
 }

@@ -176,7 +176,7 @@ public class CosmosDBLayer {
         // Verify if it has already been answered
         QuestionDAO existingQuestion = question.get();
         if (existingQuestion.getAnswer().isEmpty())
-            throw new ForbiddenException("Question Already Answered") ;
+            throw new ForbiddenException("Question Already Answered");
 
         // Update the answer
         existingQuestion.setAnswer(answer);
