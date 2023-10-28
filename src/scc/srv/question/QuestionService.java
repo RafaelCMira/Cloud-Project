@@ -10,7 +10,6 @@ import scc.data.QuestionDAO;
 import java.util.List;
 
 @Path(QuestionService.PATH)
-
 public interface QuestionService {
     String PATH = "/house";
     String HOUSE_ID = "id";
@@ -30,14 +29,14 @@ public interface QuestionService {
     @Path("/{" + HOUSE_ID + "}" + QUESTION + "/{" + QUESTION_ID + "}")
     @Consumes(MediaType.APPLICATION_JSON)
     @Produces(MediaType.APPLICATION_JSON)
-    Question replyToQuestion(@PathParam(HOUSE_ID) String houseID,
-                             @PathParam(QUESTION_ID) String questionID,
-                             @QueryParam(REPLIER_ID) String replierID,
+    Question replyToQuestion(@PathParam(HOUSE_ID) String houseId,
+                             @PathParam(QUESTION_ID) String questionId,
+                             @QueryParam(REPLIER_ID) String replierId,
                              QuestionDAO questionDAO)
             throws Exception;
 
     @GET
     @Path("/{" + HOUSE_ID + "}" + QUESTION)
     @Produces(MediaType.APPLICATION_JSON)
-    List<Question> listQuestions(@PathParam(HOUSE_ID) String houseID) throws Exception;
+    List<Question> listQuestions(@PathParam(HOUSE_ID) String houseId) throws Exception;
 }

@@ -8,7 +8,7 @@ package scc.data;
 public class Question {
 
     private String id;
-    private String userId;
+    private String askerId;
     private String houseId;
     private String text;
     private String answer;
@@ -16,10 +16,10 @@ public class Question {
     public Question() {
     }
 
-    public Question(String id, String userId, String houseId, String text, String answer) {
+    public Question(String id, String askerId, String houseId, String text, String answer) {
         super();
         this.id = id;
-        this.userId = userId;
+        this.askerId = askerId;
         this.houseId = houseId;
         this.text = text;
         this.answer = answer;
@@ -33,12 +33,12 @@ public class Question {
         this.id = id;
     }
 
-    public String getuserId() {
-        return userId;
+    public String getAskerId() {
+        return askerId;
     }
 
-    public void setuserId(String userId) {
-        this.userId = userId;
+    public void setAskerId(String askerId) {
+        this.askerId = askerId;
     }
 
     public String getHouseId() {
@@ -65,11 +65,12 @@ public class Question {
         this.answer = answer;
     }
 
+
     @Override
     public String toString() {
         return "Question{" +
-                "questionId='" + id + '\'' +
-                ", userId='" + userId + '\'' +
+                "id='" + id + '\'' +
+                ", askerId='" + askerId + '\'' +
                 ", houseId='" + houseId + '\'' +
                 ", text='" + text + '\'' +
                 ", answer='" + answer + '\'' +

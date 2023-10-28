@@ -12,6 +12,7 @@ import scc.srv.houses.HousesService;
 
 import java.util.List;
 import java.util.Optional;
+import java.util.UUID;
 
 public class QuestionResource implements QuestionService {
 
@@ -25,20 +26,20 @@ public class QuestionResource implements QuestionService {
     public String createQuestion(QuestionDAO questionDAO) throws Exception {
         //TODO: chache
 
-        if (Checks.badParams(questionDAO.getUserId(), questionDAO.getHouseId(), questionDAO.getText()))
+        if (Checks.badParams(questionDAO.getAskerId(), questionDAO.getHouseId(), questionDAO.getText()))
             throw new Exception("Error: 400 Bad Request");
 
         // Verify if house exists
-        var houseRes = db.getById(questionDAO.getHouseId(), HousesResource.CONTAINER, HouseDAO.class);
-        Optional<HouseDAO> result = houseRes.stream().findFirst();
-        if (result.isEmpty())
+        var houseRes = db.getById(questionDAO.getHouseId(), HousesResource.CONTAINER, HouseDAO.class).stream().findFirst();
+        if (houseRes.isEmpty())
             throw new Exception("Error: 404 House Not Found ");
 
         // Verify if user of makes the question exists
-        var userRes = db.getById(questionDAO.getUserId(), UsersResource.CONTAINER, UsersResource.class);
-        var userResult = userRes.stream().findFirst();
-        if (userResult.isEmpty())
+        var userRes = db.getById(questionDAO.getAskerId(), UsersResource.CONTAINER, UsersResource.class).stream().findFirst();
+        if (userRes.isEmpty())
             throw new Exception("Error: 404 User Not Found");
+
+        questionDAO.setId(UUID.randomUUID().toString());
 
         var createRes = db.createItem(questionDAO, CONTAINER);
         int statusCode = createRes.getStatusCode();
@@ -50,7 +51,7 @@ public class QuestionResource implements QuestionService {
     }
 
     @Override
-    public Question replyToQuestion(String houseId, String questionID, String replierID, QuestionDAO questionDAO) throws Exception {
+    public Question replyToQuestion(String houseId, String questionId, String replierId, QuestionDAO questionDAO) throws Exception {
         try (Jedis jedis = RedisCache.getCachePool().getResource()) {
             // Verify if house exists
             HouseDAO house = mapper.readValue(jedis.get(HousesService.HOUSE_PREFIX + houseId), HouseDAO.class);
@@ -64,14 +65,14 @@ public class QuestionResource implements QuestionService {
 
             // Verify if user who replies is the owner
             String ownerID = house.getOwnerId();
-            if (!ownerID.equals(replierID))
+            if (!ownerID.equals(replierId))
                 throw new Exception("Error: 403 You're not the owner");
 
-            var replyRes = db.replyToQuestion(houseId, questionID, questionDAO.getAnswer());
+            var replyRes = db.replyToQuestion(houseId, questionId, questionDAO.getAnswer());
 
             int statusCode = replyRes.getStatusCode();
             if (Checks.isStatusOk(statusCode)) {
-                jedis.set(CACHE_PREFIX + questionID, mapper.writeValueAsString(questionDAO));
+                jedis.set(CACHE_PREFIX + questionId, mapper.writeValueAsString(questionDAO));
                 return questionDAO.toQuestion();
             } else
                 throw new Exception("Error: " + statusCode);
@@ -93,9 +94,8 @@ public class QuestionResource implements QuestionService {
             }
 
             var queryRes = db.listHouseQuestions(houseId);
-            return queryRes.stream()
-                    .map(QuestionDAO::toQuestion)
-                    .toList();
+            return queryRes.stream().map(QuestionDAO::toQuestion).toList();
         }
     }
+    
 }

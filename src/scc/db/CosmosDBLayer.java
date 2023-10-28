@@ -156,9 +156,9 @@ public class CosmosDBLayer {
         return db.getContainer(RentalResource.CONTAINER).deleteItem(id, key, new CosmosItemRequestOptions());
     }
 
-    public CosmosPagedIterable<RentalDAO> getRentalById(String houseID, String id) {
+    public CosmosPagedIterable<RentalDAO> getRentalById(String houseId, String id) {
         init();
-        String query = "SELECT * FROM rentals WHERE rentals.houseID = \"" + houseID + "\" AND rentals.id=\"" + id + "\"";
+        String query = "SELECT * FROM rentals WHERE rentals.houseId = \"" + houseId + "\" AND rentals.id=\"" + id + "\"";
         return db.getContainer(RentalResource.CONTAINER).queryItems(query, new CosmosQueryRequestOptions(), RentalDAO.class);
     }
 
@@ -198,13 +198,13 @@ public class CosmosDBLayer {
 
     public CosmosPagedIterable<QuestionDAO> getQuestionByID(String houseID, String questionID) {
         init();
-        String query = String.format("SELECT * FROM questions WHERE questions.questionID = '%s' AND questions.houseID = '%s'", houseID, questionID);
+        String query = String.format("SELECT * FROM questions WHERE questions.id = '%s' AND questions.houseId = '%s'", houseID, questionID);
         return db.getContainer(QuestionResource.CONTAINER).queryItems(query, new CosmosQueryRequestOptions(), QuestionDAO.class);
     }
 
     public CosmosPagedIterable<QuestionDAO> listHouseQuestions(String houseId) {
         init();
-        String query = String.format("SELECT * FROM questions WHERE questions.houseID=\"%s\"", houseId);
+        String query = String.format("SELECT * FROM questions WHERE questions.houseId=\"%s\"", houseId);
         return db.getContainer(QuestionResource.CONTAINER).queryItems(query, new CosmosQueryRequestOptions(), QuestionDAO.class);
     }
 

@@ -5,7 +5,7 @@ public class QuestionDAO {
     private String _rid;
     private String _ts;
     private String id;
-    private String userId;
+    private String askerId;
     private String houseId;
     private String text;
     private String answer;
@@ -14,13 +14,13 @@ public class QuestionDAO {
     }
 
     public QuestionDAO(Question q) {
-        this(q.getId(), q.getuserId(), q.getHouseId(), q.getText(), q.getAnswer());
+        this(q.getId(), q.getAskerId(), q.getHouseId(), q.getText(), q.getAnswer());
     }
 
-    public QuestionDAO(String id, String userId, String houseId, String text, String answer) {
+    public QuestionDAO(String id, String askerId, String houseId, String text, String answer) {
         super();
         this.id = id;
-        this.userId = userId;
+        this.askerId = askerId;
         this.houseId = houseId;
         this.text = text;
         this.answer = answer;
@@ -50,12 +50,12 @@ public class QuestionDAO {
         this._ts = _ts;
     }
 
-    public String getUserId() {
-        return userId;
+    public String getAskerId() {
+        return askerId;
     }
 
-    public void setUserId(String userId) {
-        this.userId = userId;
+    public void setAskerId(String askerId) {
+        this.askerId = askerId;
     }
 
     public String getHouseId() {
@@ -83,7 +83,7 @@ public class QuestionDAO {
     }
 
     public Question toQuestion() {
-        return new Question(id, userId, houseId, text, answer);
+        return new Question(id, askerId, houseId, text, answer);
     }
 
     @Override
@@ -92,7 +92,7 @@ public class QuestionDAO {
                 "_rid='" + _rid + '\'' +
                 ", _ts='" + _ts + '\'' +
                 ", id='" + id + '\'' +
-                ", userId='" + userId + '\'' +
+                ", askerId='" + askerId + '\'' +
                 ", houseId='" + houseId + '\'' +
                 ", text='" + text + '\'' +
                 ", answer='" + answer + '\'' +

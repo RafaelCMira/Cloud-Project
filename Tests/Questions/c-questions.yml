@@ -1,0 +1,31 @@
+config:
+  target: 'https://scc24app-westeurope-59243.azurewebsites.net/rest'
+  plugins:
+    metrics-by-endpoint: { }
+  processor: "./questions.js"
+  variables:
+    metricsProcessEndpoint: "myProcessEndpoint"
+  phases:
+    - name: "Create Question"
+      duration: 1
+      arrivalCount: 1
+
+scenarios:
+  - name: 'Create Question'
+    weight: 1
+    flow:
+      - loop:
+          - function: "genNewQuestion"
+          - post:
+              url: "/house/{{ houseId }}/question"
+              headers:
+                Content-Type: application/json
+                Accept: application/json
+              json:
+                id: ""
+                houseId: "{{ houseId }}"
+                askerId: "{{ askerId }}"
+                text: "{{ text }}"
+                answer: ""
+              afterResponse: "genNewQuestionReply"
+        count: 1
