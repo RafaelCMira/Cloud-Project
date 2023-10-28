@@ -3,6 +3,7 @@ package scc.srv.question;
 import jakarta.ws.rs.*;
 import jakarta.ws.rs.core.Link;
 import jakarta.ws.rs.core.MediaType;
+import jakarta.ws.rs.core.Response;
 import scc.data.House;
 import scc.data.Question;
 import scc.data.QuestionDAO;
@@ -23,7 +24,7 @@ public interface QuestionService {
     @Path("/{" + HOUSE_ID + "}" + QUESTION)
     @Consumes(MediaType.APPLICATION_JSON)
     @Produces(MediaType.APPLICATION_JSON)
-    String createQuestion(QuestionDAO questionDAO) throws Exception;
+    Response createQuestion(QuestionDAO questionDAO) throws Exception;
 
     @PUT
     @Path("/{" + HOUSE_ID + "}" + QUESTION + "/{" + QUESTION_ID + "}")

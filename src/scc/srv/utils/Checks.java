@@ -7,7 +7,7 @@ public class Checks {
 
     public static boolean badParams(String... values) {
         for (var str : values)
-            if (str == null)
+            if (str.isBlank())
                 return true;
         return false;
     }

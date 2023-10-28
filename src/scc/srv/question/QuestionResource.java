@@ -1,6 +1,7 @@
 package scc.srv.question;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import jakarta.ws.rs.core.Response;
 import redis.clients.jedis.Jedis;
 import scc.cache.RedisCache;
 import scc.data.*;
@@ -15,40 +16,44 @@ import java.util.Optional;
 import java.util.UUID;
 
 public class QuestionResource implements QuestionService {
+    private final String BAD_REQUEST = "BAD_REQUEST@Some mandatory value is empty";
+    private final String NOT_FOUND = "NOT_FOUND@%s: %s does not exist";
 
+    private final String NOT_FOUND2 = "%s: %s  %s does not exist";
     public static final String CONTAINER = "questions";
     public static final String PARTITION_KEY = "/houseId";
 
     private final CosmosDBLayer db = CosmosDBLayer.getInstance();
     private final ObjectMapper mapper = new ObjectMapper();
-
+    
     @Override
-    public String createQuestion(QuestionDAO questionDAO) throws Exception {
-        //TODO: chache
+    public Response createQuestion(QuestionDAO questionDAO) {
+        // TODO: Cache
 
         if (Checks.badParams(questionDAO.getAskerId(), questionDAO.getHouseId(), questionDAO.getText()))
-            throw new Exception("Error: 400 Bad Request");
+            return sendResponse(BAD_REQUEST);
+        //return Response.status(Response.Status.BAD_REQUEST).entity(BAD_REQUEST).build();
 
-        // Verify if house exists
         var houseRes = db.getById(questionDAO.getHouseId(), HousesResource.CONTAINER, HouseDAO.class).stream().findFirst();
         if (houseRes.isEmpty())
-            throw new Exception("Error: 404 House Not Found ");
+            return sendResponse(NOT_FOUND, "House", questionDAO.getHouseId());
+        //return Response.status(Response.Status.NOT_FOUND).entity(NOT_FOUND).build();
 
-        // Verify if user of makes the question exists
         var userRes = db.getById(questionDAO.getAskerId(), UsersResource.CONTAINER, UsersResource.class).stream().findFirst();
         if (userRes.isEmpty())
-            throw new Exception("Error: 404 User Not Found");
+            return sendResponse(NOT_FOUND, "User", questionDAO.getAskerId());
+        //return Response.status(Response.Status.NOT_FOUND).entity("User: " + questionDAO.getAskerId() + " does not exist").build();
 
         questionDAO.setId(UUID.randomUUID().toString());
-
         var createRes = db.createItem(questionDAO, CONTAINER);
         int statusCode = createRes.getStatusCode();
 
         if (Checks.isStatusOk(statusCode))
-            return questionDAO.toQuestion().toString();
+            return Response.status(Response.Status.OK).entity(questionDAO.toQuestion().toString()).build();
         else
-            throw new Exception("Error: " + statusCode);
+            return Response.status(Response.Status.INTERNAL_SERVER_ERROR).entity("Error: " + statusCode).build();
     }
+
 
     @Override
     public Question replyToQuestion(String houseId, String questionId, String replierId, QuestionDAO questionDAO) throws Exception {
@@ -87,9 +92,8 @@ public class QuestionResource implements QuestionService {
         try (Jedis jedis = RedisCache.getCachePool().getResource()) {
             // Verify if house exists
             if (jedis.get(HousesService.HOUSE_PREFIX + houseId) == null) {
-                var houseRes = db.getById(houseId, HousesResource.CONTAINER, HouseDAO.class);
-                Optional<HouseDAO> result = houseRes.stream().findFirst();
-                if (result.isEmpty())
+                var houseRes = db.getById(houseId, HousesResource.CONTAINER, HouseDAO.class).stream().findFirst();
+                if (houseRes.isEmpty())
                     throw new Exception("Error: 404 House Not Found");
             }
 
@@ -97,5 +101,12 @@ public class QuestionResource implements QuestionService {
             return queryRes.stream().map(QuestionDAO::toQuestion).toList();
         }
     }
-    
+
+    private Response sendResponse(String msg, Object... params) {
+        var res = msg.split("@");
+        Response.Status status = Response.Status.valueOf(res[0]);
+        String message = String.format(res[1], params);
+        return Response.status(status).entity(message).build();
+    }
+
 }
