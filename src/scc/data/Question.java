@@ -13,6 +13,9 @@ public class Question {
     private String text;
     private String answer;
 
+    public Question() {
+    }
+
     public Question(String id, String userId, String houseId, String text, String answer) {
         super();
         this.id = id;

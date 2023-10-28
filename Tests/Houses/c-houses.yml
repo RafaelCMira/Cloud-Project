@@ -35,9 +35,10 @@ scenarios:
                 name: "{{ name }}"
                 location: "{{ location }}"
                 description: "{{ description }}"
-                photoId: "{{ imageId }}"
+                photosIds: [ "{{ imageId }}" ]
                 ownerId: "{{ ownerId }}"
                 rentalsIds: [ ]
-                priceByPeriod: [ [ ] ]
+                price: "{{ price }}"
+                discount: "0"
               afterResponse: "genNewHouseReply"
         count: 1

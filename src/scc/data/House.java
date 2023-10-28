@@ -18,25 +18,27 @@ public class House implements HasId {
 
     private String description;
 
-    private String photoId;
+    private List<String> photosIds;
 
     private List<String> rentalsIds;
 
     private String ownerId;
 
-    private int price;
+    private Integer price;
 
-    private double discount;
+    private Integer discount;
 
+    public House() {
+    }
 
     public House(String id, String name, String location, String description,
-                 String photoId, List<String> rentalsIds, String ownerId, int price, double discount) {
+                 List<String> photosIds, List<String> rentalsIds, String ownerId, Integer price, Integer discount) {
         super();
         this.id = id;
         this.name = name;
         this.location = location;
         this.description = description;
-        this.photoId = photoId;
+        this.photosIds = photosIds;
         this.rentalsIds = rentalsIds;
         this.ownerId = ownerId;
         this.price = price;
@@ -76,25 +78,18 @@ public class House implements HasId {
         this.description = description;
     }
 
-    public String getPhotoId() {
-        return photoId;
+    public List<String> getPhotosIds() {
+        return photosIds;
     }
 
-    public void setPhotoId(String photoId) {
-        this.photoId = photoId;
+    public void setPhotosIds(List<String> photosIds) {
+        this.photosIds = photosIds;
     }
 
     public List<String> getRentalsIds() {
         return rentalsIds;
     }
 
-    public void addRental(String rentalID) {
-        rentalsIds.add(rentalID);
-    }
-
-    public void removeRental(String rentalID) {
-        rentalsIds.remove(rentalID);
-    }
 
     public String getOwnerId() {
         return ownerId;
@@ -104,19 +99,19 @@ public class House implements HasId {
         this.ownerId = ownerId;
     }
 
-    public int getPrice() {
+    public Integer getPrice() {
         return price;
     }
 
-    public void setPrice(int price) {
+    public void setPrice(Integer price) {
         this.price = price;
     }
 
-    public double getDiscount() {
+    public Integer getDiscount() {
         return discount;
     }
 
-    public void setDiscount(double discount) {
+    public void setDiscount(Integer discount) {
         this.discount = discount;
     }
 
@@ -127,11 +122,19 @@ public class House implements HasId {
                 ", name='" + name + '\'' +
                 ", location='" + location + '\'' +
                 ", description='" + description + '\'' +
-                ", photoId='" + photoId + '\'' +
-                ", rentalsID=" + rentalsIds +
+                ", photosIds=" + photosIds +
+                ", rentalsIds=" + rentalsIds +
                 ", ownerId='" + ownerId + '\'' +
                 ", price=" + price +
                 ", discount=" + discount +
                 '}';
+    }
+
+    public void addRental(String rentalID) {
+        rentalsIds.add(rentalID);
+    }
+
+    public void removeRental(String rentalID) {
+        rentalsIds.remove(rentalID);
     }
 }

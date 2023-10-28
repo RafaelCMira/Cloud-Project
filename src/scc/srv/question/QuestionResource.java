@@ -16,7 +16,7 @@ import java.util.Optional;
 public class QuestionResource implements QuestionService {
 
     public static final String CONTAINER = "questions";
-    public static final String PARTITION_KEY = "/id";
+    public static final String PARTITION_KEY = "/houseId";
 
     private final CosmosDBLayer db = CosmosDBLayer.getInstance();
     private final ObjectMapper mapper = new ObjectMapper();

@@ -18,32 +18,32 @@ public class HouseDAO implements HasId {
 
     private String description;
 
-    private String photoId;
+    private List<String> photosIds;
 
     private List<String> rentalsIds;
 
     private String ownerId;
 
-    private int price;
+    private Integer price;
 
-    private double discount;
+    private Integer discount;
 
     public HouseDAO() {
     }
 
     public HouseDAO(House h) {
         this(h.getId(), h.getName(), h.getLocation(), h.getDescription(),
-                h.getPhotoId(), h.getRentalsIds(), h.getOwnerId(), h.getPrice(), h.getDiscount());
+                h.getPhotosIds(), h.getRentalsIds(), h.getOwnerId(), h.getPrice(), h.getDiscount());
     }
 
-    public HouseDAO(String id, String name, String location, String description, String photoId,
-                    List<String> rentalsIds, String ownerId, int price, double discount) {
+    public HouseDAO(String id, String name, String location, String description, List<String> photosIds,
+                    List<String> rentalsIds, String ownerId, Integer price, Integer discount) {
         super();
         this.id = id;
         this.name = name;
         this.location = location;
         this.description = description;
-        this.photoId = photoId;
+        this.photosIds = photosIds;
         this.rentalsIds = rentalsIds;
         this.ownerId = ownerId;
         this.price = price;
@@ -99,24 +99,16 @@ public class HouseDAO implements HasId {
         this.description = description;
     }
 
-    public String getPhotoId() {
-        return photoId;
+    public List<String> getPhotosIds() {
+        return photosIds;
     }
 
-    public void setPhotoId(String photoId) {
-        this.photoId = photoId;
+    public void setPhotosIds(List<String> photosIds) {
+        this.photosIds = photosIds;
     }
 
     public List<String> getRentalsIds() {
         return rentalsIds;
-    }
-
-    public void addRental(String rentalID) {
-        rentalsIds.add(rentalID);
-    }
-
-    public void removeRental(String rentalID) {
-        rentalsIds.remove(rentalID);
     }
 
     public String getOwnerId() {
@@ -127,26 +119,25 @@ public class HouseDAO implements HasId {
         this.ownerId = ownerId;
     }
 
-    public int getPrice() {
+    public Integer getPrice() {
         return price;
     }
 
-    public void setPrice(int price) {
+    public void setPrice(Integer price) {
         this.price = price;
     }
 
-    public double getDiscount() {
+    public Integer getDiscount() {
         return discount;
     }
 
-    public void setDiscount(double discount) {
+    public void setDiscount(Integer discount) {
         this.discount = discount;
     }
 
     public House toHouse() {
-        return new House(id, name, location, description, photoId, rentalsIds, ownerId, price, discount);
+        return new House(id, name, location, description, photosIds, rentalsIds, ownerId, price, discount);
     }
-
 
     @Override
     public String toString() {
@@ -157,11 +148,21 @@ public class HouseDAO implements HasId {
                 ", name='" + name + '\'' +
                 ", location='" + location + '\'' +
                 ", description='" + description + '\'' +
-                ", photoId='" + photoId + '\'' +
+                ", photosIds=" + photosIds +
                 ", rentalsIds=" + rentalsIds +
                 ", ownerId='" + ownerId + '\'' +
                 ", price=" + price +
                 ", discount=" + discount +
                 '}';
     }
+
+    public void addRental(String rentalID) {
+        rentalsIds.add(rentalID);
+    }
+
+    public void removeRental(String rentalID) {
+        rentalsIds.remove(rentalID);
+    }
+    
+
 }

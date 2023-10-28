@@ -14,7 +14,6 @@ import scc.srv.utils.Checks;
 import scc.srv.utils.Cache;
 import scc.srv.media.MediaResource;
 import scc.srv.users.UsersService;
-import scc.utils.Hash;
 
 import java.time.LocalDate;
 import java.util.ArrayList;
@@ -36,7 +35,7 @@ public class HousesResource implements HousesService {
 
             user.addHouse(houseDAO.getId());
 
-            var resUpdateUser = db.updateUserById(user.getId(), user);
+            var resUpdateUser = db.updateUser(user);
             int statusCode = resUpdateUser.getStatusCode();
 
             if (!Checks.isStatusOk(statusCode))
@@ -57,38 +56,40 @@ public class HousesResource implements HousesService {
         }
     }
 
+
     @Override
     public String deleteHouse(String id) throws Exception {
         if (Checks.badParams(id))
             throw new BadRequestException("Bad Request (ID NULL)");
 
+        //TODO: quando se elimina um user e depois se tenta eliminar a casa, entra sempre nesta exceção (not found)
+        //TODO: Como é que o stor quer isto feito?
         var item = db.getById(id, CONTAINER, HouseDAO.class).stream().findFirst();
         String ownerId = null;
         if (item.isPresent())
             ownerId = item.get().getOwnerId();
         else
-            throw new NotFoundException("House not found");
+            throw new Exception("Owner of the house not found");
 
-        var res = db.deleteById(id, CONTAINER, PARTITION_KEY);
+        var res = db.deleteHouse(id);
         int statusCode = res.getStatusCode();
 
         if (!Checks.isStatusOk(statusCode))
             throw new InternalServerErrorException("Internal Server Error: " + statusCode);
 
-        // TODO: DÁ ERRO PORQUE O DELETE DEVOLVE NULL, PODEMOS TER DE ALTERAR A COSMOS DB e ativar o soft delete
         var user = db.getById(ownerId, UsersResource.CONTAINER, UserDAO.class).stream().findFirst();
         if (user.isPresent()) {
             // acho que esta verificaçao do user.isPresent é necessaria para alteraçoes em paralelo
             // (podem remover o user mesmo antes de se começar a fazer o delete da casa)
             var updatedUser = user.get();
             updatedUser.removeHouse(id);
+            db.updateUser(updatedUser);
             try (Jedis jedis = RedisCache.getCachePool().getResource()) {
                 Cache.deleteFromCache(HOUSE_PREFIX, id, jedis);
                 Cache.putInCache(updatedUser, UsersService.USER_PREFIX, jedis);
             }
             return String.format("StatusCode: %d \nHouse %s was deleted", statusCode, id);
         } else {
-            // Não tenho a certeza se esta exception é not found ou nao
             throw new NotFoundException("User not found");
         }
     }
@@ -120,19 +121,19 @@ public class HousesResource implements HousesService {
 
     @Override
     public House updateHouse(String id, House house) throws Exception {
-        HouseDAO updatedHouse = refactorHouse(id, house);
-        var res = db.updateHouseById(id, updatedHouse);
+        var updatedHouse = genUpdatedHouse(id, house);
+        var res = db.updateHouse(updatedHouse);
+
         int statusCode = res.getStatusCode();
         if (Checks.isStatusOk(statusCode)) {
             try (Jedis jedis = RedisCache.getCachePool().getResource()) {
                 Cache.putInCache(updatedHouse, HOUSE_PREFIX, jedis);
+                return updatedHouse.toHouse();
             }
-            return updatedHouse.toHouse();
         } else {
             throw new Exception("Error: " + statusCode);
         }
     }
-
 
     @Override
     public List<House> getAvailHouseByLocation(String location) throws Exception {
@@ -219,33 +220,47 @@ public class HousesResource implements HousesService {
      * @return updated userDAO to the method who's making the request to the database
      * @throws Exception If id is null or if the user does not exist
      */
-    private HouseDAO refactorHouse(String id, House house) throws Exception {
+    private HouseDAO genUpdatedHouse(String id, House house) throws Exception {
         if (Checks.badParams(id))
             throw new Exception("Error: 400 Bad Request (ID NULL)");
 
-        var res = db.getById(id, CONTAINER, HouseDAO.class);
-        var result = res.stream().findFirst();
-        if (result.isPresent()) {
-            HouseDAO houseDAO = result.get();
+        var res = db.getById(id, CONTAINER, HouseDAO.class).stream().findFirst();
+        if (res.isPresent()) {
+            HouseDAO houseDAO = res.get();
 
             String newName = house.getName();
             if (!newName.isBlank())
                 houseDAO.setName(newName);
 
-            String newLocation = Hash.of(house.getLocation());
+            String newLocation = house.getLocation();
             if (!newLocation.isBlank())
                 houseDAO.setLocation(newLocation);
 
-            String newPhoto = house.getPhotoId();
+            var newPhotos = house.getPhotosIds();
             MediaResource media = new MediaResource();
-            if (!media.hasPhotoById(newPhoto))
-                throw new Exception("Error: 404 Image not found");
-            else
-                houseDAO.setPhotoId(newPhoto);
+            if (!newPhotos.isEmpty())
+                if (!media.hasPhotos(newPhotos))
+                    throw new Exception("Error: 404 Image not found");
+                else
+                    houseDAO.setPhotosIds(newPhotos);
 
             String newDescription = house.getDescription();
             if (!newDescription.isBlank())
                 houseDAO.setDescription(newDescription);
+
+            var newPrice = house.getPrice();
+            if (newPrice != null)
+                if (newPrice > 0)
+                    houseDAO.setPrice(newPrice);
+                else
+                    throw new Exception("Error: Invalid price");
+
+            var newDiscount = house.getDiscount();
+            if (newDiscount != null)
+                if (newDiscount >= 0)
+                    houseDAO.setDiscount(newDiscount);
+                else
+                    throw new Exception("Error: Invalid discount");
 
             return houseDAO;
         } else {
@@ -254,7 +269,8 @@ public class HousesResource implements HousesService {
     }
 
     private UserDAO checksHouseCreation(HouseDAO houseDAO, Jedis jedis) throws Exception {
-        if (Checks.badParams(houseDAO.getId(), houseDAO.getName(), houseDAO.getLocation(), houseDAO.getPhotoId())) {
+        if (Checks.badParams(houseDAO.getId(), houseDAO.getName(), houseDAO.getLocation(), houseDAO.getPrice().toString(),
+                houseDAO.getDiscount().toString()) && houseDAO.getPrice() > 0 && houseDAO.getDiscount() > 0) {
             throw new Exception("Error: 400 Bad Request");
         }
 
@@ -263,12 +279,12 @@ public class HousesResource implements HousesService {
             throw new Exception("Error: 409 House already exists");
 
         // Check if house already exists on DB
-        Optional<HouseDAO> house = db.getById(houseDAO.getId(), CONTAINER, HouseDAO.class).stream().findFirst();
+        var house = db.getById(houseDAO.getId(), CONTAINER, HouseDAO.class).stream().findFirst();
         if (house.isPresent())
             throw new Exception("Error: 409 House already exists");
 
         MediaResource media = new MediaResource();
-        if (!media.hasPhotoById(houseDAO.getPhotoId()))
+        if (!media.hasPhotos(houseDAO.getPhotosIds()))
             throw new Exception("Error: 404 Image not found.");
 
         // Checks if the user exists in cache

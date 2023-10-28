@@ -17,6 +17,9 @@ public class RentalDAO {
     private LocalDate initialDate;
     private LocalDate endDate;
 
+    public RentalDAO() {
+    }
+
     public RentalDAO(Rental r) {
         this(r.getId(), r.getHouseId(), r.getAskerId(), r.getPrice(), r.getStartDate(),
                 r.getEndDate(), r.getDiscount());

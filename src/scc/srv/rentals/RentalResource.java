@@ -1,6 +1,5 @@
 package scc.srv.rentals;
 
-import com.azure.cosmos.models.CosmosItemResponse;
 import com.azure.cosmos.util.CosmosPagedIterable;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import redis.clients.jedis.Jedis;
@@ -92,7 +91,7 @@ public class RentalResource implements RentalService {
     @Override
     public Rental updateRental(String houseID, String id, RentalDAO rentalDAO) throws Exception {
         RentalDAO updatedRental = refactorRental(houseID, id, rentalDAO);
-        var res = db.updateRentalById(id, updatedRental);
+        var res = db.updateRental(updatedRental);
         int statusCode = res.getStatusCode();
         if (Checks.isStatusOk(res.getStatusCode())) {
             try (Jedis jedis = RedisCache.getCachePool().getResource()) {
@@ -119,7 +118,7 @@ public class RentalResource implements RentalService {
         if (id == null)
             throw new Exception("Error: 400 Bad Request (Null ID");
 
-        var res = db.deleteById(id, CONTAINER, houseId);
+        var res = db.deleteRental(id);
         int statusCode = res.getStatusCode();
 
         if (Checks.isStatusOk(statusCode)) {

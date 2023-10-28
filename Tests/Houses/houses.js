@@ -135,6 +135,7 @@ function genNewHouse(context, events, done) {
     context.vars.location = faker.address.city();
     context.vars.description = faker.lorem.sentence();
     context.vars.ownerId = usersIds[random(usersIds.length)];
+    context.vars.price = random(300);
 	return done();
 }
 

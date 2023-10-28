@@ -15,6 +15,9 @@ public class Rental {
     private LocalDate endDate;
     private double discount;
 
+    public Rental() {
+    }
+
     public Rental(String id, String houseId, String askerId, double price, LocalDate startDate, LocalDate endDate, double discount) {
         super();
         this.id = id;

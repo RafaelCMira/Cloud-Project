@@ -10,8 +10,6 @@ import scc.utils.Hash;
 import java.util.ArrayList;
 import java.util.List;
 
-import jakarta.ws.rs.PathParam;
-
 /**
  * Resource for managing media files, such as images.
  */
@@ -54,24 +52,17 @@ public class MediaResource implements MediaService {
         return content;
     }
 
-    /**
-     * Checks if the photo exists in the blob
-     *
-     * @param id - the photo id
-     * @return true if the photo exists in the blob, false otherwise
-     */
-    public boolean hasPhotoById(String id) {
+
+    public boolean hasPhotos(List<String> photosIds) {
         try {
             // Get container client
             BlobContainerClient containerClient = getContainerClient(MediaService.CONTAINER_NAME);
-
-            // Get client to blob
-            BlobClient blob = containerClient.getBlobClient(id);
-            return blob.exists();
-        } catch (Exception e) {
-            e.printStackTrace();
+            for (String photo : photosIds)
+                if (!containerClient.getBlobClient(photo).exists())
+                    return false;
+        } catch (Exception ignored) {
         }
-        return false;
+        return true;
     }
 
     public List<String> listImages() {
