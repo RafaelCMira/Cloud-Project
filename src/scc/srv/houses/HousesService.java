@@ -2,6 +2,7 @@ package scc.srv.houses;
 
 import jakarta.ws.rs.*;
 import jakarta.ws.rs.core.MediaType;
+import jakarta.ws.rs.core.Response;
 import scc.data.HouseDAO;
 import scc.data.House;
 
@@ -21,7 +22,7 @@ public interface HousesService {
     @POST
     @Consumes(MediaType.APPLICATION_JSON)
     @Produces(MediaType.APPLICATION_JSON)
-    String createHouse(HouseDAO houseDAO) throws Exception;
+    Response createHouse(HouseDAO houseDAO) throws Exception;
 
     @DELETE
     @Path("/{" + ID + "}")

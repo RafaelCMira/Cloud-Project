@@ -1,10 +1,13 @@
 package scc.srv.houses;
 
+import com.azure.cosmos.CosmosException;
 import com.azure.cosmos.util.CosmosPagedIterable;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import jakarta.ws.rs.BadRequestException;
 import jakarta.ws.rs.InternalServerErrorException;
 import jakarta.ws.rs.NotFoundException;
+import jakarta.ws.rs.WebApplicationException;
+import jakarta.ws.rs.core.Response;
 import redis.clients.jedis.Jedis;
 import scc.cache.RedisCache;
 import scc.data.*;
@@ -29,32 +32,37 @@ public class HousesResource implements HousesService {
     private final ObjectMapper mapper = new ObjectMapper();
 
     @Override
-    public String createHouse(HouseDAO houseDAO) throws Exception {
+    public Response createHouse(HouseDAO houseDAO) throws Exception {
         try (Jedis jedis = RedisCache.getCachePool().getResource()) {
 
-            var user = checksHouseCreation(houseDAO, jedis);
+            try {
+                var user = checksHouseCreation(houseDAO, jedis);
+                user.addHouse(houseDAO.getId());
 
-            user.addHouse(houseDAO.getId());
+                db.updateUser(user);
+                db.createItem(houseDAO, CONTAINER);
 
-            var resUpdateUser = db.updateUser(user);
-            int statusCode = resUpdateUser.getStatusCode();
+                // TODO: enviar ambos os pedidos para a cache de uma vez, o stor disse que dava para fazer
 
-            if (!isStatusOk(statusCode))
-                throw new InternalServerErrorException("Internal Server Error: " + statusCode);
-
-            var resCreateHouse = db.createItem(houseDAO, HousesResource.CONTAINER);
-            statusCode = resCreateHouse.getStatusCode();
-
-            // If all operations succeeded, put in cache the updates
-            // TODO: enviar ambos os pedidos para a cache de uma vez, o stor disse que dava para fazer
-            if (isStatusOk(statusCode)) {
                 Cache.putInCache(houseDAO, HOUSE_PREFIX, jedis);
                 Cache.putInCache(user, UsersService.USER_PREFIX, jedis);
-                return houseDAO.toHouse().toString();
-            } else {
-                throw new InternalServerErrorException("Internal Server Error: " + statusCode);
+
+                return sendResponse(OK, houseDAO.toHouse().toString());
+
+            } catch (CosmosException ex) {
+                return handleException(ex.getStatusCode(), ex.getMessage(), houseDAO);
+            } catch (WebApplicationException ex) {
+                return handleException(ex.getResponse().getStatus(), ex.getMessage(), houseDAO);
             }
+
         }
+    }
+
+    private Response handleException(int statusCode, String msg, HouseDAO houseDAO) {
+        if (msg.contains("House"))
+            return processException(statusCode, "House", houseDAO.getId());
+        else
+            return processException(statusCode, "User", houseDAO.getOwnerId());
     }
 
 
@@ -272,30 +280,31 @@ public class HousesResource implements HousesService {
     private UserDAO checksHouseCreation(HouseDAO houseDAO, Jedis jedis) throws Exception {
         if (badParams(houseDAO.getId(), houseDAO.getName(), houseDAO.getLocation(), houseDAO.getPrice().toString(),
                 houseDAO.getDiscount().toString()) && houseDAO.getPrice() > 0 && houseDAO.getDiscount() > 0) {
-            throw new Exception("Error: 400 Bad Request");
+            throw new WebApplicationException(Response.Status.BAD_REQUEST);
         }
 
-        // Check if house already exists on Cache
+        /*// Check if house already exists on Cache
         if (jedis.get(HousesService.HOUSE_PREFIX + houseDAO.getId()) != null)
-            throw new Exception("Error: 409 House already exists");
+            throw new WebApplicationException("House", Response.Status.CONFLICT);*/
 
         // Check if house already exists on DB
         var house = db.getById(houseDAO.getId(), CONTAINER, HouseDAO.class).stream().findFirst();
         if (house.isPresent())
-            throw new Exception("Error: 409 House already exists");
+            throw new WebApplicationException("House", Response.Status.CONFLICT);
 
         MediaResource media = new MediaResource();
         if (!media.hasPhotos(houseDAO.getPhotosIds()))
-            throw new Exception("Error: 404 Image not found.");
+            throw new WebApplicationException(Response.Status.NOT_FOUND);
 
-        // Checks if the user exists in cache
+       /* // Checks if the user exists in cache
         UserDAO user = mapper.readValue(jedis.get(UsersService.USER_PREFIX + houseDAO.getOwnerId()), UserDAO.class);
-        if (user != null) return user;
+        if (user != null)
+            return user;*/
 
         // Checks if the user exists in DB
         var dbUser = db.getById(houseDAO.getOwnerId(), UsersResource.CONTAINER, UserDAO.class).stream().findFirst();
         if (dbUser.isEmpty())
-            throw new Exception("Error: 404 User not found.");
+            throw new WebApplicationException("User", Response.Status.NOT_FOUND);
 
         return dbUser.get();
     }
