@@ -3,9 +3,6 @@ package scc.srv.houses;
 import com.azure.cosmos.CosmosException;
 import com.azure.cosmos.util.CosmosPagedIterable;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import jakarta.ws.rs.BadRequestException;
-import jakarta.ws.rs.InternalServerErrorException;
-import jakarta.ws.rs.NotFoundException;
 import jakarta.ws.rs.WebApplicationException;
 import jakarta.ws.rs.core.Response;
 import redis.clients.jedis.Jedis;
@@ -50,81 +47,75 @@ public class HousesResource implements HousesService {
                 return sendResponse(OK, houseDAO.toHouse().toString());
 
             } catch (CosmosException ex) {
-                return handleException(ex.getStatusCode(), ex.getMessage(), houseDAO);
+                return handleCreateException(ex.getStatusCode(), ex.getMessage(), houseDAO);
             } catch (WebApplicationException ex) {
-                return handleException(ex.getResponse().getStatus(), ex.getMessage(), houseDAO);
+                return handleCreateException(ex.getResponse().getStatus(), ex.getMessage(), houseDAO);
             }
 
         }
     }
 
-    private Response handleException(int statusCode, String msg, HouseDAO houseDAO) {
+    private Response handleCreateException(int statusCode, String msg, HouseDAO houseDAO) {
         if (msg.contains("House"))
             return processException(statusCode, "House", houseDAO.getId());
         else
             return processException(statusCode, "User", houseDAO.getOwnerId());
     }
 
-
     @Override
-    public String deleteHouse(String id) throws Exception {
+    public Response deleteHouse(String id) throws Exception {
         if (badParams(id))
-            throw new BadRequestException("Bad Request (ID NULL)");
+            return sendResponse(BAD_REQUEST);
 
-        //TODO: quando se elimina um user e depois se tenta eliminar a casa, entra sempre nesta exceção (not found)
-        //TODO: Como é que o stor quer isto feito?
-        var item = db.getById(id, CONTAINER, HouseDAO.class).stream().findFirst();
-        String ownerId = null;
-        if (item.isPresent())
-            ownerId = item.get().getOwnerId();
-        else
-            throw new Exception("Owner of the house not found");
+        try {
+            //TODO: Quando se elimina um User, colocar nas casas (Deleted User)
+            var item = db.getById(id, CONTAINER, HouseDAO.class).stream().findFirst();
+            String ownerId = null;
+            if (item.isPresent())
+                ownerId = item.get().getOwnerId();
+            else
+                return sendResponse(NOT_FOUND, "House", id);
 
-        var res = db.deleteHouse(id);
-        int statusCode = res.getStatusCode();
+            db.deleteHouse(id);
 
-        if (!isStatusOk(statusCode))
-            throw new InternalServerErrorException("Internal Server Error: " + statusCode);
-
-        var user = db.getById(ownerId, UsersResource.CONTAINER, UserDAO.class).stream().findFirst();
-        if (user.isPresent()) {
-            // acho que esta verificaçao do user.isPresent é necessaria para alteraçoes em paralelo
-            // (podem remover o user mesmo antes de se começar a fazer o delete da casa)
-            var updatedUser = user.get();
-            updatedUser.removeHouse(id);
-            db.updateUser(updatedUser);
-            try (Jedis jedis = RedisCache.getCachePool().getResource()) {
-                Cache.deleteFromCache(HOUSE_PREFIX, id, jedis);
-                Cache.putInCache(updatedUser, UsersService.USER_PREFIX, jedis);
+            var user = db.getById(ownerId, UsersResource.CONTAINER, UserDAO.class).stream().findFirst();
+            if (user.isPresent()) {
+                var updatedUser = user.get();
+                updatedUser.removeHouse(id);
+                db.updateUser(updatedUser);
+                try (Jedis jedis = RedisCache.getCachePool().getResource()) {
+                    Cache.deleteFromCache(HOUSE_PREFIX, id, jedis);
+                    Cache.putInCache(updatedUser, UsersService.USER_PREFIX, jedis);
+                }
             }
-            return String.format("StatusCode: %d \nHouse %s was deleted", statusCode, id);
-        } else {
-            throw new NotFoundException("User not found");
+
+        } catch (CosmosException ex) {
+            throw new Exception("Error " + ex.getStatusCode() + " " + ex.getMessage());
+            // return handleDeleteException(ex.getStatusCode(), ex.getMessage(), id/*, ownerId*/); // adicionar aqui o ownerId quando tivermos as
+            // cookies
         }
+
+        return sendResponse(OK, String.format("House %s was deleted", id));
     }
 
     @Override
-    public House getHouse(String id) throws Exception {
+    public Response getHouse(String id) throws Exception {
         if (badParams(id))
-            throw new Exception("Error: 400 Bad Request (ID NULL)");
+            return sendResponse(BAD_REQUEST);
 
         try (Jedis jedis = RedisCache.getCachePool().getResource()) {
 
             String house = Cache.getFromCache(HOUSE_PREFIX, id, jedis);
-            if (house != null) {
-                return mapper.readValue(house, HouseDAO.class).toHouse();
-            }
+            if (house != null)
+                return sendResponse(OK, mapper.readValue(house, HouseDAO.class).toHouse());
 
-            var res = db.getById(id, CONTAINER, HouseDAO.class);
-            var result = res.stream().findFirst();
-
-            if (result.isPresent()) {
-                var houseToCACHE = result.get();
+            var res = db.getById(id, CONTAINER, HouseDAO.class).stream().findFirst();
+            if (res.isPresent()) {
+                var houseToCACHE = res.get();
                 Cache.putInCache(houseToCACHE, HOUSE_PREFIX, jedis);
-                return houseToCACHE.toHouse();
-            } else {
-                throw new Exception("Error: 404");
-            }
+                return sendResponse(OK, houseToCACHE.toHouse());
+            } else
+                return sendResponse(NOT_FOUND, "House", id);
         }
     }
 

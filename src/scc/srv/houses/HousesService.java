@@ -27,12 +27,12 @@ public interface HousesService {
     @DELETE
     @Path("/{" + ID + "}")
     @Produces(MediaType.APPLICATION_JSON)
-    String deleteHouse(@PathParam(ID) String id) throws Exception;
+    Response deleteHouse(@PathParam(ID) String id) throws Exception;
 
     @GET
     @Path("/{" + ID + "}")
     @Produces(MediaType.APPLICATION_JSON)
-    House getHouse(@PathParam(ID) String id) throws Exception;
+    Response getHouse(@PathParam(ID) String id) throws Exception;
 
     @PUT
     @Path("/{" + ID + "}")
