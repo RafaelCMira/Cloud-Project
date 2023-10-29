@@ -1,6 +1,7 @@
 package scc.data;
 
 import java.time.LocalDate;
+import java.util.Date;
 
 /**
  * Represents a House Rental, as returned to the client
@@ -11,14 +12,14 @@ public class Rental {
     private String houseId;
     private String askerId;
     private double price;
-    private LocalDate startDate;
-    private LocalDate endDate;
+    private Date startDate;
+    private Date endDate;
     private double discount;
 
     public Rental() {
     }
 
-    public Rental(String id, String houseId, String askerId, double price, LocalDate startDate, LocalDate endDate, double discount) {
+    public Rental(String id, String houseId, String askerId, double price, Date startDate, Date endDate, double discount) {
         super();
         this.id = id;
         this.houseId = houseId;
@@ -61,19 +62,19 @@ public class Rental {
         return price;
     }
 
-    public void setStartDate(LocalDate startDate) {
+    public void setStartDate(Date startDate) {
         this.startDate = startDate;
     }
 
-    public LocalDate getStartDate() {
+    public Date getStartDate() {
         return startDate;
     }
 
-    public void setEndDate(LocalDate endDate) {
+    public void setEndDate(Date endDate) {
         this.endDate = endDate;
     }
 
-    public LocalDate getEndDate() {
+    public Date getEndDate() {
         return endDate;
     }
 

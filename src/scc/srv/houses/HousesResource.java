@@ -14,8 +14,10 @@ import scc.srv.utils.Cache;
 import scc.srv.media.MediaResource;
 import scc.srv.users.UsersService;
 
+import java.time.Instant;
 import java.time.LocalDate;
 import java.util.ArrayList;
+import java.util.Date;
 import java.util.List;
 import java.util.Optional;
 
@@ -164,7 +166,7 @@ public class HousesResource implements HousesService {
                 boolean available = true;
                 for (String rentalId : h.getRentalsIds()) {
                     var rental = db.getRentalById(h.getId(), rentalId).stream().findFirst();
-                    if (rental.isPresent() && rental.get().getEndDate().isBefore(LocalDate.now()))
+                    if (rental.isPresent() && rental.get().getEndDate().before(Date.from(Instant.now())))
                         available = false;
                 }
                 if (available)
@@ -190,8 +192,8 @@ public class HousesResource implements HousesService {
     @Override
     public List<House> getHouseByLocationPeriod(String location, String initialDate, String endDate) throws Exception {
         //TODO: chache
-        LocalDate iniDate = LocalDate.parse(initialDate);
-        LocalDate eDate = LocalDate.parse(endDate);
+        Date iniDate = Date.from(Instant.parse(initialDate));
+        Date eDate = Date.from(Instant.parse(endDate));
 
         List<House> result = new ArrayList<>();
 
@@ -207,7 +209,7 @@ public class HousesResource implements HousesService {
                     available = false;
                 } else {
                     RentalDAO r = rental.get();
-                    available = r.getInitialDate().isAfter(eDate) || r.getEndDate().isBefore(iniDate);
+                    available = r.getInitialDate().after(eDate) || r.getEndDate().before(iniDate);
                 }
 
             }

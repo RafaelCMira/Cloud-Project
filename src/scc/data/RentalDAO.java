@@ -1,12 +1,15 @@
 package scc.data;
 
+import scc.srv.utils.HasId;
+
 import java.time.LocalDate;
+import java.util.Date;
 
 /**
  * Represents a House Rental, as returned to the client
  */
 
-public class RentalDAO {
+public class RentalDAO implements HasId {
     private String _rid;
     private String _ts;
     private String id;
@@ -14,8 +17,8 @@ public class RentalDAO {
     private String userId;
     private double price;
     private double discount;
-    private LocalDate initialDate;
-    private LocalDate endDate;
+    private Date initialDate;
+    private Date endDate;
 
     public RentalDAO() {
     }
@@ -25,7 +28,7 @@ public class RentalDAO {
                 r.getEndDate(), r.getDiscount());
     }
 
-    public RentalDAO(String id, String houseId, String userId, double price, LocalDate initialDate, LocalDate endDate, double discount) {
+    public RentalDAO(String id, String houseId, String userId, double price, Date initialDate, Date endDate, double discount) {
         super();
         this.id = id;
         this.houseId = houseId;
@@ -84,19 +87,19 @@ public class RentalDAO {
         return price;
     }
 
-    public void setInitialDate(LocalDate initialDate) {
+    public void setInitialDate(Date initialDate) {
         this.initialDate = initialDate;
     }
 
-    public LocalDate getInitialDate() {
+    public Date getInitialDate() {
         return initialDate;
     }
 
-    public void setEndDate(LocalDate endDate) {
+    public void setEndDate(Date endDate) {
         this.endDate = endDate;
     }
 
-    public LocalDate getEndDate() {
+    public Date getEndDate() {
         return endDate;
     }
 
