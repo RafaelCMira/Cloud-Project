@@ -1,19 +1,24 @@
 package scc.srv.users;
 
+import com.azure.cosmos.CosmosException;
+import com.azure.cosmos.implementation.ConflictException;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import jakarta.ws.rs.WebApplicationException;
+import jakarta.ws.rs.core.Response;
 import redis.clients.jedis.Jedis;
 import scc.cache.RedisCache;
 import scc.data.User;
 import scc.data.UserDAO;
 import scc.db.CosmosDBLayer;
-import scc.srv.utils.Checks;
 import scc.srv.utils.Cache;
 import scc.srv.media.MediaResource;
 import scc.utils.Hash;
 
 import java.util.ArrayList;
 import java.util.List;
+
+import static scc.srv.utils.Utility.*;
 
 
 public class UsersResource implements UsersService {
@@ -24,29 +29,32 @@ public class UsersResource implements UsersService {
     private final CosmosDBLayer db = CosmosDBLayer.getInstance();
 
     @Override
-    public String createUser(UserDAO userDAO) throws Exception {
-        if (Checks.badParams(userDAO.getId(), userDAO.getName(), userDAO.getPwd(), userDAO.getPhotoId()))
-            throw new Exception("Error: 400 Bad Request");
+    public Response createUser(UserDAO userDAO) throws Exception {
+        if (badParams(userDAO.getId(), userDAO.getName(), userDAO.getPwd(), userDAO.getPhotoId()))
+            return sendResponse(BAD_REQUEST);
 
         MediaResource media = new MediaResource();
         if (!media.hasPhotos(List.of(userDAO.getPhotoId())))
-            throw new Exception("Error: 404 Image not found");
+            return sendResponse(NOT_FOUND, "Image", "(some id)");
 
-        var res = db.createItem(userDAO, CONTAINER);
-        int statusCode = res.getStatusCode();
-
-        if (Checks.isStatusOk(statusCode)) {
-            try (Jedis jedis = RedisCache.getCachePool().getResource()) {
-                Cache.putInCache(userDAO, USER_PREFIX, jedis);
-                return userDAO.toUser().toString();
+        try {
+            var res = db.createItem(userDAO, CONTAINER);
+            int statusCode = res.getStatusCode();
+            if (isStatusOk(statusCode)) {
+                try (Jedis jedis = RedisCache.getCachePool().getResource()) {
+                    Cache.putInCache(userDAO, USER_PREFIX, jedis);
+                }
             }
-        } else
-            throw new Exception("Error: " + statusCode);
+        } catch (CosmosException ex) {
+            return processException(ex.getStatusCode(), "User", userDAO.getId());
+        }
+
+        return sendResponse(OK, userDAO.toUser().toString());
     }
 
     @Override
     public String deleteUser(String id) throws Exception {
-        if (Checks.badParams(id))
+        if (badParams(id))
             throw new Exception("Error: 400 Bad Request (ID NULL)");
 
         var res = db.deleteUser(id);
@@ -55,7 +63,7 @@ public class UsersResource implements UsersService {
         //TODO: colocar "Deleted User" no ownerId das casas do user eliminado e nos Rentals
         //TODO: Usar azure functions
 
-        if (Checks.isStatusOk(statusCode)) {
+        if (isStatusOk(statusCode)) {
             try (Jedis jedis = RedisCache.getCachePool().getResource()) {
                 jedis.del(USER_PREFIX + id);
                 return String.format("StatusCode: %d \nUser %s was delete", statusCode, id);
@@ -66,7 +74,7 @@ public class UsersResource implements UsersService {
 
     @Override
     public User getUser(String id) throws Exception {
-        if (Checks.badParams(id))
+        if (badParams(id))
             throw new Exception("Error: 400 Bad Request (ID NULL)");
 
         try (Jedis jedis = RedisCache.getCachePool().getResource()) {
@@ -90,7 +98,7 @@ public class UsersResource implements UsersService {
         var res = db.updateUser(updatedUser);
 
         int statusCode = res.getStatusCode();
-        if (Checks.isStatusOk(statusCode)) {
+        if (isStatusOk(statusCode)) {
             try (Jedis jedis = RedisCache.getCachePool().getResource()) {
                 Cache.putInCache(updatedUser, USER_PREFIX, jedis);
                 return updatedUser.toUser();
@@ -110,7 +118,7 @@ public class UsersResource implements UsersService {
 
     @Override
     public List<String> getUserHouses(String id) throws Exception {
-        if (Checks.badParams(id))
+        if (badParams(id))
             throw new Exception("Error: 400 Bad Request (ID NULL)");
 
         try (Jedis jedis = RedisCache.getCachePool().getResource()) {
@@ -139,7 +147,7 @@ public class UsersResource implements UsersService {
      * @throws Exception If id is null or if the user does not exist
      */
     private UserDAO genUpdatedUserDAO(String id, User user) throws Exception {
-        if (Checks.badParams(id))
+        if (badParams(id))
             throw new Exception("Error: 400 Bad Request (ID NULL)");
 
         var result = db.getById(id, CONTAINER, UserDAO.class).stream().findFirst();

@@ -2,6 +2,7 @@ package scc.srv.users;
 
 import jakarta.ws.rs.*;
 import jakarta.ws.rs.core.MediaType;
+import jakarta.ws.rs.core.Response;
 import org.glassfish.jersey.media.multipart.FormDataContentDisposition;
 import org.glassfish.jersey.media.multipart.FormDataParam;
 import scc.data.User;
@@ -28,7 +29,7 @@ public interface UsersService {
     @POST
     @Consumes(MediaType.APPLICATION_JSON)
     @Produces(MediaType.APPLICATION_JSON)
-    String createUser(UserDAO userDAO) throws Exception;
+    Response createUser(UserDAO userDAO) throws Exception;
 
     @DELETE
     @Path("/{" + ID + "}")

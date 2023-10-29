@@ -8,50 +8,46 @@ import scc.data.*;
 import scc.db.CosmosDBLayer;
 import scc.srv.houses.HousesResource;
 import scc.srv.users.UsersResource;
-import scc.srv.utils.Checks;
 import scc.srv.houses.HousesService;
 
-import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 
-public class QuestionResource implements QuestionService {
-    private final String BAD_REQUEST = "BAD_REQUEST@Some mandatory value is empty";
-    private final String NOT_FOUND = "NOT_FOUND@%s: %s does not exist";
 
-    private final String NOT_FOUND2 = "%s: %s  %s does not exist";
+import static scc.srv.utils.Utility.*;
+
+public class QuestionResource implements QuestionService {
+
+
     public static final String CONTAINER = "questions";
     public static final String PARTITION_KEY = "/houseId";
 
     private final CosmosDBLayer db = CosmosDBLayer.getInstance();
     private final ObjectMapper mapper = new ObjectMapper();
-    
+
     @Override
     public Response createQuestion(QuestionDAO questionDAO) {
         // TODO: Cache
 
-        if (Checks.badParams(questionDAO.getAskerId(), questionDAO.getHouseId(), questionDAO.getText()))
+        if (badParams(questionDAO.getAskerId(), questionDAO.getHouseId(), questionDAO.getText()))
             return sendResponse(BAD_REQUEST);
-        //return Response.status(Response.Status.BAD_REQUEST).entity(BAD_REQUEST).build();
 
         var houseRes = db.getById(questionDAO.getHouseId(), HousesResource.CONTAINER, HouseDAO.class).stream().findFirst();
         if (houseRes.isEmpty())
             return sendResponse(NOT_FOUND, "House", questionDAO.getHouseId());
-        //return Response.status(Response.Status.NOT_FOUND).entity(NOT_FOUND).build();
 
         var userRes = db.getById(questionDAO.getAskerId(), UsersResource.CONTAINER, UsersResource.class).stream().findFirst();
         if (userRes.isEmpty())
             return sendResponse(NOT_FOUND, "User", questionDAO.getAskerId());
-        //return Response.status(Response.Status.NOT_FOUND).entity("User: " + questionDAO.getAskerId() + " does not exist").build();
 
         questionDAO.setId(UUID.randomUUID().toString());
         var createRes = db.createItem(questionDAO, CONTAINER);
         int statusCode = createRes.getStatusCode();
 
-        if (Checks.isStatusOk(statusCode))
-            return Response.status(Response.Status.OK).entity(questionDAO.toQuestion().toString()).build();
+        if (isStatusOk(statusCode))
+            return sendResponse(OK, questionDAO.toQuestion().toString());
         else
-            return Response.status(Response.Status.INTERNAL_SERVER_ERROR).entity("Error: " + statusCode).build();
+            return sendResponse(INTERNAL_SERVER_ERROR);
     }
 
 
@@ -76,7 +72,7 @@ public class QuestionResource implements QuestionService {
             var replyRes = db.replyToQuestion(houseId, questionId, questionDAO.getAnswer());
 
             int statusCode = replyRes.getStatusCode();
-            if (Checks.isStatusOk(statusCode)) {
+            if (isStatusOk(statusCode)) {
                 jedis.set(CACHE_PREFIX + questionId, mapper.writeValueAsString(questionDAO));
                 return questionDAO.toQuestion();
             } else
@@ -85,7 +81,7 @@ public class QuestionResource implements QuestionService {
     }
 
     @Override
-    public List<Question> listQuestions(String houseId) throws Exception {
+    public Response listQuestions(String houseId) throws Exception {
         // TODO: ver se questions estao na cache
         //  se nao estiverem, por na chache
 
@@ -94,19 +90,13 @@ public class QuestionResource implements QuestionService {
             if (jedis.get(HousesService.HOUSE_PREFIX + houseId) == null) {
                 var houseRes = db.getById(houseId, HousesResource.CONTAINER, HouseDAO.class).stream().findFirst();
                 if (houseRes.isEmpty())
-                    throw new Exception("Error: 404 House Not Found");
+                    return sendResponse(NOT_FOUND, "House", houseId);
             }
 
-            var queryRes = db.listHouseQuestions(houseId);
-            return queryRes.stream().map(QuestionDAO::toQuestion).toList();
+            var questions = db.listHouseQuestions(houseId).stream().map(QuestionDAO::toQuestion).toList();
+            return sendResponse(OK, questions);
         }
     }
 
-    private Response sendResponse(String msg, Object... params) {
-        var res = msg.split("@");
-        Response.Status status = Response.Status.valueOf(res[0]);
-        String message = String.format(res[1], params);
-        return Response.status(status).entity(message).build();
-    }
 
 }

@@ -39,5 +39,5 @@ public interface QuestionService {
     @GET
     @Path("/{" + HOUSE_ID + "}" + QUESTION)
     @Produces(MediaType.APPLICATION_JSON)
-    List<Question> listQuestions(@PathParam(HOUSE_ID) String houseId) throws Exception;
+    Response listQuestions(@PathParam(HOUSE_ID) String houseId) throws Exception;
 }

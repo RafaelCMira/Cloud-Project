@@ -48,7 +48,7 @@ public class AzureManagement {
     static final boolean CREATE_REDIS = true;
 
     // TODO: change your suffix and other names if you want
-    static final String MY_SUFFIX = "60602"; // Add your suffix here
+    static final String MY_SUFFIX = "59243"; // Add your suffix here
     static final String AZURE_COSMOSDB_NAME = "scc24account" + MY_SUFFIX;    // Cosmos DB account name
     static final String AZURE_COSMOSDB_DATABASE = "scc24db" + MY_SUFFIX;    // Cosmos DB database name
     static final String[] BLOB_CONTAINERS = {MediaService.CONTAINER_NAME};    // TODO: Containers to add to the blob storage

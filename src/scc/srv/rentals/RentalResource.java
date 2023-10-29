@@ -8,7 +8,6 @@ import scc.data.*;
 import scc.db.CosmosDBLayer;
 import scc.srv.houses.HousesResource;
 import scc.srv.users.UsersResource;
-import scc.srv.utils.Checks;
 import scc.srv.houses.HousesService;
 import scc.srv.users.UsersService;
 
@@ -16,6 +15,8 @@ import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
+
+import static scc.srv.utils.Utility.*;
 
 public class RentalResource implements RentalService {
     public static final String CONTAINER = "rentals";
@@ -27,7 +28,7 @@ public class RentalResource implements RentalService {
 
     @Override
     public String createRental(String houseId, RentalDAO rentalDAO) throws Exception {
-        if (Checks.badParams(rentalDAO.getId(), rentalDAO.getHouseId(), rentalDAO.getUserId()))
+        if (badParams(rentalDAO.getId(), rentalDAO.getHouseId(), rentalDAO.getUserId()))
             throw new Exception("Error: 400 Bad Request");
 
         try (Jedis jedis = RedisCache.getCachePool().getResource()) {
@@ -58,7 +59,7 @@ public class RentalResource implements RentalService {
             var createRental = db.createItem(rentalDAO, CONTAINER);
             int statusCode = createRental.getStatusCode();
 
-            if (Checks.isStatusOk(statusCode)) {
+            if (isStatusOk(statusCode)) {
                 jedis.set(CACHE_PREFIX + rentalDAO.getId(), mapper.writeValueAsString(rentalDAO));
                 return rentalDAO.toRental().toString();
             } else
@@ -93,7 +94,7 @@ public class RentalResource implements RentalService {
         RentalDAO updatedRental = refactorRental(houseID, id, rentalDAO);
         var res = db.updateRental(updatedRental);
         int statusCode = res.getStatusCode();
-        if (Checks.isStatusOk(res.getStatusCode())) {
+        if (isStatusOk(res.getStatusCode())) {
             try (Jedis jedis = RedisCache.getCachePool().getResource()) {
                 jedis.set(CACHE_PREFIX + id, mapper.writeValueAsString(updatedRental));
             }
@@ -121,7 +122,7 @@ public class RentalResource implements RentalService {
         var res = db.deleteRental(id);
         int statusCode = res.getStatusCode();
 
-        if (Checks.isStatusOk(statusCode)) {
+        if (isStatusOk(statusCode)) {
             HouseDAO houseDAO = db.getById(houseId, HousesResource.CONTAINER, HouseDAO.class).stream().findFirst().get();
             houseDAO.removeRental(id);
             //TODO: delete do rental na casa chache

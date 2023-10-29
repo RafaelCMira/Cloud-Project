@@ -10,7 +10,6 @@ import scc.cache.RedisCache;
 import scc.data.*;
 import scc.db.CosmosDBLayer;
 import scc.srv.users.UsersResource;
-import scc.srv.utils.Checks;
 import scc.srv.utils.Cache;
 import scc.srv.media.MediaResource;
 import scc.srv.users.UsersService;
@@ -19,6 +18,8 @@ import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
+
+import static scc.srv.utils.Utility.*;
 
 public class HousesResource implements HousesService {
 
@@ -38,7 +39,7 @@ public class HousesResource implements HousesService {
             var resUpdateUser = db.updateUser(user);
             int statusCode = resUpdateUser.getStatusCode();
 
-            if (!Checks.isStatusOk(statusCode))
+            if (!isStatusOk(statusCode))
                 throw new InternalServerErrorException("Internal Server Error: " + statusCode);
 
             var resCreateHouse = db.createItem(houseDAO, HousesResource.CONTAINER);
@@ -46,7 +47,7 @@ public class HousesResource implements HousesService {
 
             // If all operations succeeded, put in cache the updates
             // TODO: enviar ambos os pedidos para a cache de uma vez, o stor disse que dava para fazer
-            if (Checks.isStatusOk(statusCode)) {
+            if (isStatusOk(statusCode)) {
                 Cache.putInCache(houseDAO, HOUSE_PREFIX, jedis);
                 Cache.putInCache(user, UsersService.USER_PREFIX, jedis);
                 return houseDAO.toHouse().toString();
@@ -59,7 +60,7 @@ public class HousesResource implements HousesService {
 
     @Override
     public String deleteHouse(String id) throws Exception {
-        if (Checks.badParams(id))
+        if (badParams(id))
             throw new BadRequestException("Bad Request (ID NULL)");
 
         //TODO: quando se elimina um user e depois se tenta eliminar a casa, entra sempre nesta exceção (not found)
@@ -74,7 +75,7 @@ public class HousesResource implements HousesService {
         var res = db.deleteHouse(id);
         int statusCode = res.getStatusCode();
 
-        if (!Checks.isStatusOk(statusCode))
+        if (!isStatusOk(statusCode))
             throw new InternalServerErrorException("Internal Server Error: " + statusCode);
 
         var user = db.getById(ownerId, UsersResource.CONTAINER, UserDAO.class).stream().findFirst();
@@ -96,7 +97,7 @@ public class HousesResource implements HousesService {
 
     @Override
     public House getHouse(String id) throws Exception {
-        if (Checks.badParams(id))
+        if (badParams(id))
             throw new Exception("Error: 400 Bad Request (ID NULL)");
 
         try (Jedis jedis = RedisCache.getCachePool().getResource()) {
@@ -125,7 +126,7 @@ public class HousesResource implements HousesService {
         var res = db.updateHouse(updatedHouse);
 
         int statusCode = res.getStatusCode();
-        if (Checks.isStatusOk(statusCode)) {
+        if (isStatusOk(statusCode)) {
             try (Jedis jedis = RedisCache.getCachePool().getResource()) {
                 Cache.putInCache(updatedHouse, HOUSE_PREFIX, jedis);
                 return updatedHouse.toHouse();
@@ -221,7 +222,7 @@ public class HousesResource implements HousesService {
      * @throws Exception If id is null or if the user does not exist
      */
     private HouseDAO genUpdatedHouse(String id, House house) throws Exception {
-        if (Checks.badParams(id))
+        if (badParams(id))
             throw new Exception("Error: 400 Bad Request (ID NULL)");
 
         var res = db.getById(id, CONTAINER, HouseDAO.class).stream().findFirst();
@@ -269,7 +270,7 @@ public class HousesResource implements HousesService {
     }
 
     private UserDAO checksHouseCreation(HouseDAO houseDAO, Jedis jedis) throws Exception {
-        if (Checks.badParams(houseDAO.getId(), houseDAO.getName(), houseDAO.getLocation(), houseDAO.getPrice().toString(),
+        if (badParams(houseDAO.getId(), houseDAO.getName(), houseDAO.getLocation(), houseDAO.getPrice().toString(),
                 houseDAO.getDiscount().toString()) && houseDAO.getPrice() > 0 && houseDAO.getDiscount() > 0) {
             throw new Exception("Error: 400 Bad Request");
         }
