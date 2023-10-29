@@ -53,58 +53,71 @@ public class UsersResource implements UsersService {
     }
 
     @Override
-    public String deleteUser(String id) throws Exception {
+    public Response deleteUser(String id) throws Exception {
         if (badParams(id))
-            throw new Exception("Error: 400 Bad Request (ID NULL)");
-
-        var res = db.deleteUser(id);
-        int statusCode = res.getStatusCode();
+            return sendResponse(BAD_REQUEST);
 
         //TODO: colocar "Deleted User" no ownerId das casas do user eliminado e nos Rentals
         //TODO: Usar azure functions
 
-        if (isStatusOk(statusCode)) {
-            try (Jedis jedis = RedisCache.getCachePool().getResource()) {
-                jedis.del(USER_PREFIX + id);
-                return String.format("StatusCode: %d \nUser %s was delete", statusCode, id);
+        try {
+            var res = db.deleteUser(id);
+            int statusCode = res.getStatusCode();
+            if (isStatusOk(statusCode)) {
+                try (Jedis jedis = RedisCache.getCachePool().getResource()) {
+                    jedis.del(USER_PREFIX + id);
+                }
             }
-        } else
-            throw new Exception("Error: " + statusCode);
+        } catch (CosmosException ex) {
+            return processException(ex.getStatusCode(), "User", id);
+        }
+        return sendResponse(OK, String.format("User %s was deleted", id));
     }
 
     @Override
-    public User getUser(String id) throws Exception {
+    public Response getUser(String id) throws Exception {
         if (badParams(id))
-            throw new Exception("Error: 400 Bad Request (ID NULL)");
+            return sendResponse(BAD_REQUEST);
 
         try (Jedis jedis = RedisCache.getCachePool().getResource()) {
-            String userString = jedis.get(USER_PREFIX + id);
-            if (userString != null)
-                return mapper.readValue(userString, UserDAO.class).toUser();
 
-            var result = db.getById(id, CONTAINER, UserDAO.class).stream().findFirst();
-            if (result.isPresent()) {
-                var user = result.get();
-                Cache.putInCache(user, USER_PREFIX, jedis);
-                return user.toUser();
-            } else
-                throw new Exception("Error: 404");
+            String cacheRes = jedis.get(USER_PREFIX + id);
+            if (cacheRes != null)
+                return sendResponse(OK, mapper.readValue(cacheRes, UserDAO.class).toUser());
+
+            try {
+                var result = db.getById(id, CONTAINER, UserDAO.class).stream().findFirst();
+                if (result.isPresent()) {
+                    var user = result.get();
+                    Cache.putInCache(user, USER_PREFIX, jedis);
+                    return sendResponse(OK, user.toUser());
+                } else
+                    return sendResponse(NOT_FOUND, "User", id);
+
+            } catch (CosmosException ex) {
+                return processException(ex.getStatusCode(), "User", id);
+            }
+
         }
     }
 
     @Override
-    public User updateUser(String id, User user) throws Exception {
-        var updatedUser = genUpdatedUserDAO(id, user);
-        var res = db.updateUser(updatedUser);
+    public Response updateUser(String id, User user) throws Exception {
 
-        int statusCode = res.getStatusCode();
-        if (isStatusOk(statusCode)) {
+        try {
+            var updatedUser = genUpdatedUserDAO(id, user);
+            db.updateUser(updatedUser);
+
             try (Jedis jedis = RedisCache.getCachePool().getResource()) {
                 Cache.putInCache(updatedUser, USER_PREFIX, jedis);
-                return updatedUser.toUser();
+                return sendResponse(OK, updatedUser.toUser());
             }
-        } else
-            throw new Exception("Error: " + statusCode);
+
+        } catch (CosmosException ex) {
+            return processException(ex.getStatusCode(), "User", id);
+        } catch (WebApplicationException ex) {
+            return processException(ex.getResponse().getStatus(), "User", id);
+        }
     }
 
     @Override
@@ -148,7 +161,7 @@ public class UsersResource implements UsersService {
      */
     private UserDAO genUpdatedUserDAO(String id, User user) throws Exception {
         if (badParams(id))
-            throw new Exception("Error: 400 Bad Request (ID NULL)");
+            throw new WebApplicationException(Response.Status.BAD_REQUEST);
 
         var result = db.getById(id, CONTAINER, UserDAO.class).stream().findFirst();
         if (result.isPresent()) {
@@ -166,13 +179,13 @@ public class UsersResource implements UsersService {
             MediaResource media = new MediaResource();
             if (!newPhoto.isEmpty())
                 if (!media.hasPhotos(List.of(newPhoto)))
-                    throw new Exception("Error: 404 Image not found");
+                    throw new WebApplicationException(Response.Status.NOT_FOUND);
                 else
                     userDAO.setPhotoId(newPhoto);
 
             return userDAO;
         } else {
-            throw new Exception("Error: 404");
+            throw new WebApplicationException(Response.Status.NOT_FOUND);
         }
     }
 

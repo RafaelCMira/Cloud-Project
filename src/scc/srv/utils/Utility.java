@@ -8,7 +8,7 @@ import jakarta.ws.rs.core.Response;
 public class Utility {
     public static final String OK = "OK@%s";
     public static final String BAD_REQUEST = "BAD_REQUEST@Some mandatory value is empty";
-    public static final String FORBIDDEN = "FORBIDDEN@%s: %s does not exist";
+    public static final String FORBIDDEN = "FORBIDDEN@%s: %s can't do that operation";
     public static final String NOT_FOUND = "NOT_FOUND@%s: %s does not exist";
     public static final String CONFLICT = "CONFLICT@%s with this id: %s already exists";
     public static final String INTERNAL_SERVER_ERROR = "INTERNAL_SERVER_ERROR@Something went wrong";

@@ -34,18 +34,18 @@ public interface UsersService {
     @DELETE
     @Path("/{" + ID + "}")
     @Produces(MediaType.APPLICATION_JSON)
-    String deleteUser(@PathParam(ID) String id) throws Exception;
+    Response deleteUser(@PathParam(ID) String id) throws Exception;
 
     @GET
     @Path("/{" + ID + "}")
     @Produces(MediaType.APPLICATION_JSON)
-    User getUser(@PathParam(ID) String id) throws Exception;
+    Response getUser(@PathParam(ID) String id) throws Exception;
 
     @PUT
     @Path("/{" + ID + "}")
     @Consumes(MediaType.APPLICATION_JSON)
     @Produces(MediaType.APPLICATION_JSON)
-    User updateUser(@PathParam(ID) String id, User user) throws Exception;
+    Response updateUser(@PathParam(ID) String id, User user) throws Exception;
 
 
     @GET
