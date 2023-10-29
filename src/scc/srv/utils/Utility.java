@@ -7,7 +7,7 @@ import jakarta.ws.rs.core.Response;
  */
 public class Utility {
     public static final String OK = "OK@%s";
-    public static final String BAD_REQUEST = "BAD_REQUEST@Some mandatory value is empty";
+    public static final String BAD_REQUEST = "BAD_REQUEST@%s";
     public static final String FORBIDDEN = "FORBIDDEN@%s: %s can't do that operation";
     public static final String NOT_FOUND = "NOT_FOUND@%s: %s does not exist";
     public static final String CONFLICT = "CONFLICT@%s with this id: %s already exists";
@@ -23,7 +23,11 @@ public class Utility {
     public static Response processException(int statusCode, Object... params) {
         switch (statusCode) {
             case 400 -> {
-                return sendResponse(BAD_REQUEST);
+                if (params == null) {
+                    String defaultMsg = "Some mandatory value is empty";
+                    return sendResponse(BAD_REQUEST, defaultMsg);
+                } else
+                    return sendResponse(BAD_REQUEST, params);
             }
             case 403 -> {
                 return sendResponse(FORBIDDEN, params);

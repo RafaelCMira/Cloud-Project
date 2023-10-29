@@ -55,6 +55,7 @@ public interface UsersService {
     @GET
     @Path("/{" + ID + "}" + HOUSES)
     @Produces(MediaType.APPLICATION_JSON)
-    List<String> getUserHouses(@PathParam(ID) String id) throws Exception;
+    Response getUserHouses(@PathParam(ID) String id) throws Exception;
 
 }
+

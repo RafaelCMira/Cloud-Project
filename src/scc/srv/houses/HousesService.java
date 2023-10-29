@@ -38,7 +38,7 @@ public interface HousesService {
     @Path("/{" + ID + "}")
     @Consumes(MediaType.APPLICATION_JSON)
     @Produces(MediaType.APPLICATION_JSON)
-    House updateHouse(@PathParam(ID) String id, House house) throws Exception;
+    Response updateHouse(@PathParam(ID) String id, House house) throws Exception;
 
     @GET
     @Path("/")

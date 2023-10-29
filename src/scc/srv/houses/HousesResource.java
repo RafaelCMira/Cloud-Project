@@ -62,6 +62,13 @@ public class HousesResource implements HousesService {
             return processException(statusCode, "User", houseDAO.getOwnerId());
     }
 
+    private Response handleUpdateException(int statusCode, String msg, String id) {
+        if (msg.contains("House"))
+            return processException(statusCode, "House", id);
+        else
+            return processException(statusCode, msg, id);
+    }
+
     @Override
     public Response deleteHouse(String id) throws Exception {
         if (badParams(id))
@@ -120,18 +127,20 @@ public class HousesResource implements HousesService {
     }
 
     @Override
-    public House updateHouse(String id, House house) throws Exception {
-        var updatedHouse = genUpdatedHouse(id, house);
-        var res = db.updateHouse(updatedHouse);
+    public Response updateHouse(String id, House house) throws Exception {
+        try {
+            var updatedHouse = genUpdatedHouse(id, house);
+            db.updateHouse(updatedHouse);
 
-        int statusCode = res.getStatusCode();
-        if (isStatusOk(statusCode)) {
             try (Jedis jedis = RedisCache.getCachePool().getResource()) {
                 Cache.putInCache(updatedHouse, HOUSE_PREFIX, jedis);
-                return updatedHouse.toHouse();
+                return sendResponse(OK, updatedHouse.toHouse());
             }
-        } else {
-            throw new Exception("Error: " + statusCode);
+
+        } catch (CosmosException ex) {
+            return handleUpdateException(ex.getStatusCode(), ex.getMessage(), id);
+        } catch (WebApplicationException ex) {
+            return handleUpdateException(ex.getResponse().getStatus(), ex.getMessage(), id);
         }
     }
 
@@ -222,7 +231,7 @@ public class HousesResource implements HousesService {
      */
     private HouseDAO genUpdatedHouse(String id, House house) throws Exception {
         if (badParams(id))
-            throw new Exception("Error: 400 Bad Request (ID NULL)");
+            throw new WebApplicationException(Response.Status.BAD_REQUEST);
 
         var res = db.getById(id, CONTAINER, HouseDAO.class).stream().findFirst();
         if (res.isPresent()) {
@@ -240,7 +249,7 @@ public class HousesResource implements HousesService {
             MediaResource media = new MediaResource();
             if (!newPhotos.isEmpty())
                 if (!media.hasPhotos(newPhotos))
-                    throw new Exception("Error: 404 Image not found");
+                    throw new WebApplicationException(Response.Status.NOT_FOUND);
                 else
                     houseDAO.setPhotosIds(newPhotos);
 
@@ -253,18 +262,22 @@ public class HousesResource implements HousesService {
                 if (newPrice > 0)
                     houseDAO.setPrice(newPrice);
                 else
-                    throw new Exception("Error: Invalid price");
+                    // throw new WebApplicationException(Response.Status.BAD_REQUEST);
+                    throw new WebApplicationException("Error: Invalid price", Response.Status.BAD_REQUEST);
+            //throw new Exception("Error: Invalid price");
 
             var newDiscount = house.getDiscount();
             if (newDiscount != null)
                 if (newDiscount >= 0)
                     houseDAO.setDiscount(newDiscount);
                 else
-                    throw new Exception("Error: Invalid discount");
+                    // throw new WebApplicationException(Response.Status.BAD_REQUEST);
+                    throw new WebApplicationException("Error: Invalid discount", Response.Status.BAD_REQUEST);
+            //  throw new Exception("Error: Invalid discount");
 
             return houseDAO;
         } else {
-            throw new Exception("Error: 404");
+            throw new WebApplicationException(Response.Status.NOT_FOUND);
         }
     }
 

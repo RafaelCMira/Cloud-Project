@@ -130,24 +130,30 @@ public class UsersResource implements UsersService {
     }
 
     @Override
-    public List<String> getUserHouses(String id) throws Exception {
+    public Response getUserHouses(String id) throws Exception {
         if (badParams(id))
-            throw new Exception("Error: 400 Bad Request (ID NULL)");
+            return sendResponse(BAD_REQUEST);
 
-        try (Jedis jedis = RedisCache.getCachePool().getResource()) {
-            String user = Cache.getFromCache(USER_PREFIX, id, jedis);
-            if (user != null) {
-                return mapper.readValue(user, UserDAO.class).getHouseIds();
+        try {
+            try (Jedis jedis = RedisCache.getCachePool().getResource()) {
+                String user = Cache.getFromCache(USER_PREFIX, id, jedis);
+                if (user != null) {
+                    return sendResponse(OK, mapper.readValue(user, UserDAO.class).getHouseIds());
+                }
+
+                var res = db.getById(id, CONTAINER, UserDAO.class).stream().findFirst();
+                if (res.isPresent()) {
+                    var dbUser = res.get();
+                    Cache.putInCache(dbUser, USER_PREFIX, jedis);
+                    return sendResponse(OK, dbUser.getHouseIds());
+                } else
+                    return sendResponse(NOT_FOUND, "User", id);
             }
 
-            var res = db.getById(id, CONTAINER, UserDAO.class).stream().findFirst();
-            if (res.isPresent()) {
-                var dbUser = res.get();
-                Cache.putInCache(dbUser, USER_PREFIX, jedis);
-                return dbUser.getHouseIds();
-            } else
-                throw new Exception("Error: 404");
+        } catch (CosmosException ex) {
+            return processException(ex.getStatusCode(), "User", id);
         }
+
     }
 
 
