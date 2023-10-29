@@ -32,26 +32,23 @@ public class HousesResource implements HousesService {
     public Response createHouse(HouseDAO houseDAO) throws Exception {
         try (Jedis jedis = RedisCache.getCachePool().getResource()) {
 
-            try {
-                var user = checksHouseCreation(houseDAO, jedis);
-                user.addHouse(houseDAO.getId());
+            var user = checksHouseCreation(houseDAO, jedis);
+            user.addHouse(houseDAO.getId());
 
-                db.updateUser(user);
-                db.createItem(houseDAO, CONTAINER);
+            db.updateUser(user);
+            db.createItem(houseDAO, CONTAINER);
 
-                // TODO: enviar ambos os pedidos para a cache de uma vez, o stor disse que dava para fazer
+            // TODO: enviar ambos os pedidos para a cache de uma vez, o stor disse que dava para fazer
 
-                Cache.putInCache(houseDAO, HOUSE_PREFIX, jedis);
-                Cache.putInCache(user, UsersService.USER_PREFIX, jedis);
+            Cache.putInCache(houseDAO, HOUSE_PREFIX, jedis);
+            Cache.putInCache(user, UsersService.USER_PREFIX, jedis);
 
-                return sendResponse(OK, houseDAO.toHouse().toString());
+            return sendResponse(OK, houseDAO.toHouse().toString());
 
-            } catch (CosmosException ex) {
-                return handleCreateException(ex.getStatusCode(), ex.getMessage(), houseDAO);
-            } catch (WebApplicationException ex) {
-                return handleCreateException(ex.getResponse().getStatus(), ex.getMessage(), houseDAO);
-            }
-
+        } catch (CosmosException ex) {
+            return handleCreateException(ex.getStatusCode(), ex.getMessage(), houseDAO);
+        } catch (WebApplicationException ex) {
+            return handleCreateException(ex.getResponse().getStatus(), ex.getMessage(), houseDAO);
         }
     }
 
@@ -123,6 +120,8 @@ public class HousesResource implements HousesService {
                 return sendResponse(OK, houseToCACHE.toHouse());
             } else
                 return sendResponse(NOT_FOUND, "House", id);
+        } catch (CosmosException ex) {
+            return processException(ex.getStatusCode(), ex.getMessage());
         }
     }
 
@@ -134,8 +133,9 @@ public class HousesResource implements HousesService {
 
             try (Jedis jedis = RedisCache.getCachePool().getResource()) {
                 Cache.putInCache(updatedHouse, HOUSE_PREFIX, jedis);
-                return sendResponse(OK, updatedHouse.toHouse());
             }
+
+            return sendResponse(OK, updatedHouse.toHouse());
 
         } catch (CosmosException ex) {
             return handleUpdateException(ex.getStatusCode(), ex.getMessage(), id);
@@ -144,36 +144,37 @@ public class HousesResource implements HousesService {
         }
     }
 
+    // TODO: Quando fazemos RENTAL
+    // 1 - Write na DB
+    // 2.1 - Get do resultado? - se o rental que nós fizemos ficar na DB então podemos enviar a resposta ao cliente de sucesso
+    // 2.2 - Se não ficar, enviar msg a dizer que já está alugado
     @Override
-    public List<House> getAvailHouseByLocation(String location) throws Exception {
+    public Response getAvailHouseByLocation(String location) throws Exception {
         //TODO: chache
 
         List<House> result = new ArrayList<>();
 
-        var res = db.getHousesByLocation(location);
-        var houses = res.stream().toList();
-        if (houses.isEmpty())
-            throw new Exception("There is no available houses in this location: 404");
+        try {
+            var houses = db.getHousesByLocation(location).stream().toList();
 
-        // Check if house is available
-        // TODO: há uma forma melhor de fazer isto
+            // Check if house is available
+            // TODO: há uma forma melhor de fazer isto
 
-        for (HouseDAO h : houses) {
-            boolean available = true;
-            for (String rentalId : h.getRentalsIds()) {
-                var rental = db.getRentalById(h.getId(), rentalId).stream().findFirst();
-                if (rental.isPresent() && rental.get().getEndDate().isBefore(LocalDate.now()))
-                    available = false;
+            for (HouseDAO h : houses) {
+                boolean available = true;
+                for (String rentalId : h.getRentalsIds()) {
+                    var rental = db.getRentalById(h.getId(), rentalId).stream().findFirst();
+                    if (rental.isPresent() && rental.get().getEndDate().isBefore(LocalDate.now()))
+                        available = false;
+                }
+                if (available)
+                    result.add(h.toHouse());
             }
-            if (available)
-                result.add(h.toHouse());
+        } catch (CosmosException ex) {
+            return processException(ex.getStatusCode(), "Mudar este nome");
         }
 
-        if (!result.isEmpty()) {
-            return result;
-        } else {
-            throw new Exception("Error: 404");
-        }
+        return sendResponse(OK, result);
     }
 
     private boolean isDateInBetween(LocalDate start, LocalDate end) {

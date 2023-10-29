@@ -43,7 +43,7 @@ public interface HousesService {
     @GET
     @Path("/")
     @Produces(MediaType.APPLICATION_JSON)
-    List<House> getAvailHouseByLocation(@QueryParam(LOCATION) String location) throws Exception;
+    Response getAvailHouseByLocation(@QueryParam(LOCATION) String location) throws Exception;
 
     @GET
     @Path("/Available/")
