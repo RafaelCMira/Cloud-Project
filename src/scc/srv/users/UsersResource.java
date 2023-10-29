@@ -85,19 +85,16 @@ public class UsersResource implements UsersService {
             if (cacheRes != null)
                 return sendResponse(OK, mapper.readValue(cacheRes, UserDAO.class).toUser());
 
-            try {
-                var result = db.getById(id, CONTAINER, UserDAO.class).stream().findFirst();
-                if (result.isPresent()) {
-                    var user = result.get();
-                    Cache.putInCache(user, USER_PREFIX, jedis);
-                    return sendResponse(OK, user.toUser());
-                } else
-                    return sendResponse(NOT_FOUND, "User", id);
+            var result = db.getById(id, CONTAINER, UserDAO.class).stream().findFirst();
+            if (result.isPresent()) {
+                var user = result.get();
+                Cache.putInCache(user, USER_PREFIX, jedis);
+                return sendResponse(OK, user.toUser());
+            } else
+                return sendResponse(NOT_FOUND, "User", id);
 
-            } catch (CosmosException ex) {
-                return processException(ex.getStatusCode(), "User", id);
-            }
-
+        } catch (CosmosException ex) {
+            return processException(ex.getStatusCode(), "User", id);
         }
     }
 
@@ -133,27 +130,23 @@ public class UsersResource implements UsersService {
     public Response getUserHouses(String id) throws Exception {
         if (badParams(id))
             return sendResponse(BAD_REQUEST);
+        
+        try (Jedis jedis = RedisCache.getCachePool().getResource()) {
+            String user = Cache.getFromCache(USER_PREFIX, id, jedis);
+            if (user != null)
+                return sendResponse(OK, mapper.readValue(user, UserDAO.class).getHouseIds());
 
-        try {
-            try (Jedis jedis = RedisCache.getCachePool().getResource()) {
-                String user = Cache.getFromCache(USER_PREFIX, id, jedis);
-                if (user != null) {
-                    return sendResponse(OK, mapper.readValue(user, UserDAO.class).getHouseIds());
-                }
-
-                var res = db.getById(id, CONTAINER, UserDAO.class).stream().findFirst();
-                if (res.isPresent()) {
-                    var dbUser = res.get();
-                    Cache.putInCache(dbUser, USER_PREFIX, jedis);
-                    return sendResponse(OK, dbUser.getHouseIds());
-                } else
-                    return sendResponse(NOT_FOUND, "User", id);
-            }
+            var res = db.getById(id, CONTAINER, UserDAO.class).stream().findFirst();
+            if (res.isPresent()) {
+                var dbUser = res.get();
+                Cache.putInCache(dbUser, USER_PREFIX, jedis);
+                return sendResponse(OK, dbUser.getHouseIds());
+            } else
+                return sendResponse(NOT_FOUND, "User", id);
 
         } catch (CosmosException ex) {
             return processException(ex.getStatusCode(), "User", id);
         }
-
     }
 
 
