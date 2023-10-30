@@ -25,7 +25,7 @@ import static scc.srv.utils.Utility.*;
 
 public class RentalResource implements RentalService {
     public static final String CONTAINER = "rentals";
-    public static final String PARTITION_KEY = "/id";
+    public static final String PARTITION_KEY = "/houseId";
 
     private final CosmosDBLayer db = CosmosDBLayer.getInstance();
 
@@ -33,17 +33,20 @@ public class RentalResource implements RentalService {
 
     @Override
     public Response createRental(String houseId, RentalDAO rentalDAO) throws Exception {
-        //TODO: adicionar o rental à casa
+        //TODO: add rental to house with azure functions
         try (Jedis jedis = RedisCache.getCachePool().getResource()) {
-            var house = checkRentalCreation(houseId, rentalDAO, jedis);
+            checkRentalCreation(houseId, rentalDAO, jedis);
 
             var newRental = db.createItem(rentalDAO, CONTAINER);
             int statusCode = newRental.getStatusCode();
 
             if (isStatusOk(statusCode)) {
-                // TODO verificar se o rental foi realmente adicionado
-                var rentalInDB = db.getRentalById(houseId, rentalDAO.getId()).stream().findFirst().get();
-                if (!rentalInDB.getUserId().equals(rentalDAO.getUserId()))
+
+                // Check if the right rental it is in the DB
+                var rentalInDB = db.getRentalById(houseId, rentalDAO.getId()).stream().findFirst();
+                if (rentalInDB.isEmpty())
+                    return sendResponse(INTERNAL_SERVER_ERROR);
+                else if (!rentalInDB.get().getUserId().equals(rentalDAO.getUserId()))
                     return sendResponse(CONFLICT, RENTAL_MSG, rentalDAO.getId());
 
                 Cache.putInCache(rentalDAO, CACHE_PREFIX, jedis);
@@ -119,13 +122,16 @@ public class RentalResource implements RentalService {
         if (badParams(id))
             return sendResponse(BAD_REQUEST, BAD_REQUEST_MSG);
 
-        var res = db.deleteRental(id);
+        var res = db.deleteRental(houseId,id);
         int statusCode = res.getStatusCode();
 
         if (isStatusOk(statusCode)) {
-            HouseDAO houseDAO = db.getById(houseId, HousesResource.CONTAINER, HouseDAO.class).stream().findFirst().get();
-            houseDAO.removeRental(id);
-            //TODO: delete do rental na casa chache
+            // TODO - This could be made with azure functions
+            var houseDAO = db.getById(houseId, HousesResource.CONTAINER, HouseDAO.class).stream().findFirst();
+            if(houseDAO.isEmpty()) return sendResponse(NOT_FOUND,HOUSE_MSG,houseId);
+            houseDAO.get().removeRental(id);
+
+            // Delete rental in cache
             try (Jedis jedis = RedisCache.getCachePool().getResource()) {
                 jedis.del(CACHE_PREFIX + id);
             }
@@ -193,12 +199,12 @@ public class RentalResource implements RentalService {
      *
      * @param houseId - id of the house
      * @param rental  - the rental
-     * @return afdfadfa
      * @throws Exception - WebApplicationException depending of the result of the checks
      */
-    private HouseDAO checkRentalCreation(String houseId, RentalDAO rental, Jedis jedis) throws Exception {
+    private void checkRentalCreation(String houseId, RentalDAO rental, Jedis jedis) throws Exception {
         if (badParams(rental.getId(), rental.getHouseId(), rental.getUserId()))
             throw new WebApplicationException(Response.Status.BAD_REQUEST);
+
         // Verify if house exists
         HouseDAO house = mapper.readValue(jedis.get(HousesService.HOUSE_PREFIX + houseId), HouseDAO.class);
         if (house == null) {
@@ -216,9 +222,26 @@ public class RentalResource implements RentalService {
             if (userRes.isEmpty())
                 throw new WebApplicationException(USER_MSG, Response.Status.NOT_FOUND);
         }
-        // TODO - check if the house is available
-        // checkHouseAvailability(house);
 
-        return house;
+        if(isHouseNotAvailable(houseId,rental.getInitialDate(),rental.getEndDate()))
+            throw new WebApplicationException(RENTAL_MSG, Response.Status.CONFLICT);
+    }
+
+    /**
+     * Checks if the House is not available in the given time.
+     * @param houseId - The id of the house.
+     * @param sTime - The start Date of the Rental.
+     * @param eTime - The end Date of the Rental
+     * @return true if the house is not available in the given time, false otherwise.
+     */
+    private boolean isHouseNotAvailable(String houseId, Date sTime, Date eTime) {
+        var rentals = db.getRentals(houseId).stream().toList();
+
+        for(RentalDAO r: rentals) {
+           if(!r.getInitialDate().after(eTime)&&!r.getEndDate().before(sTime))
+               return true;
+        }
+
+        return false;
     }
 }
