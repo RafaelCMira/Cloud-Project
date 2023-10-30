@@ -64,8 +64,10 @@ public class RentalResource implements RentalService {
     private Response handleCreateException(int statusCode, String msg, RentalDAO rental) {
         if (msg.contains(HOUSE_MSG))
             return processException(statusCode, HOUSE_MSG, rental.getHouseId());
-        else
+        else if(msg.contains(USER_MSG))
             return processException(statusCode, USER_MSG, rental.getUserId());
+        else
+            return processException(statusCode,RENTAL_MSG, rental.getId());
     }
 
     @Override
@@ -112,7 +114,7 @@ public class RentalResource implements RentalService {
 
     @Override
     public Response listRentals(String houseID) {
-        //TODO: chache ?
+        //TODO: cache ?
         var res = db.getItems(CONTAINER, RentalDAO.class).stream().map(RentalDAO::toRental).toList();
         return sendResponse(OK, res);
     }
@@ -183,7 +185,6 @@ public class RentalResource implements RentalService {
 
     @Override
     public Response getDiscountedRentals(String houseID) throws Exception {
-        //TODO: Not working, conflict on the endpoint
         //TODO: cache & tem ser updated de x em x tempo
         var rentalsDAO = db.getRentals(houseID);
         List<Rental> res = new ArrayList<>();
@@ -199,7 +200,7 @@ public class RentalResource implements RentalService {
      *
      * @param houseId - id of the house
      * @param rental  - the rental
-     * @throws Exception - WebApplicationException depending of the result of the checks
+     * @throws Exception - WebApplicationException depending on the result of the checks
      */
     private void checkRentalCreation(String houseId, RentalDAO rental, Jedis jedis) throws Exception {
         if (badParams(rental.getId(), rental.getHouseId(), rental.getUserId()))
@@ -209,9 +210,7 @@ public class RentalResource implements RentalService {
         HouseDAO house = mapper.readValue(jedis.get(HousesService.HOUSE_PREFIX + houseId), HouseDAO.class);
         if (house == null) {
             var houseRes = db.getById(houseId, HousesResource.CONTAINER, HouseDAO.class).stream().findFirst();
-            if (houseRes.isPresent())
-                house = houseRes.get();
-            else
+            if (houseRes.isEmpty())
                 throw new WebApplicationException(HOUSE_MSG, Response.Status.NOT_FOUND);
         }
 
