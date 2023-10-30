@@ -50,7 +50,7 @@ public interface UsersService {
 
     @GET
     @Produces(MediaType.APPLICATION_JSON)
-    List<User> listUsers() throws Exception;
+    Response listUsers() throws Exception;
 
     @GET
     @Path("/{" + ID + "}" + HOUSES)

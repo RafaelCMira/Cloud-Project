@@ -18,7 +18,6 @@ import static scc.srv.utils.Utility.*;
 
 public class QuestionResource implements QuestionService {
 
-
     public static final String CONTAINER = "questions";
     public static final String PARTITION_KEY = "/houseId";
 
@@ -28,17 +27,18 @@ public class QuestionResource implements QuestionService {
     @Override
     public Response createQuestion(QuestionDAO questionDAO) {
         // TODO: Cache
-
         if (badParams(questionDAO.getAskerId(), questionDAO.getHouseId(), questionDAO.getText()))
-            return sendResponse(BAD_REQUEST);
+            return sendResponse(BAD_REQUEST, BAD_REQUEST_MSG);
 
+        // House not found
         var houseRes = db.getById(questionDAO.getHouseId(), HousesResource.CONTAINER, HouseDAO.class).stream().findFirst();
         if (houseRes.isEmpty())
-            return sendResponse(NOT_FOUND, "House", questionDAO.getHouseId());
+            return sendResponse(NOT_FOUND, HOUSE_MSG, questionDAO.getHouseId());
 
+        // House not found
         var userRes = db.getById(questionDAO.getAskerId(), UsersResource.CONTAINER, UsersResource.class).stream().findFirst();
         if (userRes.isEmpty())
-            return sendResponse(NOT_FOUND, "User", questionDAO.getAskerId());
+            return sendResponse(NOT_FOUND, USER_MSG, questionDAO.getAskerId());
 
         questionDAO.setId(UUID.randomUUID().toString());
         var createRes = db.createItem(questionDAO, CONTAINER);
@@ -90,7 +90,7 @@ public class QuestionResource implements QuestionService {
             if (jedis.get(HousesService.HOUSE_PREFIX + houseId) == null) {
                 var houseRes = db.getById(houseId, HousesResource.CONTAINER, HouseDAO.class).stream().findFirst();
                 if (houseRes.isEmpty())
-                    return sendResponse(NOT_FOUND, "House", houseId);
+                    return sendResponse(NOT_FOUND, HOUSE_MSG, houseId);
             }
 
             var questions = db.listHouseQuestions(houseId).stream().map(QuestionDAO::toQuestion).toList();

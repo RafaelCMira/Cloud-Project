@@ -31,53 +31,51 @@ public class UsersResource implements UsersService {
     @Override
     public Response createUser(UserDAO userDAO) throws Exception {
         if (badParams(userDAO.getId(), userDAO.getName(), userDAO.getPwd(), userDAO.getPhotoId()))
-            return sendResponse(BAD_REQUEST);
+            return sendResponse(BAD_REQUEST, BAD_REQUEST_MSG);
 
         MediaResource media = new MediaResource();
         if (!media.hasPhotos(List.of(userDAO.getPhotoId())))
-            return sendResponse(NOT_FOUND, "Image", "(some id)");
+            return sendResponse(NOT_FOUND, IMAGE_MSG, "(some id)");
 
         try {
-            var res = db.createItem(userDAO, CONTAINER);
-            int statusCode = res.getStatusCode();
-            if (isStatusOk(statusCode)) {
-                try (Jedis jedis = RedisCache.getCachePool().getResource()) {
-                    Cache.putInCache(userDAO, USER_PREFIX, jedis);
-                }
+            db.createItem(userDAO, CONTAINER);
+
+            try (Jedis jedis = RedisCache.getCachePool().getResource()) {
+                Cache.putInCache(userDAO, USER_PREFIX, jedis);
             }
+
         } catch (CosmosException ex) {
-            return processException(ex.getStatusCode(), "User", userDAO.getId());
+            return processException(ex.getStatusCode(), USER_MSG, userDAO.getId());
         }
 
         return sendResponse(OK, userDAO.toUser().toString());
     }
 
     @Override
-    public Response deleteUser(String id) throws Exception {
+    public Response deleteUser(String id) {
         if (badParams(id))
-            return sendResponse(BAD_REQUEST);
+            return sendResponse(BAD_REQUEST, BAD_REQUEST_MSG);
 
         //TODO: colocar "Deleted User" no ownerId das casas do user eliminado e nos Rentals
         //TODO: Usar azure functions
 
         try {
-            var res = db.deleteUser(id);
-            int statusCode = res.getStatusCode();
-            if (isStatusOk(statusCode)) {
-                try (Jedis jedis = RedisCache.getCachePool().getResource()) {
-                    jedis.del(USER_PREFIX + id);
-                }
+            db.deleteUser(id);
+
+            try (Jedis jedis = RedisCache.getCachePool().getResource()) {
+                jedis.del(USER_PREFIX + id);
             }
+
         } catch (CosmosException ex) {
-            return processException(ex.getStatusCode(), "User", id);
+            return processException(ex.getStatusCode(), USER_MSG, id);
         }
         return sendResponse(OK, String.format("User %s was deleted", id));
     }
 
     @Override
-    public Response getUser(String id) throws Exception {
+    public Response getUser(String id) throws JsonProcessingException {
         if (badParams(id))
-            return sendResponse(BAD_REQUEST);
+            return sendResponse(BAD_REQUEST, BAD_REQUEST_MSG);
 
         try (Jedis jedis = RedisCache.getCachePool().getResource()) {
 
@@ -91,47 +89,54 @@ public class UsersResource implements UsersService {
                 Cache.putInCache(user, USER_PREFIX, jedis);
                 return sendResponse(OK, user.toUser());
             } else
-                return sendResponse(NOT_FOUND, "User", id);
+                return sendResponse(NOT_FOUND, USER_MSG, id);
 
         } catch (CosmosException ex) {
-            return processException(ex.getStatusCode(), "User", id);
+            return processException(ex.getStatusCode(), USER_MSG, id);
         }
     }
 
     @Override
-    public Response updateUser(String id, User user) throws Exception {
-
+    public Response updateUser(String id, User user) throws JsonProcessingException {
         try {
+
             var updatedUser = genUpdatedUserDAO(id, user);
             db.updateUser(updatedUser);
 
             try (Jedis jedis = RedisCache.getCachePool().getResource()) {
                 Cache.putInCache(updatedUser, USER_PREFIX, jedis);
-                return sendResponse(OK, updatedUser.toUser());
             }
 
+            return sendResponse(OK, updatedUser.toUser());
+
         } catch (CosmosException ex) {
-            return processException(ex.getStatusCode(), "User", id);
+            return processException(ex.getStatusCode(), USER_MSG, id);
         } catch (WebApplicationException ex) {
-            return processException(ex.getResponse().getStatus(), "User", id);
+            return processException(ex.getResponse().getStatus(), USER_MSG, id);
         }
     }
 
     @Override
-    public List<User> listUsers() {
-        var res = db.getItems(CONTAINER, UserDAO.class).stream().map(UserDAO::toUser).toList();
-        if (!res.isEmpty())
-            return res;
-        else
-            return new ArrayList<>();
+    public Response listUsers() {
+        try {
+            List<User> toReturn = new ArrayList<>();
+            var res = db.getItems(CONTAINER, UserDAO.class).stream().map(UserDAO::toUser).toList();
+            if (!res.isEmpty())
+                toReturn = res;
+            return sendResponse(OK, toReturn);
+        } catch (CosmosException ex) {
+            return processException(ex.getStatusCode());
+        }
+
     }
 
     @Override
-    public Response getUserHouses(String id) throws Exception {
+    public Response getUserHouses(String id) throws JsonProcessingException {
         if (badParams(id))
-            return sendResponse(BAD_REQUEST);
-        
+            return sendResponse(BAD_REQUEST, BAD_REQUEST_MSG);
+
         try (Jedis jedis = RedisCache.getCachePool().getResource()) {
+
             String user = Cache.getFromCache(USER_PREFIX, id, jedis);
             if (user != null)
                 return sendResponse(OK, mapper.readValue(user, UserDAO.class).getHouseIds());
@@ -142,23 +147,23 @@ public class UsersResource implements UsersService {
                 Cache.putInCache(dbUser, USER_PREFIX, jedis);
                 return sendResponse(OK, dbUser.getHouseIds());
             } else
-                return sendResponse(NOT_FOUND, "User", id);
+                return sendResponse(NOT_FOUND, USER_MSG, id);
 
         } catch (CosmosException ex) {
-            return processException(ex.getStatusCode(), "User", id);
+            return processException(ex.getStatusCode(), USER_MSG, id);
         }
     }
 
 
     /**
-     * Returns updated userDAO to the method who's making the request to the database
+     * * Returns updated userDAO to the method who's making the request to the database
      *
      * @param id   of the user being accessed
      * @param user new user attributes
      * @return updated userDAO to the method who's making the request to the database
-     * @throws Exception If id is null or if the user does not exist
+     * @throws WebApplicationException If user doesn't exist or if id is empty
      */
-    private UserDAO genUpdatedUserDAO(String id, User user) throws Exception {
+    private UserDAO genUpdatedUserDAO(String id, User user) throws WebApplicationException {
         if (badParams(id))
             throw new WebApplicationException(Response.Status.BAD_REQUEST);
 
@@ -183,9 +188,9 @@ public class UsersResource implements UsersService {
                     userDAO.setPhotoId(newPhoto);
 
             return userDAO;
-        } else {
+
+        } else
             throw new WebApplicationException(Response.Status.NOT_FOUND);
-        }
     }
 
     // Usar se for necessario guardar a lista das casas do user

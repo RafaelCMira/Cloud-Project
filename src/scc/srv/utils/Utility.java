@@ -8,10 +8,17 @@ import jakarta.ws.rs.core.Response;
 public class Utility {
     public static final String OK = "OK@%s";
     public static final String BAD_REQUEST = "BAD_REQUEST@%s";
+    public static final String BAD_REQUEST_MSG = "Some mandatory value is empty";
     public static final String FORBIDDEN = "FORBIDDEN@%s: %s can't do that operation";
     public static final String NOT_FOUND = "NOT_FOUND@%s: %s does not exist";
     public static final String CONFLICT = "CONFLICT@%s with this id: %s already exists";
     public static final String INTERNAL_SERVER_ERROR = "INTERNAL_SERVER_ERROR@Something went wrong";
+
+    public static final String USER_MSG = "User";
+    public static final String IMAGE_MSG = "Image";
+    public static final String HOUSE_MSG = "House";
+    public static final String RENTAL_MSG = "Rental";
+
 
     public static Response sendResponse(String msg, Object... params) {
         var res = msg.split("@");
@@ -23,11 +30,7 @@ public class Utility {
     public static Response processException(int statusCode, Object... params) {
         switch (statusCode) {
             case 400 -> {
-                if (params == null) {
-                    String defaultMsg = "Some mandatory value is empty";
-                    return sendResponse(BAD_REQUEST, defaultMsg);
-                } else
-                    return sendResponse(BAD_REQUEST, params);
+                return sendResponse(BAD_REQUEST, params);
             }
             case 403 -> {
                 return sendResponse(FORBIDDEN, params);

@@ -2,6 +2,7 @@ package scc.srv.houses;
 
 import com.azure.cosmos.CosmosException;
 import com.azure.cosmos.util.CosmosPagedIterable;
+import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import jakarta.ws.rs.WebApplicationException;
 import jakarta.ws.rs.core.Response;
@@ -31,17 +32,17 @@ public class HousesResource implements HousesService {
     private final ObjectMapper mapper = new ObjectMapper();
 
     @Override
-    public Response createHouse(HouseDAO houseDAO) throws Exception {
+    public Response createHouse(HouseDAO houseDAO) throws JsonProcessingException, WebApplicationException {
         try (Jedis jedis = RedisCache.getCachePool().getResource()) {
 
             var user = checksHouseCreation(houseDAO, jedis);
             user.addHouse(houseDAO.getId());
 
             db.updateUser(user);
+
             db.createItem(houseDAO, CONTAINER);
 
             // TODO: enviar ambos os pedidos para a cache de uma vez, o stor disse que dava para fazer
-
             Cache.putInCache(houseDAO, HOUSE_PREFIX, jedis);
             Cache.putInCache(user, UsersService.USER_PREFIX, jedis);
 
@@ -56,14 +57,14 @@ public class HousesResource implements HousesService {
 
     private Response handleCreateException(int statusCode, String msg, HouseDAO houseDAO) {
         if (msg.contains("House"))
-            return processException(statusCode, "House", houseDAO.getId());
+            return processException(statusCode, HOUSE_MSG, houseDAO.getId());
         else
-            return processException(statusCode, "User", houseDAO.getOwnerId());
+            return processException(statusCode, USER_MSG, houseDAO.getOwnerId());
     }
 
     private Response handleUpdateException(int statusCode, String msg, String id) {
         if (msg.contains("House"))
-            return processException(statusCode, "House", id);
+            return processException(statusCode, HOUSE_MSG, id);
         else
             return processException(statusCode, msg, id);
     }
@@ -71,7 +72,7 @@ public class HousesResource implements HousesService {
     @Override
     public Response deleteHouse(String id) throws Exception {
         if (badParams(id))
-            return sendResponse(BAD_REQUEST);
+            return sendResponse(BAD_REQUEST, BAD_REQUEST_MSG);
 
         try {
             //TODO: Quando se elimina um User, colocar nas casas (Deleted User)
@@ -80,7 +81,7 @@ public class HousesResource implements HousesService {
             if (item.isPresent())
                 ownerId = item.get().getOwnerId();
             else
-                return sendResponse(NOT_FOUND, "House", id);
+                return sendResponse(NOT_FOUND, HOUSE_MSG, id);
 
             db.deleteHouse(id);
 
@@ -107,7 +108,7 @@ public class HousesResource implements HousesService {
     @Override
     public Response getHouse(String id) throws Exception {
         if (badParams(id))
-            return sendResponse(BAD_REQUEST);
+            return sendResponse(BAD_REQUEST, BAD_REQUEST_MSG);
 
         try (Jedis jedis = RedisCache.getCachePool().getResource()) {
 
@@ -121,7 +122,7 @@ public class HousesResource implements HousesService {
                 Cache.putInCache(houseToCACHE, HOUSE_PREFIX, jedis);
                 return sendResponse(OK, houseToCACHE.toHouse());
             } else
-                return sendResponse(NOT_FOUND, "House", id);
+                return sendResponse(NOT_FOUND, HOUSE_MSG, id);
         } catch (CosmosException ex) {
             return processException(ex.getStatusCode(), ex.getMessage());
         }
@@ -265,26 +266,23 @@ public class HousesResource implements HousesService {
                 if (newPrice > 0)
                     houseDAO.setPrice(newPrice);
                 else
-                    // throw new WebApplicationException(Response.Status.BAD_REQUEST);
                     throw new WebApplicationException("Error: Invalid price", Response.Status.BAD_REQUEST);
-            //throw new Exception("Error: Invalid price");
 
             var newDiscount = house.getDiscount();
             if (newDiscount != null)
                 if (newDiscount >= 0)
                     houseDAO.setDiscount(newDiscount);
                 else
-                    // throw new WebApplicationException(Response.Status.BAD_REQUEST);
                     throw new WebApplicationException("Error: Invalid discount", Response.Status.BAD_REQUEST);
-            //  throw new Exception("Error: Invalid discount");
 
             return houseDAO;
+
         } else {
             throw new WebApplicationException(Response.Status.NOT_FOUND);
         }
     }
 
-    private UserDAO checksHouseCreation(HouseDAO houseDAO, Jedis jedis) throws Exception {
+    private UserDAO checksHouseCreation(HouseDAO houseDAO, Jedis jedis) {
         if (badParams(houseDAO.getId(), houseDAO.getName(), houseDAO.getLocation(), houseDAO.getPrice().toString(),
                 houseDAO.getDiscount().toString()) && houseDAO.getPrice() > 0 && houseDAO.getDiscount() > 0) {
             throw new WebApplicationException(Response.Status.BAD_REQUEST);

@@ -15,7 +15,6 @@ public interface HousesService {
     String LOCATION = "location";
     String INITIAL_DATE = "initialDate";
     String END_DATE = "endDate";
-
     String HOUSE_PREFIX = "house:";
 
 
