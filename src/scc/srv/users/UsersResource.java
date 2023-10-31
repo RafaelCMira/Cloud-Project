@@ -33,7 +33,7 @@ public class UsersResource implements UsersService {
     private final CosmosDBLayer db = CosmosDBLayer.getInstance();
 
     @Override
-    public Response authUser(Login credentials) throws Exception {
+    public Response auth(Login credentials) throws Exception {
         if (badParams(credentials.getId(), credentials.getPwd()))
             return sendResponse(BAD_REQUEST, BAD_REQUEST_MSG);
 
@@ -75,13 +75,10 @@ public class UsersResource implements UsersService {
             return sendResponse(NOT_FOUND, MEDIA_MSG, "(some id)");
 
         try {
-
             userDAO.setPwd(Hash.of(userDAO.getPwd()));
             db.createItem(userDAO, CONTAINER);
 
-            try (Jedis jedis = RedisCache.getCachePool().getResource()) {
-                Cache.putInCache(userDAO, USER_PREFIX, jedis);
-            }
+            Cache.putInCache(userDAO, USER_PREFIX);
 
         } catch (CosmosException ex) {
             return processException(ex.getStatusCode(), USER_MSG, userDAO.getId());
@@ -116,22 +113,23 @@ public class UsersResource implements UsersService {
 
         return sendResponse(OK, String.format(RESOURCE_WAS_DELETED, USER_MSG, id));
     }
-    
+
     @Override
     public Response getUser(String id) throws JsonProcessingException {
         if (badParams(id))
             return sendResponse(BAD_REQUEST, BAD_REQUEST_MSG);
 
-        try (Jedis jedis = RedisCache.getCachePool().getResource()) {
+        try {
 
-            String cacheRes = jedis.get(USER_PREFIX + id);
+            String cacheRes = Cache.getFromCache(USER_PREFIX, id);
             if (cacheRes != null)
                 return sendResponse(OK, mapper.readValue(cacheRes, UserDAO.class).toUser());
 
             var result = db.getById(id, CONTAINER, UserDAO.class).stream().findFirst();
             if (result.isPresent()) {
                 var user = result.get();
-                Cache.putInCache(user, USER_PREFIX, jedis);
+                Cache.putInCache(user, USER_PREFIX);
+
                 return sendResponse(OK, user.toUser());
             } else
                 return sendResponse(NOT_FOUND, USER_MSG, id);
@@ -143,8 +141,8 @@ public class UsersResource implements UsersService {
 
     @Override
     public Response updateUser(Cookie session, String id, User user) throws JsonProcessingException {
-        try {
 
+        try {
             var checkCookies = checkUserSession(session, id);
             if (checkCookies.getStatus() != Response.Status.OK.getStatusCode())
                 return checkCookies;
@@ -152,9 +150,7 @@ public class UsersResource implements UsersService {
             var updatedUser = genUpdatedUserDAO(id, user);
             db.updateUser(updatedUser);
 
-            try (Jedis jedis = RedisCache.getCachePool().getResource()) {
-                Cache.putInCache(updatedUser, USER_PREFIX, jedis);
-            }
+            Cache.putInCache(updatedUser, USER_PREFIX);
 
             return sendResponse(OK, updatedUser.toUser());
 
@@ -191,16 +187,17 @@ public class UsersResource implements UsersService {
         if (badParams(id))
             return sendResponse(BAD_REQUEST, BAD_REQUEST_MSG);
 
-        try (Jedis jedis = RedisCache.getCachePool().getResource()) {
+        try {
 
-            String user = Cache.getFromCache(USER_PREFIX, id, jedis);
+            String user = Cache.getFromCache(USER_PREFIX, id);
             if (user != null)
                 return sendResponse(OK, mapper.readValue(user, UserDAO.class).getHouseIds());
 
             var res = db.getById(id, CONTAINER, UserDAO.class).stream().findFirst();
             if (res.isPresent()) {
                 var dbUser = res.get();
-                Cache.putInCache(dbUser, USER_PREFIX, jedis);
+                Cache.putInCache(dbUser, USER_PREFIX);
+
                 return sendResponse(OK, dbUser.getHouseIds());
             } else
                 return sendResponse(NOT_FOUND, USER_MSG, id);
@@ -212,7 +209,7 @@ public class UsersResource implements UsersService {
 
 
     /**
-     * * Returns updated userDAO to the method who's making the request to the database
+     * Returns updated userDAO to the method who's making the request to the database
      *
      * @param id   of the user being accessed
      * @param user new user attributes

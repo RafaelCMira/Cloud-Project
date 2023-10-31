@@ -19,6 +19,7 @@ public class Utility {
     public static final String NOT_FOUND = "NOT_FOUND@%s: %s does not exist";
     public static final String CONFLICT = "CONFLICT@%s with this id: %s already exists";
     public static final String UNAUTHORIZED = "UNAUTHORIZED@%s";
+    public static final String UNAUTHORIZED_MSG = "User is unauthorized to do thi.";
     public static final String INTERNAL_SERVER_ERROR = "INTERNAL_SERVER_ERROR@Something went wrong";
 
     public static final String USER_MSG = "User";
@@ -79,11 +80,9 @@ public class Utility {
 
         Session session = null;
 
-        try (Jedis jedis = RedisCache.getCachePool().getResource()) {
-            String cacheRes = Cache.getFromCache(Session.SESSION_PREFIX, cookie.getValue(), jedis);
-            if (cacheRes != null)
-                session = mapper.readValue(cacheRes, Session.class);
-        }
+        String cacheRes = Cache.getFromCache(Session.SESSION_PREFIX, cookie.getValue());
+        if (cacheRes != null)
+            session = mapper.readValue(cacheRes, Session.class);
 
         if (session == null)
             return sendResponse(UNAUTHORIZED, "No valid session initialized - " + "SESSION null");

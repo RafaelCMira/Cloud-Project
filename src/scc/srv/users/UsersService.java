@@ -4,14 +4,9 @@ import jakarta.ws.rs.*;
 import jakarta.ws.rs.core.Cookie;
 import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
-import org.glassfish.jersey.media.multipart.FormDataContentDisposition;
-import org.glassfish.jersey.media.multipart.FormDataParam;
 import scc.data.User;
 import scc.data.UserDAO;
 import scc.srv.utils.Login;
-
-import java.io.InputStream;
-import java.util.List;
 
 
 @Path(UsersService.PATH)
@@ -32,7 +27,7 @@ public interface UsersService {
     @POST
     @Path(AUTH)
     @Consumes(MediaType.APPLICATION_JSON)
-    Response authUser(Login credentials) throws Exception;
+    Response auth(Login credentials) throws Exception;
 
     @POST
     @Consumes(MediaType.APPLICATION_JSON)

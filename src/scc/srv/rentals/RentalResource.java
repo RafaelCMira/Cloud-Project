@@ -2,15 +2,14 @@ package scc.srv.rentals;
 
 import com.azure.cosmos.CosmosException;
 import jakarta.ws.rs.WebApplicationException;
+import jakarta.ws.rs.core.Cookie;
 import jakarta.ws.rs.core.Response;
-import com.azure.cosmos.util.CosmosPagedIterable;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import redis.clients.jedis.Jedis;
 import scc.cache.RedisCache;
 import scc.data.*;
 import scc.db.CosmosDBLayer;
 import scc.srv.houses.HousesResource;
-import scc.srv.users.UsersResource;
 import scc.srv.houses.HousesService;
 import scc.srv.users.UsersService;
 import scc.srv.utils.Cache;
@@ -19,7 +18,6 @@ import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
-import java.util.Optional;
 
 import static scc.srv.utils.Utility.*;
 
@@ -32,10 +30,10 @@ public class RentalResource implements RentalService {
     private final ObjectMapper mapper = new ObjectMapper();
 
     @Override
-    public Response createRental(String houseId, RentalDAO rentalDAO) throws Exception {
+    public Response createRental(Cookie session, String houseId, RentalDAO rentalDAO) throws Exception {
         //TODO: add rental to house with azure functions
-        try (Jedis jedis = RedisCache.getCachePool().getResource()) {
-            checkRentalCreation(houseId, rentalDAO, jedis);
+        try {
+            checkRentalCreation(session, houseId, rentalDAO);
 
             var newRental = db.createItem(rentalDAO, CONTAINER);
             int statusCode = newRental.getStatusCode();
@@ -49,8 +47,10 @@ public class RentalResource implements RentalService {
                 else if (!rentalInDB.get().getUserId().equals(rentalDAO.getUserId()))
                     return sendResponse(CONFLICT, RENTAL_MSG, rentalDAO.getId());
 
-                Cache.putInCache(rentalDAO, CACHE_PREFIX, jedis);
+                Cache.putInCache(rentalDAO, CACHE_PREFIX);
+
                 return sendResponse(OK, rentalDAO.toRental().toString());
+
             } else
                 return processException(statusCode, RENTAL_MSG, rentalDAO.getId());
 
@@ -71,41 +71,41 @@ public class RentalResource implements RentalService {
     }
 
     @Override
-    public Response getRental(String houseID, String id) throws Exception {
+    public Response getRental(String houseId, String id) throws Exception {
         if (badParams(id))
             return sendResponse(BAD_REQUEST, BAD_REQUEST_MSG);
 
-        // Check if it is in Cache
-        try (Jedis jedis = RedisCache.getCachePool().getResource()) {
-            String rCache = jedis.get(CACHE_PREFIX + id);
+        try {
+            String rCache = Cache.getFromCache(CACHE_PREFIX, id);
             if (rCache != null)
                 return sendResponse(OK, mapper.readValue(rCache, RentalDAO.class).toRental());
 
-            CosmosPagedIterable<RentalDAO> res = db.getRentalById(houseID, id);
-            Optional<RentalDAO> result = res.stream().findFirst();
+            var result = db.getRentalById(houseId, id).stream().findFirst();
             if (result.isPresent()) {
-                Cache.putInCache(result.get(), CACHE_PREFIX, jedis);
+                Cache.putInCache(result.get(), CACHE_PREFIX);
                 return sendResponse(OK, result.get().toRental());
-            } else {
+
+            } else
                 return sendResponse(NOT_FOUND, RENTAL_MSG, id);
-            }
+
+        } catch (CosmosException ex) {
+            return processException(ex.getStatusCode(), ex.getMessage());
         }
     }
 
     @Override
-    public Response updateRental(String houseID, String id, RentalDAO rentalDAO) throws Exception {
-        RentalDAO updatedRental = refactorRental(houseID, id, rentalDAO);
+    public Response updateRental(Cookie session, String houseId, String id, RentalDAO rentalDAO) throws Exception {
+        RentalDAO updatedRental = genUpdatedRental(session, houseId, id, rentalDAO);
         try {
             var res = db.updateRental(updatedRental);
             int statusCode = res.getStatusCode();
             if (isStatusOk(res.getStatusCode())) {
-                try (Jedis jedis = RedisCache.getCachePool().getResource()) {
-                    jedis.set(CACHE_PREFIX + id, mapper.writeValueAsString(updatedRental));
-                }
+                Cache.putInCache(updatedRental, CACHE_PREFIX);
                 return sendResponse(OK, updatedRental.toRental());
-            } else {
+
+            } else
                 return processException(statusCode, RENTAL_MSG, id);
-            }
+
         } catch (CosmosException ex) {
             return processException(ex.getStatusCode(), RENTAL_MSG, id);
         }
@@ -145,41 +145,37 @@ public class RentalResource implements RentalService {
     }
 
 
-    private RentalDAO refactorRental(String houseID, String id, RentalDAO rentalDAO) throws Exception {
-        if (id == null) throw new Exception("Error: 400 Bad Request (Null ID)");
+    private RentalDAO genUpdatedRental(Cookie session, String houseID, String id, RentalDAO rental) throws Exception {
+        if (badParams(id))
+            throw new WebApplicationException(BAD_REQUEST_MSG, Response.Status.BAD_REQUEST);
 
         var result = db.getRentalById(houseID, id).stream().findFirst();
         if (result.isPresent()) {
-            RentalDAO rental = result.get();
+            RentalDAO rentalDAO = result.get();
 
-            String rentalDAOId = rentalDAO.getId();
-            if (!rental.getId().equals(rentalDAOId))
-                rental.setId(rentalDAOId);
+            //todo: Quem pode fazer update ao rental? O dono da casa ou o user que aluga?
+           /* var checkCookies = checkUserSession(session, rentalDAO.getUserId());
+            if (checkCookies.getStatus() != Response.Status.OK.getStatusCode())
+                throw new WebApplicationException(UNAUTHORIZED_MSG, Response.Status.UNAUTHORIZED);
+            */
 
-            String rentalDAOHouseId = rentalDAO.getHouseId();
-            if (!rental.getHouseId().equals(rentalDAOHouseId))
-                rental.setHouseId(rentalDAOHouseId);
+            //TODO: ver o que se pode alterar num rental. Verficar datas de novo
+            double rentalDAOPrice = rental.getPrice();
+            if (rentalDAO.getPrice() != (rentalDAOPrice))
+                rentalDAO.setPrice(rentalDAOPrice);
 
-            String rentalDAOUserId = rentalDAO.getUserId();
-            if (!rental.getUserId().equals(rentalDAOUserId))
-                rental.setUserId(rentalDAOUserId);
+            Date rentalDAOInitialDate = rental.getInitialDate();
+            if (!rentalDAO.getInitialDate().equals(rentalDAOInitialDate))
+                rentalDAO.setInitialDate(rentalDAOInitialDate);
 
-            double rentalDAOPrice = rentalDAO.getPrice();
-            if (rental.getPrice() != (rentalDAOPrice))
-                rental.setPrice(rentalDAOPrice);
+            Date rentalDAOEndDate = rental.getEndDate();
+            if (!rentalDAO.getEndDate().equals(rentalDAOEndDate))
+                rentalDAO.setEndDate(rentalDAOEndDate);
 
-            Date rentalDAOInitialDate = rentalDAO.getInitialDate();
-            if (!rental.getInitialDate().equals(rentalDAOInitialDate))
-                rental.setInitialDate(rentalDAOInitialDate);
-
-            Date rentalDAOEndDate = rentalDAO.getEndDate();
-            if (!rental.getEndDate().equals(rentalDAOEndDate))
-                rental.setEndDate(rentalDAOEndDate);
-
-            return rental;
+            return rentalDAO;
 
         } else {
-            throw new Exception("Error: 404 Rental Not Found");
+            throw new WebApplicationException(RENTAL_MSG, Response.Status.NOT_FOUND);
         }
     }
 
@@ -202,26 +198,29 @@ public class RentalResource implements RentalService {
      * @param rental  - the rental
      * @throws Exception - WebApplicationException depending on the result of the checks
      */
-    private void checkRentalCreation(String houseId, RentalDAO rental, Jedis jedis) throws Exception {
+    private void checkRentalCreation(Cookie session, String houseId, RentalDAO rental) throws Exception {
+        var checkCookies = checkUserSession(session, rental.getUserId());
+        if (checkCookies.getStatus() != Response.Status.OK.getStatusCode())
+            throw new WebApplicationException(UNAUTHORIZED, Response.Status.UNAUTHORIZED);
+
         if (badParams(rental.getId(), rental.getHouseId(), rental.getUserId()))
             throw new WebApplicationException(Response.Status.BAD_REQUEST);
 
         // Verify if house exists
-        HouseDAO house = mapper.readValue(jedis.get(HousesService.HOUSE_PREFIX + houseId), HouseDAO.class);
-        if (house == null) {
+        if (Cache.getFromCache(HousesService.HOUSE_PREFIX, rental.getHouseId()) == null) {
             var houseRes = db.getById(houseId, HousesResource.CONTAINER, HouseDAO.class).stream().findFirst();
             if (houseRes.isEmpty())
                 throw new WebApplicationException(HOUSE_MSG, Response.Status.NOT_FOUND);
         }
 
-        // Verify if user exists
-        String userId = rental.getUserId();
-        if (jedis.get(UsersService.USER_PREFIX + userId) == null) {
-            var userRes = db.getById(userId, UsersResource.CONTAINER, UserDAO.class).stream().findFirst();
+        // Verify if house exists
+        if (Cache.getFromCache(UsersService.USER_PREFIX, rental.getUserId()) == null) {
+            var userRes = db.getById(rental.getUserId(), HousesResource.CONTAINER, HouseDAO.class).stream().findFirst();
             if (userRes.isEmpty())
                 throw new WebApplicationException(USER_MSG, Response.Status.NOT_FOUND);
         }
 
+        // Verify if house is available
         if (isHouseNotAvailable(houseId, rental.getInitialDate(), rental.getEndDate()))
             throw new WebApplicationException(RENTAL_MSG, Response.Status.CONFLICT);
     }

@@ -28,7 +28,7 @@ public interface HousesService {
     @DELETE
     @Path("/{" + ID + "}")
     @Produces(MediaType.APPLICATION_JSON)
-    Response deleteHouse(@PathParam(ID) String id) throws Exception;
+    Response deleteHouse(@CookieParam(SESSION) Cookie session, @PathParam(ID) String id) throws Exception;
 
     @GET
     @Path("/{" + ID + "}")
@@ -39,7 +39,7 @@ public interface HousesService {
     @Path("/{" + ID + "}")
     @Consumes(MediaType.APPLICATION_JSON)
     @Produces(MediaType.APPLICATION_JSON)
-    Response updateHouse(@PathParam(ID) String id, House house) throws Exception;
+    Response updateHouse(@CookieParam(SESSION) Cookie session, @PathParam(ID) String id, House house) throws Exception;
 
     @GET
     @Path("/")

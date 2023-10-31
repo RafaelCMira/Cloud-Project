@@ -1,6 +1,7 @@
 package scc.srv.rentals;
 
 import jakarta.ws.rs.*;
+import jakarta.ws.rs.core.Cookie;
 import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
 import scc.data.*;
@@ -18,12 +19,14 @@ public interface RentalService {
 
     String CACHE_PREFIX = "rental:";
 
+    String SESSION = "session";
+
 
     @POST
     @Path("{" + HOUSE_ID + "}" + RENTAL)
     @Consumes(MediaType.APPLICATION_JSON)
     @Produces(MediaType.APPLICATION_JSON)
-    Response createRental(@PathParam(HOUSE_ID) String houseID, RentalDAO rentalDAO) throws Exception;
+    Response createRental(@CookieParam(SESSION) Cookie session, @PathParam(HOUSE_ID) String houseID, RentalDAO rentalDAO) throws Exception;
 
     @GET
     @Path("{" + HOUSE_ID + "}" + RENTAL + "/{" + RENTAL_ID + "}")
@@ -35,7 +38,8 @@ public interface RentalService {
     @Path("/{" + HOUSE_ID + "}" + RENTAL + "/{" + RENTAL_ID + "}")
     @Produces(MediaType.APPLICATION_JSON)
     @Consumes(MediaType.APPLICATION_JSON)
-    Response updateRental(@PathParam(HOUSE_ID) String houseID, @PathParam(RENTAL_ID) String id, RentalDAO rentalDAO) throws Exception;
+    Response updateRental(@CookieParam(SESSION) Cookie session, @PathParam(HOUSE_ID) String houseID, @PathParam(RENTAL_ID) String id,
+                          RentalDAO rentalDAO) throws Exception;
 
     @GET
     @Path("/{" + HOUSE_ID + "}" + RENTAL)

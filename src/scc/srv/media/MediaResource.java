@@ -34,7 +34,7 @@ public class MediaResource implements MediaService {
             // Upload contents from BinaryData (check documentation for other alternatives)
             blob.upload(data);
 
-            Cache.putInCache(data, MEDIA_PREFIX, jedis);
+            Cache.putInCache(data, MEDIA_PREFIX);
 
         } catch (Exception e) {
             e.printStackTrace();
