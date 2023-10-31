@@ -163,6 +163,6 @@ public class HouseDAO implements HasId {
     public void removeRental(String rentalID) {
         rentalsIds.remove(rentalID);
     }
-    
+
 
 }

@@ -64,10 +64,10 @@ public class RentalResource implements RentalService {
     private Response handleCreateException(int statusCode, String msg, RentalDAO rental) {
         if (msg.contains(HOUSE_MSG))
             return processException(statusCode, HOUSE_MSG, rental.getHouseId());
-        else if(msg.contains(USER_MSG))
+        else if (msg.contains(USER_MSG))
             return processException(statusCode, USER_MSG, rental.getUserId());
         else
-            return processException(statusCode,RENTAL_MSG, rental.getId());
+            return processException(statusCode, RENTAL_MSG, rental.getId());
     }
 
     @Override
@@ -124,13 +124,13 @@ public class RentalResource implements RentalService {
         if (badParams(id))
             return sendResponse(BAD_REQUEST, BAD_REQUEST_MSG);
 
-        var res = db.deleteRental(houseId,id);
+        var res = db.deleteRental(houseId, id);
         int statusCode = res.getStatusCode();
 
         if (isStatusOk(statusCode)) {
             // TODO - This could be made with azure functions
             var houseDAO = db.getById(houseId, HousesResource.CONTAINER, HouseDAO.class).stream().findFirst();
-            if(houseDAO.isEmpty()) return sendResponse(NOT_FOUND,HOUSE_MSG,houseId);
+            if (houseDAO.isEmpty()) return sendResponse(NOT_FOUND, HOUSE_MSG, houseId);
             houseDAO.get().removeRental(id);
 
             // Delete rental in cache
@@ -222,23 +222,24 @@ public class RentalResource implements RentalService {
                 throw new WebApplicationException(USER_MSG, Response.Status.NOT_FOUND);
         }
 
-        if(isHouseNotAvailable(houseId,rental.getInitialDate(),rental.getEndDate()))
+        if (isHouseNotAvailable(houseId, rental.getInitialDate(), rental.getEndDate()))
             throw new WebApplicationException(RENTAL_MSG, Response.Status.CONFLICT);
     }
 
     /**
      * Checks if the House is not available in the given time.
+     *
      * @param houseId - The id of the house.
-     * @param sTime - The start Date of the Rental.
-     * @param eTime - The end Date of the Rental
+     * @param sTime   - The start Date of the Rental.
+     * @param eTime   - The end Date of the Rental
      * @return true if the house is not available in the given time, false otherwise.
      */
     private boolean isHouseNotAvailable(String houseId, Date sTime, Date eTime) {
         var rentals = db.getRentals(houseId).stream().toList();
 
-        for(RentalDAO r: rentals) {
-           if(!r.getInitialDate().after(eTime)&&!r.getEndDate().before(sTime))
-               return true;
+        for (RentalDAO r : rentals) {
+            if (!r.getInitialDate().after(eTime) && !r.getEndDate().before(sTime))
+                return true;
         }
 
         return false;

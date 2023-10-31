@@ -5,11 +5,14 @@ public class Session implements HasId {
     public static final String SESSION_PREFIX = "s:";
 
     private String sessionId;
-    private String id;
+    private String userId;
+
+    public Session() {
+    }
 
     public Session(String sessionId, String userId) {
         this.sessionId = sessionId;
-        this.id = userId;
+        this.userId = userId;
     }
 
     public String getSessionId() {
@@ -21,11 +24,19 @@ public class Session implements HasId {
     }
 
     public String getId() {
-        return id;
+        return userId;
     }
 
     public void setId(String userId) {
-        this.id = userId;
+        this.userId = userId;
+    }
+
+    @Override
+    public String toString() {
+        return "Session{" +
+                "sessionId='" + sessionId + '\'' +
+                ", userId='" + userId + '\'' +
+                '}';
     }
 }
 

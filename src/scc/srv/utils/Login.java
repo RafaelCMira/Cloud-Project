@@ -12,7 +12,7 @@ public class Login {
 
     public Login(String id, String pwd) {
         this.id = id;
-        this.pwd = Hash.of(pwd);
+        this.pwd = pwd;
     }
 
     public String getId() {

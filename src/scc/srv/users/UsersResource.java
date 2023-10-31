@@ -3,8 +3,8 @@ package scc.srv.users;
 import com.azure.cosmos.CosmosException;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import jakarta.ws.rs.NotAuthorizedException;
 import jakarta.ws.rs.WebApplicationException;
+import jakarta.ws.rs.core.Cookie;
 import jakarta.ws.rs.core.NewCookie;
 import jakarta.ws.rs.core.Response;
 import redis.clients.jedis.Jedis;
@@ -33,28 +33,46 @@ public class UsersResource implements UsersService {
     private final CosmosDBLayer db = CosmosDBLayer.getInstance();
 
     @Override
-    public Response authUser(Login user) throws Exception {
+    public Response authUser(Login credentials) throws Exception {
+        if (badParams(credentials.getId(), credentials.getPwd()))
+            return sendResponse(BAD_REQUEST, BAD_REQUEST_MSG);
+
         try (Jedis jedis = RedisCache.getCachePool().getResource()) {
-            var id = user.getId();
+            var id = credentials.getId();
 
-            var userDAO = (UserDAO) getUser(id).getEntity();
+            var res = getUser(id);
+            if (res.getStatus() != Response.Status.OK.getStatusCode())
+                return res;
 
-            boolean checkPwd = user.getPwd().equals(userDAO.getPwd());
+            var user = (User) res.getEntity();
 
-            if (checkPwd) {
-                String uid = UUID.randomUUID().toString();
-                NewCookie cookie = new NewCookie.Builder(Session.SESSION_PREFIX + id)
-                        .value(uid)
-                        .path("/")
-                        .comment("sessionid")
-                        .maxAge(3600)
-                        .secure(false)
-                        .httpOnly(true)
-                        .build();
-                Cache.putInCache(new Session(uid, user.getId()), Session.SESSION_PREFIX + id, jedis);
-                return Response.ok().cookie(cookie).build();
-            } else
-                throw new NotAuthorizedException("Incorrect login");
+            if (!Hash.of(credentials.getPwd()).equals(user.getPwd()))
+                return sendResponse(UNAUTHORIZED, "Incorrect login");
+
+            String uid = UUID.randomUUID().toString();
+            NewCookie cookie = new NewCookie.Builder(SESSION)
+                    .value(uid)
+                    .path("/")
+                    .comment("sessionid")
+                    .maxAge(3600)
+                    .secure(false)
+                    .httpOnly(true)
+                    .build();
+
+            jedis.set(Session.SESSION_PREFIX + uid, mapper.writeValueAsString(new Session(uid, credentials.getId())));
+
+            //var ai = Cache.getFromCache(Session.SESSION_PREFIX, uid, jedis);
+
+           /* if (ai == null) {
+                throw new Exception("Algo de errado não tá certo");
+            } else {//TODO: está na cache porque entra no else
+                throw new Exception(mapper.readValue(ai, Session.class).toString());
+            }*/
+
+
+            // Cache.putInCache(new Session(uid, credentials.getId()), Session.SESSION_PREFIX + id, jedis);
+
+            return Response.ok().cookie(cookie).build();
         }
     }
 
@@ -69,6 +87,7 @@ public class UsersResource implements UsersService {
 
         try {
 
+            userDAO.setPwd(Hash.of(userDAO.getPwd()));
             db.createItem(userDAO, CONTAINER);
 
             try (Jedis jedis = RedisCache.getCachePool().getResource()) {
@@ -83,14 +102,19 @@ public class UsersResource implements UsersService {
     }
 
     @Override
-    public Response deleteUser(String id) {
+    public Response deleteUser(Cookie session, String id) throws JsonProcessingException {
         if (badParams(id))
             return sendResponse(BAD_REQUEST, BAD_REQUEST_MSG);
 
         //TODO: colocar "Deleted User" no ownerId das casas do user eliminado e nos Rentals
         //TODO: Usar azure functions
 
+        var checkCookies = checkUserSession(session, id);
+        if (checkCookies.getStatus() != Response.Status.OK.getStatusCode())
+            return checkCookies;
+
         try {
+
             db.deleteUser(id);
 
             try (Jedis jedis = RedisCache.getCachePool().getResource()) {
@@ -102,6 +126,7 @@ public class UsersResource implements UsersService {
         }
         return sendResponse(OK, String.format(RESOURCE_WAS_DELETED, USER_MSG, id));
     }
+
 
     @Override
     public Response getUser(String id) throws JsonProcessingException {

@@ -71,7 +71,7 @@ public class UserDAO implements HasId {
     }
 
     public void setPwd(String pwd) {
-        this.pwd = Hash.of(pwd);
+        this.pwd = pwd;
     }
 
     public String getPhotoId() {
