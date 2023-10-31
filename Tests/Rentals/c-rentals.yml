@@ -1,0 +1,33 @@
+config:
+  target: 'https://scc24app-westeurope-60602.azurewebsites.net/rest'
+  plugins:
+    metrics-by-endpoint: { }
+  processor: "./rentals.js"
+  variables:
+    metricsProcessEndpoint: "myProcessEndpoint"  # function used to aggregate endpoints for statistics
+  phases:
+    - name: "Create Rentals"    # Create rentals
+      duration: 1
+      arrivalCount: 1
+
+scenarios:
+  - name: 'Create Rentals'
+    weight: 1
+    flow:
+      - loop:
+          - function: "genNewRental"
+          - post:
+              url: "/house/{{ houseId }}/rental"
+              headers:
+                Content-Type: application/json
+                Accept: application/json
+              json:
+                id: ""
+                houseId: "{{ houseId }}"
+                askerId: "{{ askerId }}"
+                price: "{{ price }}"
+                startDate: "{{ startDate }}"
+                endDate: "{{ endDate }}"
+                answer: ""
+              afterResponse: "genNewRentalReply"
+        count: 1
