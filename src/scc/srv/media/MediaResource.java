@@ -6,9 +6,7 @@ import com.azure.storage.blob.BlobContainerClient;
 import com.azure.storage.blob.BlobContainerClientBuilder;
 import com.azure.storage.blob.models.BlobItem;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import redis.clients.jedis.Jedis;
-import scc.cache.RedisCache;
-import scc.srv.utils.Cache;
+import scc.cache.Cache;
 import scc.utils.Hash;
 import scc.utils.mgt.AzureManagement;
 

@@ -1,4 +1,4 @@
-package scc.srv.utils;
+package scc.srv.authentication;
 
 import scc.utils.Hash;
 

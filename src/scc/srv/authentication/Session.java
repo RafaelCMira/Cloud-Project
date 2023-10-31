@@ -1,4 +1,6 @@
-package scc.srv.utils;
+package scc.srv.authentication;
+
+import scc.srv.utils.HasId;
 
 public class Session implements HasId {
 

@@ -8,14 +8,13 @@ import jakarta.ws.rs.core.Cookie;
 import jakarta.ws.rs.core.NewCookie;
 import jakarta.ws.rs.core.Response;
 import redis.clients.jedis.Jedis;
-import scc.cache.RedisCache;
+import scc.cache.Cache;
 import scc.data.User;
 import scc.data.UserDAO;
 import scc.db.CosmosDBLayer;
-import scc.srv.utils.Cache;
 import scc.srv.media.MediaResource;
-import scc.srv.utils.Login;
-import scc.srv.utils.Session;
+import scc.srv.authentication.Login;
+import scc.srv.authentication.Session;
 import scc.utils.Hash;
 import scc.utils.mgt.AzureManagement;
 
@@ -38,7 +37,7 @@ public class UsersResource implements UsersService {
         if (badParams(credentials.getId(), credentials.getPwd()))
             return sendResponse(BAD_REQUEST, BAD_REQUEST_MSG);
 
-        try (Jedis jedis = RedisCache.getCachePool().getResource()) {
+        try (Jedis jedis = Cache.getCachePool().getResource()) {
             var id = credentials.getId();
 
             var res = getUser(id);
@@ -210,7 +209,7 @@ public class UsersResource implements UsersService {
                 }
 
                 return sendResponse(OK, dbUser.getHouseIds());
-                
+
             } else
                 return sendResponse(NOT_FOUND, USER_MSG, id);
 

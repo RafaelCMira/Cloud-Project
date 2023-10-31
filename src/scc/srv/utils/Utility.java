@@ -5,8 +5,8 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import jakarta.ws.rs.NotAuthorizedException;
 import jakarta.ws.rs.core.Cookie;
 import jakarta.ws.rs.core.Response;
-import redis.clients.jedis.Jedis;
-import scc.cache.RedisCache;
+import scc.cache.Cache;
+import scc.srv.authentication.Session;
 
 /**
  * Class with common check functions to validate requests input

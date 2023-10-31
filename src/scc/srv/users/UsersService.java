@@ -6,7 +6,7 @@ import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
 import scc.data.User;
 import scc.data.UserDAO;
-import scc.srv.utils.Login;
+import scc.srv.authentication.Login;
 
 
 @Path(UsersService.PATH)

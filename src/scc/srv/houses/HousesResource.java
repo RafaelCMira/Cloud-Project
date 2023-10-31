@@ -7,10 +7,10 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import jakarta.ws.rs.WebApplicationException;
 import jakarta.ws.rs.core.Cookie;
 import jakarta.ws.rs.core.Response;
+import scc.cache.Cache;
 import scc.data.*;
 import scc.db.CosmosDBLayer;
 import scc.srv.users.UsersResource;
-import scc.srv.utils.Cache;
 import scc.srv.media.MediaResource;
 import scc.srv.users.UsersService;
 import scc.utils.mgt.AzureManagement;
@@ -324,7 +324,7 @@ public class HousesResource implements HousesService {
             if (Cache.getFromCache(HousesService.HOUSE_PREFIX, houseDAO.getId()) != null)
                 throw new WebApplicationException(HOUSE_MSG, Response.Status.CONFLICT);
         }
-        
+
         // Check if house already exists on DB
         var house = db.getById(houseDAO.getId(), CONTAINER, HouseDAO.class).stream().findFirst();
         if (house.isPresent())

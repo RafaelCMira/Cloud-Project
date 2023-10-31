@@ -5,12 +5,12 @@ import jakarta.ws.rs.WebApplicationException;
 import jakarta.ws.rs.core.Cookie;
 import jakarta.ws.rs.core.Response;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import scc.cache.Cache;
 import scc.data.*;
 import scc.db.CosmosDBLayer;
 import scc.srv.houses.HousesResource;
 import scc.srv.houses.HousesService;
 import scc.srv.users.UsersService;
-import scc.srv.utils.Cache;
 import scc.utils.mgt.AzureManagement;
 
 import java.time.Instant;
