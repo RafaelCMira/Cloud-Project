@@ -26,6 +26,10 @@ public class Utility {
     public static Response sendResponse(String msg, Object... params) {
         var res = msg.split("@");
         Response.Status status = Response.Status.valueOf(res[0]);
+
+        if (status == Response.Status.OK)
+            return Response.ok(params[0]).build();
+
         String message = String.format(res[1], params);
         return Response.status(status).entity(message).build();
     }
