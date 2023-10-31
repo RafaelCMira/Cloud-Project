@@ -5,14 +5,13 @@ import jakarta.ws.rs.WebApplicationException;
 import jakarta.ws.rs.core.Cookie;
 import jakarta.ws.rs.core.Response;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import redis.clients.jedis.Jedis;
-import scc.cache.RedisCache;
 import scc.data.*;
 import scc.db.CosmosDBLayer;
 import scc.srv.houses.HousesResource;
 import scc.srv.houses.HousesService;
 import scc.srv.users.UsersService;
 import scc.srv.utils.Cache;
+import scc.utils.mgt.AzureManagement;
 
 import java.time.Instant;
 import java.util.ArrayList;
@@ -47,7 +46,9 @@ public class RentalResource implements RentalService {
                 else if (!rentalInDB.get().getUserId().equals(rentalDAO.getUserId()))
                     return sendResponse(CONFLICT, RENTAL_MSG, rentalDAO.getId());
 
-                Cache.putInCache(rentalDAO, CACHE_PREFIX);
+                if (AzureManagement.CREATE_REDIS) {
+                    Cache.putInCache(rentalDAO, CACHE_PREFIX);
+                }
 
                 return sendResponse(OK, rentalDAO.toRental().toString());
 
@@ -76,14 +77,21 @@ public class RentalResource implements RentalService {
             return sendResponse(BAD_REQUEST, BAD_REQUEST_MSG);
 
         try {
-            String rCache = Cache.getFromCache(CACHE_PREFIX, id);
-            if (rCache != null)
-                return sendResponse(OK, mapper.readValue(rCache, RentalDAO.class).toRental());
+            if (AzureManagement.CREATE_REDIS) {
+                String cacheRes = Cache.getFromCache(CACHE_PREFIX, id);
+                if (cacheRes != null)
+                    return sendResponse(OK, mapper.readValue(cacheRes, RentalDAO.class).toRental());
+            }
 
             var result = db.getRentalById(houseId, id).stream().findFirst();
             if (result.isPresent()) {
-                Cache.putInCache(result.get(), CACHE_PREFIX);
-                return sendResponse(OK, result.get().toRental());
+                var rentalToCache = result.get();
+
+                if (AzureManagement.CREATE_REDIS) {
+                    Cache.putInCache(rentalToCache, CACHE_PREFIX);
+                }
+
+                return sendResponse(OK, rentalToCache.toRental());
 
             } else
                 return sendResponse(NOT_FOUND, RENTAL_MSG, id);
@@ -100,7 +108,10 @@ public class RentalResource implements RentalService {
             var res = db.updateRental(updatedRental);
             int statusCode = res.getStatusCode();
             if (isStatusOk(res.getStatusCode())) {
-                Cache.putInCache(updatedRental, CACHE_PREFIX);
+                if (AzureManagement.CREATE_REDIS) {
+                    Cache.putInCache(updatedRental, CACHE_PREFIX);
+                }
+
                 return sendResponse(OK, updatedRental.toRental());
 
             } else
@@ -134,9 +145,10 @@ public class RentalResource implements RentalService {
             houseDAO.get().removeRental(id);
 
             // Delete rental in cache
-            try (Jedis jedis = RedisCache.getCachePool().getResource()) {
-                jedis.del(CACHE_PREFIX + id);
+            if (AzureManagement.CREATE_REDIS) {
+                Cache.deleteFromCache(CACHE_PREFIX, id);
             }
+
             String s = String.format("StatusCode: %d \nRental %s was delete", statusCode, id);
             return sendResponse(OK, s);
         } else {

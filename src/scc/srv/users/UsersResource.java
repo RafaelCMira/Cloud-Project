@@ -17,6 +17,7 @@ import scc.srv.media.MediaResource;
 import scc.srv.utils.Login;
 import scc.srv.utils.Session;
 import scc.utils.Hash;
+import scc.utils.mgt.AzureManagement;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -103,9 +104,8 @@ public class UsersResource implements UsersService {
 
             db.deleteUser(id);
 
-            try (Jedis jedis = RedisCache.getCachePool().getResource()) {
-                jedis.del(USER_PREFIX + id);
-            }
+            if (AzureManagement.CREATE_REDIS)
+                Cache.deleteFromCache(USER_PREFIX, id);
 
         } catch (CosmosException ex) {
             return processException(ex.getStatusCode(), USER_MSG, id);
@@ -120,17 +120,22 @@ public class UsersResource implements UsersService {
             return sendResponse(BAD_REQUEST, BAD_REQUEST_MSG);
 
         try {
-
-            String cacheRes = Cache.getFromCache(USER_PREFIX, id);
-            if (cacheRes != null)
-                return sendResponse(OK, mapper.readValue(cacheRes, UserDAO.class).toUser());
+            if (AzureManagement.CREATE_REDIS) {
+                String cacheRes = Cache.getFromCache(USER_PREFIX, id);
+                if (cacheRes != null)
+                    return sendResponse(OK, mapper.readValue(cacheRes, UserDAO.class).toUser());
+            }
 
             var result = db.getById(id, CONTAINER, UserDAO.class).stream().findFirst();
             if (result.isPresent()) {
                 var user = result.get();
-                Cache.putInCache(user, USER_PREFIX);
+
+                if (AzureManagement.CREATE_REDIS) {
+                    Cache.putInCache(user, USER_PREFIX);
+                }
 
                 return sendResponse(OK, user.toUser());
+
             } else
                 return sendResponse(NOT_FOUND, USER_MSG, id);
 
@@ -150,7 +155,9 @@ public class UsersResource implements UsersService {
             var updatedUser = genUpdatedUserDAO(id, user);
             db.updateUser(updatedUser);
 
-            Cache.putInCache(updatedUser, USER_PREFIX);
+            if (AzureManagement.CREATE_REDIS) {
+                Cache.putInCache(updatedUser, USER_PREFIX);
+            }
 
             return sendResponse(OK, updatedUser.toUser());
 
@@ -188,17 +195,22 @@ public class UsersResource implements UsersService {
             return sendResponse(BAD_REQUEST, BAD_REQUEST_MSG);
 
         try {
-
-            String user = Cache.getFromCache(USER_PREFIX, id);
-            if (user != null)
-                return sendResponse(OK, mapper.readValue(user, UserDAO.class).getHouseIds());
+            if (AzureManagement.CREATE_REDIS) {
+                String user = Cache.getFromCache(USER_PREFIX, id);
+                if (user != null)
+                    return sendResponse(OK, mapper.readValue(user, UserDAO.class).getHouseIds());
+            }
 
             var res = db.getById(id, CONTAINER, UserDAO.class).stream().findFirst();
             if (res.isPresent()) {
                 var dbUser = res.get();
-                Cache.putInCache(dbUser, USER_PREFIX);
+
+                if (AzureManagement.CREATE_REDIS) {
+                    Cache.putInCache(dbUser, USER_PREFIX);
+                }
 
                 return sendResponse(OK, dbUser.getHouseIds());
+                
             } else
                 return sendResponse(NOT_FOUND, USER_MSG, id);
 

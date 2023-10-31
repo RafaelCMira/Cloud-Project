@@ -10,6 +10,7 @@ import redis.clients.jedis.Jedis;
 import scc.cache.RedisCache;
 import scc.srv.utils.Cache;
 import scc.utils.Hash;
+import scc.utils.mgt.AzureManagement;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -22,7 +23,7 @@ public class MediaResource implements MediaService {
 
     public String upload(byte[] contents) {
         String id = Hash.of(contents);
-        try (Jedis jedis = RedisCache.getCachePool().getResource()) {
+        try {
             BinaryData data = BinaryData.fromBytes(contents);
 
             // Get container client
@@ -34,7 +35,9 @@ public class MediaResource implements MediaService {
             // Upload contents from BinaryData (check documentation for other alternatives)
             blob.upload(data);
 
-            Cache.putInCache(data, MEDIA_PREFIX);
+            if (AzureManagement.CREATE_REDIS) {
+                Cache.putInCache(data, MEDIA_PREFIX);
+            }
 
         } catch (Exception e) {
             e.printStackTrace();
@@ -46,6 +49,13 @@ public class MediaResource implements MediaService {
         byte[] content = null;
 
         try {
+
+            if (AzureManagement.CREATE_REDIS) {
+                var res = Cache.getFromCache(MEDIA_PREFIX, id);
+                if (res != null)
+                    return mapper.readValue(res, BinaryData.class).toBytes();
+            }
+
             // Get container client
             BlobContainerClient containerClient = getContainerClient(MediaService.CONTAINER_NAME);
 

@@ -7,14 +7,13 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import jakarta.ws.rs.WebApplicationException;
 import jakarta.ws.rs.core.Cookie;
 import jakarta.ws.rs.core.Response;
-import redis.clients.jedis.Jedis;
-import scc.cache.RedisCache;
 import scc.data.*;
 import scc.db.CosmosDBLayer;
 import scc.srv.users.UsersResource;
 import scc.srv.utils.Cache;
 import scc.srv.media.MediaResource;
 import scc.srv.users.UsersService;
+import scc.utils.mgt.AzureManagement;
 
 import java.time.Instant;
 import java.time.LocalDate;
@@ -44,8 +43,10 @@ public class HousesResource implements HousesService {
             db.updateUser(user);
 
             // TODO: enviar ambos os pedidos para a cache de uma vez, o stor disse que dava para fazer
-            Cache.putInCache(houseDAO, HOUSE_PREFIX);
-            Cache.putInCache(user, UsersService.USER_PREFIX);
+            if (AzureManagement.CREATE_REDIS) {
+                Cache.putInCache(houseDAO, HOUSE_PREFIX);
+                Cache.putInCache(user, UsersService.USER_PREFIX);
+            }
 
             return sendResponse(OK, houseDAO.toHouse().toString());
 
@@ -101,9 +102,10 @@ public class HousesResource implements HousesService {
                 var updatedUser = user.get();
                 updatedUser.removeHouse(id);
                 db.updateUser(updatedUser);
-
-                Cache.deleteFromCache(HOUSE_PREFIX, id);
-                Cache.putInCache(updatedUser, UsersService.USER_PREFIX);
+                if (AzureManagement.CREATE_REDIS) {
+                    Cache.deleteFromCache(HOUSE_PREFIX, id);
+                    Cache.putInCache(updatedUser, UsersService.USER_PREFIX);
+                }
             }
 
         } catch (CosmosException ex) {
@@ -122,14 +124,20 @@ public class HousesResource implements HousesService {
 
         try {
 
-            String house = Cache.getFromCache(HOUSE_PREFIX, id);
-            if (house != null)
-                return sendResponse(OK, mapper.readValue(house, HouseDAO.class).toHouse());
+            if (AzureManagement.CREATE_REDIS) {
+                String house = Cache.getFromCache(HOUSE_PREFIX, id);
+                if (house != null)
+                    return sendResponse(OK, mapper.readValue(house, HouseDAO.class).toHouse());
+            }
 
             var res = db.getById(id, CONTAINER, HouseDAO.class).stream().findFirst();
             if (res.isPresent()) {
                 var houseToCache = res.get();
-                Cache.putInCache(houseToCache, HOUSE_PREFIX);
+
+                if (AzureManagement.CREATE_REDIS) {
+                    Cache.putInCache(houseToCache, HOUSE_PREFIX);
+                }
+
                 return sendResponse(OK, houseToCache.toHouse());
             } else
                 return sendResponse(NOT_FOUND, HOUSE_MSG, id);
@@ -146,7 +154,9 @@ public class HousesResource implements HousesService {
             var updatedHouse = genUpdatedHouse(session, id, house);
             db.updateHouse(updatedHouse);
 
-            Cache.putInCache(updatedHouse, HOUSE_PREFIX);
+            if (AzureManagement.CREATE_REDIS) {
+                Cache.putInCache(updatedHouse, HOUSE_PREFIX);
+            }
 
             return sendResponse(OK, updatedHouse.toHouse());
 
@@ -310,18 +320,22 @@ public class HousesResource implements HousesService {
 
         // Check if house already exists on Cache
         //TODO: usar Cache.getFromCache
-        if (Cache.getFromCache(HousesService.HOUSE_PREFIX, houseDAO.getId()) != null)
-            throw new WebApplicationException(HOUSE_MSG, Response.Status.CONFLICT);
-
+        if (AzureManagement.CREATE_REDIS) {
+            if (Cache.getFromCache(HousesService.HOUSE_PREFIX, houseDAO.getId()) != null)
+                throw new WebApplicationException(HOUSE_MSG, Response.Status.CONFLICT);
+        }
+        
         // Check if house already exists on DB
         var house = db.getById(houseDAO.getId(), CONTAINER, HouseDAO.class).stream().findFirst();
         if (house.isPresent())
             throw new WebApplicationException(HOUSE_MSG, Response.Status.CONFLICT);
 
-        // Checks if the user exists in cache
-        var user = Cache.getFromCache(UsersService.USER_PREFIX, houseDAO.getOwnerId());
-        if (user != null)
-            return mapper.readValue(user, UserDAO.class);
+        if (AzureManagement.CREATE_REDIS) {
+            // Checks if the user exists in cache
+            var user = Cache.getFromCache(UsersService.USER_PREFIX, houseDAO.getOwnerId());
+            if (user != null)
+                return mapper.readValue(user, UserDAO.class);
+        }
 
         // Checks if the user exists in DB
         var dbUser = db.getById(houseDAO.getOwnerId(), UsersResource.CONTAINER, UserDAO.class).stream().findFirst();
