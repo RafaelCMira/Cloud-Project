@@ -146,15 +146,13 @@ public class CosmosDBLayer {
 
     public CosmosItemResponse<RentalDAO> updateRental(RentalDAO rental) {
         init();
-        //TODO - create the db for the rentals with the house id
-        // PartitionKey key = new PartitionKey(rental.getHouseId());
-        PartitionKey key = new PartitionKey(rental.getId());
+        PartitionKey key = new PartitionKey(rental.getHouseId());
         return db.getContainer(RentalResource.CONTAINER).replaceItem(rental, rental.getId(), key, new CosmosItemRequestOptions());
     }
 
-    public CosmosItemResponse<Object> deleteRental(String id) {
+    public CosmosItemResponse<Object> deleteRental(String houseId, String id) {
         init();
-        PartitionKey key = new PartitionKey(id);
+        PartitionKey key = new PartitionKey(houseId);
         return db.getContainer(RentalResource.CONTAINER).deleteItem(id, key, new CosmosItemRequestOptions());
     }
 
