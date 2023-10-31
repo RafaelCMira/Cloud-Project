@@ -1,8 +1,8 @@
 package scc.srv.question;
 
 import com.azure.cosmos.CosmosException;
+import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import jakarta.ws.rs.PathParam;
 import jakarta.ws.rs.WebApplicationException;
 import jakarta.ws.rs.core.Response;
 import redis.clients.jedis.Jedis;
@@ -13,6 +13,7 @@ import scc.srv.houses.HousesResource;
 import scc.srv.users.UsersResource;
 import scc.srv.houses.HousesService;
 import scc.srv.users.UsersService;
+import scc.srv.utils.Cache;
 
 import java.util.Optional;
 import java.util.UUID;
@@ -29,7 +30,7 @@ public class QuestionResource implements QuestionService {
     private final ObjectMapper mapper = new ObjectMapper();
 
     @Override
-    public Response createQuestion(String houseId, QuestionDAO questionDAO) {
+    public Response createQuestion(String houseId, QuestionDAO questionDAO) throws JsonProcessingException {
         try (Jedis jedis = RedisCache.getCachePool().getResource()) {
             questionDAO.setHouseId(houseId);
 
@@ -37,6 +38,8 @@ public class QuestionResource implements QuestionService {
 
             questionDAO.setId(UUID.randomUUID().toString());
             db.createItem(questionDAO, CONTAINER);
+
+            Cache.putInCache(questionDAO, QUESTION_PREFIX, jedis);
 
             return sendResponse(OK, questionDAO.toQuestion().toString());
 
@@ -57,38 +60,41 @@ public class QuestionResource implements QuestionService {
     }
 
     @Override
-    public Question replyToQuestion(String houseId, String questionId, String replierId, QuestionDAO questionDAO) throws Exception {
+    public Response replyToQuestion(String houseId, String questionId, String replierId, QuestionDAO questionDAO) throws Exception {
         try (Jedis jedis = RedisCache.getCachePool().getResource()) {
+
             // Verify if house exists
-            HouseDAO house = mapper.readValue(jedis.get(HousesService.HOUSE_PREFIX + houseId), HouseDAO.class);
-            if (house == null) {
-                var houseRes = db.getById(houseId, HousesResource.CONTAINER, HouseDAO.class);
-                Optional<HouseDAO> hResult = houseRes.stream().findFirst();
-                if (hResult.isEmpty())
-                    throw new Exception("Error: 404 House Not Found ");
-                house = hResult.get();
+            HouseDAO house = null;
+            var cacheHouse = jedis.get(HousesService.HOUSE_PREFIX + houseId);
+            if (cacheHouse != null)
+                house = mapper.readValue(cacheHouse, HouseDAO.class);
+            else {
+                var houseRes = db.getById(houseId, HousesResource.CONTAINER, HouseDAO.class).stream().findFirst();
+                if (houseRes.isEmpty())
+                    return sendResponse(NOT_FOUND, HOUSE_MSG);
+                house = houseRes.get();
             }
 
             // Verify if user who replies is the owner
-            String ownerID = house.getOwnerId();
-            if (!ownerID.equals(replierId))
-                throw new Exception("Error: 403 You're not the owner");
+            if (!house.getOwnerId().equals(replierId))
+                return sendResponse(FORBIDDEN, NOT_THE_OWNER);
 
-            var replyRes = db.replyToQuestion(houseId, questionId, questionDAO.getAnswer());
+            //todo: usar cookies para verificar se ele existe
 
-            int statusCode = replyRes.getStatusCode();
-            if (isStatusOk(statusCode)) {
-                jedis.set(CACHE_PREFIX + questionId, mapper.writeValueAsString(questionDAO));
-                return questionDAO.toQuestion();
-            } else
-                throw new Exception("Error: " + statusCode);
+            db.replyToQuestion(houseId, questionId, questionDAO.getAnswer());
+
+            jedis.set(QUESTION_PREFIX + questionId, mapper.writeValueAsString(questionDAO));
+
+            return sendResponse(OK, questionDAO.toQuestion());
+
+        } catch (CosmosException ex) {
+            return processException(ex.getStatusCode(), ex.getMessage());
         }
     }
 
     @Override
-    public Response listQuestions(String houseId) throws Exception {
-        // TODO: ver se questions estao na cache
-        //  se nao estiverem, por na chache
+    public Response listQuestions(String houseId) {
+        // TODO: colocar lista de questoes na cache
 
         try (Jedis jedis = RedisCache.getCachePool().getResource()) {
             // Verify if house exists
@@ -100,6 +106,9 @@ public class QuestionResource implements QuestionService {
 
             var questions = db.listHouseQuestions(houseId).stream().map(QuestionDAO::toQuestion).toList();
             return sendResponse(OK, questions);
+
+        } catch (CosmosException ex) {
+            return processException(ex.getStatusCode(), ex.getMessage());
         }
     }
 
