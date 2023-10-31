@@ -61,17 +61,6 @@ public class UsersResource implements UsersService {
 
             jedis.set(Session.SESSION_PREFIX + uid, mapper.writeValueAsString(new Session(uid, credentials.getId())));
 
-            //var ai = Cache.getFromCache(Session.SESSION_PREFIX, uid, jedis);
-
-           /* if (ai == null) {
-                throw new Exception("Algo de errado não tá certo");
-            } else {//TODO: está na cache porque entra no else
-                throw new Exception(mapper.readValue(ai, Session.class).toString());
-            }*/
-
-
-            // Cache.putInCache(new Session(uid, credentials.getId()), Session.SESSION_PREFIX + id, jedis);
-
             return Response.ok().cookie(cookie).build();
         }
     }
@@ -124,10 +113,10 @@ public class UsersResource implements UsersService {
         } catch (CosmosException ex) {
             return processException(ex.getStatusCode(), USER_MSG, id);
         }
+
         return sendResponse(OK, String.format(RESOURCE_WAS_DELETED, USER_MSG, id));
     }
-
-
+    
     @Override
     public Response getUser(String id) throws JsonProcessingException {
         if (badParams(id))
@@ -153,8 +142,12 @@ public class UsersResource implements UsersService {
     }
 
     @Override
-    public Response updateUser(String id, User user) throws JsonProcessingException {
+    public Response updateUser(Cookie session, String id, User user) throws JsonProcessingException {
         try {
+
+            var checkCookies = checkUserSession(session, id);
+            if (checkCookies.getStatus() != Response.Status.OK.getStatusCode())
+                return checkCookies;
 
             var updatedUser = genUpdatedUserDAO(id, user);
             db.updateUser(updatedUser);
@@ -226,7 +219,7 @@ public class UsersResource implements UsersService {
      * @return updated userDAO to the method who's making the request to the database
      * @throws WebApplicationException If user doesn't exist or if id is empty
      */
-    private UserDAO genUpdatedUserDAO(String id, User user) throws WebApplicationException {
+    private UserDAO genUpdatedUserDAO(String id, User user) throws WebApplicationException, JsonProcessingException {
         if (badParams(id))
             throw new WebApplicationException(BAD_REQUEST_MSG, Response.Status.BAD_REQUEST);
 

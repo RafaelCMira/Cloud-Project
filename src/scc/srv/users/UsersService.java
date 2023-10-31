@@ -53,7 +53,7 @@ public interface UsersService {
     @Path("/{" + ID + "}")
     @Consumes(MediaType.APPLICATION_JSON)
     @Produces(MediaType.APPLICATION_JSON)
-    Response updateUser(@PathParam(ID) String id, User user) throws Exception;
+    Response updateUser(@CookieParam(SESSION) Cookie session, @PathParam(ID) String id, User user) throws Exception;
 
     @GET
     @Produces(MediaType.APPLICATION_JSON)
