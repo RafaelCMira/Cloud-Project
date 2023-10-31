@@ -4,7 +4,9 @@ import com.azure.cosmos.CosmosException;
 import com.azure.cosmos.util.CosmosPagedIterable;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import jakarta.ws.rs.NotAuthorizedException;
 import jakarta.ws.rs.WebApplicationException;
+import jakarta.ws.rs.core.Cookie;
 import jakarta.ws.rs.core.Response;
 import redis.clients.jedis.Jedis;
 import scc.cache.RedisCache;
@@ -14,6 +16,7 @@ import scc.srv.users.UsersResource;
 import scc.srv.utils.Cache;
 import scc.srv.media.MediaResource;
 import scc.srv.users.UsersService;
+import scc.srv.utils.Session;
 
 import java.time.Instant;
 import java.time.LocalDate;
@@ -32,8 +35,12 @@ public class HousesResource implements HousesService {
     private final ObjectMapper mapper = new ObjectMapper();
 
     @Override
-    public Response createHouse(HouseDAO houseDAO) throws JsonProcessingException, WebApplicationException {
+    public Response createHouse(Cookie session, HouseDAO houseDAO) throws JsonProcessingException, WebApplicationException {
         try (Jedis jedis = RedisCache.getCachePool().getResource()) {
+
+            var checkCookies = checkCookieUser(session, houseDAO.getOwnerId());
+            if (checkCookies.getStatus() != Response.Status.OK.getStatusCode())
+                return checkCookies;
 
             var user = checkHouseCreation(houseDAO, jedis);
             user.addHouse(houseDAO.getId());
@@ -54,6 +61,31 @@ public class HousesResource implements HousesService {
             return handleCreateException(ex.getResponse().getStatus(), ex.getMessage(), houseDAO);
         }
     }
+
+    /**
+     * Throws exception if not appropriate user for operation on House
+     */
+    public Response checkCookieUser(Cookie cookie, String id) throws NotAuthorizedException, JsonProcessingException {
+        if (cookie == null || cookie.getValue() == null)
+            return sendResponse(FORBIDDEN, "No session initialized");
+
+        Session session = null;
+
+        try (Jedis jedis = RedisCache.getCachePool().getResource()) {
+            String cacheRes = Cache.getFromCache(Session.SESSION_PREFIX, id, jedis);
+            if (cacheRes != null)
+                session = mapper.readValue(cacheRes, Session.class);
+        }
+
+        if (session == null || session.getId() == null || session.getId().isEmpty())
+            return sendResponse(FORBIDDEN, "No valid session initialized");
+
+        if (!session.getId().equals(id) && !session.getId().equals("admin"))
+            return sendResponse(FORBIDDEN, "Invalid user : " + session.getId());
+
+        return sendResponse(OK, "User authenticated");
+    }
+
 
     private Response handleCreateException(int statusCode, String msg, HouseDAO houseDAO) {
         if (msg.contains(MEDIA_MSG))
@@ -298,6 +330,7 @@ public class HousesResource implements HousesService {
             throw new WebApplicationException(MEDIA_MSG, Response.Status.NOT_FOUND);
 
         // Check if house already exists on Cache
+        //TODO: usar Cache.getFromCache
         if (jedis.get(HousesService.HOUSE_PREFIX + houseDAO.getId()) != null)
             throw new WebApplicationException(HOUSE_MSG, Response.Status.CONFLICT);
 

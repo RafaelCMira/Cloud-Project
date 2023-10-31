@@ -3,7 +3,9 @@ package scc.srv.users;
 import com.azure.cosmos.CosmosException;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import jakarta.ws.rs.NotAuthorizedException;
 import jakarta.ws.rs.WebApplicationException;
+import jakarta.ws.rs.core.NewCookie;
 import jakarta.ws.rs.core.Response;
 import redis.clients.jedis.Jedis;
 import scc.cache.RedisCache;
@@ -12,10 +14,13 @@ import scc.data.UserDAO;
 import scc.db.CosmosDBLayer;
 import scc.srv.utils.Cache;
 import scc.srv.media.MediaResource;
+import scc.srv.utils.Login;
+import scc.srv.utils.Session;
 import scc.utils.Hash;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.UUID;
 
 import static scc.srv.utils.Utility.*;
 
@@ -28,6 +33,32 @@ public class UsersResource implements UsersService {
     private final CosmosDBLayer db = CosmosDBLayer.getInstance();
 
     @Override
+    public Response authUser(Login user) throws Exception {
+        try (Jedis jedis = RedisCache.getCachePool().getResource()) {
+            var id = user.getId();
+
+            var userDAO = (UserDAO) getUser(id).getEntity();
+
+            boolean checkPwd = user.getPwd().equals(userDAO.getPwd());
+
+            if (checkPwd) {
+                String uid = UUID.randomUUID().toString();
+                NewCookie cookie = new NewCookie.Builder(Session.SESSION_PREFIX + id)
+                        .value(uid)
+                        .path("/")
+                        .comment("sessionid")
+                        .maxAge(3600)
+                        .secure(false)
+                        .httpOnly(true)
+                        .build();
+                Cache.putInCache(new Session(uid, user.getId()), Session.SESSION_PREFIX + id, jedis);
+                return Response.ok().cookie(cookie).build();
+            } else
+                throw new NotAuthorizedException("Incorrect login");
+        }
+    }
+
+    @Override
     public Response createUser(UserDAO userDAO) throws Exception {
         if (badParams(userDAO.getId(), userDAO.getName(), userDAO.getPwd(), userDAO.getPhotoId()))
             return sendResponse(BAD_REQUEST, BAD_REQUEST_MSG);
@@ -37,6 +68,7 @@ public class UsersResource implements UsersService {
             return sendResponse(NOT_FOUND, MEDIA_MSG, "(some id)");
 
         try {
+
             db.createItem(userDAO, CONTAINER);
 
             try (Jedis jedis = RedisCache.getCachePool().getResource()) {
@@ -47,7 +79,7 @@ public class UsersResource implements UsersService {
             return processException(ex.getStatusCode(), USER_MSG, userDAO.getId());
         }
 
-        return sendResponse(OK, userDAO.toUser().toString());
+        return sendResponse(OK, userDAO.toUser());
     }
 
     @Override

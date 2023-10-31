@@ -1,6 +1,7 @@
 package scc.srv.houses;
 
 import jakarta.ws.rs.*;
+import jakarta.ws.rs.core.Cookie;
 import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
 import scc.data.HouseDAO;
@@ -16,12 +17,13 @@ public interface HousesService {
     String INITIAL_DATE = "initialDate";
     String END_DATE = "endDate";
     String HOUSE_PREFIX = "house:";
+    String SESSION = "session";
 
 
     @POST
     @Consumes(MediaType.APPLICATION_JSON)
     @Produces(MediaType.APPLICATION_JSON)
-    Response createHouse(HouseDAO houseDAO) throws Exception;
+    Response createHouse(@CookieParam(SESSION) Cookie session, HouseDAO houseDAO) throws Exception;
 
     @DELETE
     @Path("/{" + ID + "}")
