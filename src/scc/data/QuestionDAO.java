@@ -1,6 +1,8 @@
 package scc.data;
 
-public class QuestionDAO {
+import scc.srv.utils.HasId;
+
+public class QuestionDAO implements HasId {
 
     private String _rid;
     private String _ts;

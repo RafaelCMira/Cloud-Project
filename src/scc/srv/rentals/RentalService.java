@@ -1,13 +1,10 @@
 package scc.srv.rentals;
 
-import com.azure.core.annotation.Get;
 import jakarta.ws.rs.*;
-import jakarta.ws.rs.core.Link;
 import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
 import scc.data.*;
 
-import java.util.List;
 
 @Path(RentalService.PATH)
 
@@ -17,7 +14,7 @@ public interface RentalService {
     String RENTAL_ID = "id";
     String RENTAL = "/rental";
 
-    String DISCOUNT = "discount";
+    String DISCOUNT = "/discount";
 
     String CACHE_PREFIX = "rental:";
 
@@ -54,7 +51,7 @@ public interface RentalService {
     Response deleteRental(@PathParam(HOUSE_ID) String houseID, @PathParam(RENTAL_ID) String id) throws Exception;
 
     @GET
-    @Path("/{" + HOUSE_ID + "}" + RENTAL + "/{" + DISCOUNT + "}")
+    @Path("/{" + HOUSE_ID + "}" + DISCOUNT)
     @Produces(MediaType.APPLICATION_JSON)
     @Consumes(MediaType.APPLICATION_JSON)
     Response getDiscountedRentals(@PathParam(HOUSE_ID) String houseID) throws Exception;

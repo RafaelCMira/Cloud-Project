@@ -1,5 +1,6 @@
 package scc.srv.utils;
 
+import com.azure.core.util.BinaryData;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import redis.clients.jedis.Jedis;
@@ -16,6 +17,10 @@ public class Cache {
 
     public static <T extends HasId> void putInCache(T obj, String prefix, Jedis jedis) throws JsonProcessingException {
         jedis.set(prefix + obj.getId(), mapper.writeValueAsString(obj));
+    }
+
+    public static void putInCache(BinaryData data, String prefix, Jedis jedis) throws JsonProcessingException {
+        jedis.set(prefix + data, mapper.writeValueAsString(data));
     }
 
     public static String getFromCache(String prefix, String key, Jedis jedis) {

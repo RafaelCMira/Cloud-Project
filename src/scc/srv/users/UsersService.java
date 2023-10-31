@@ -7,6 +7,7 @@ import org.glassfish.jersey.media.multipart.FormDataContentDisposition;
 import org.glassfish.jersey.media.multipart.FormDataParam;
 import scc.data.User;
 import scc.data.UserDAO;
+import scc.srv.utils.Login;
 
 import java.io.InputStream;
 import java.util.List;
@@ -22,9 +23,16 @@ public interface UsersService {
     String HOUSES = "/houses";
     String QUERY = "query";
 
+    String AUTH = "/auth";
+
     String USER_PREFIX = "u:";
 
     String USER_HOUSES_PREFIX = "h:";
+
+    @POST
+    @Path(AUTH)
+    @Consumes(MediaType.APPLICATION_JSON)
+    Response authUser(Login user) throws Exception;
 
     @POST
     @Consumes(MediaType.APPLICATION_JSON)
@@ -47,10 +55,9 @@ public interface UsersService {
     @Produces(MediaType.APPLICATION_JSON)
     Response updateUser(@PathParam(ID) String id, User user) throws Exception;
 
-
     @GET
     @Produces(MediaType.APPLICATION_JSON)
-    List<User> listUsers() throws Exception;
+    Response listUsers() throws Exception;
 
     @GET
     @Path("/{" + ID + "}" + HOUSES)

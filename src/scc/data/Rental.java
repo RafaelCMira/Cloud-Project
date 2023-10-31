@@ -1,6 +1,5 @@
 package scc.data;
 
-import java.time.LocalDate;
 import java.util.Date;
 
 /**
@@ -10,7 +9,7 @@ import java.util.Date;
 public class Rental {
     private String id;
     private String houseId;
-    private String askerId;
+    private String userId;
     private double price;
     private Date startDate;
     private Date endDate;
@@ -19,11 +18,11 @@ public class Rental {
     public Rental() {
     }
 
-    public Rental(String id, String houseId, String askerId, double price, Date startDate, Date endDate, double discount) {
+    public Rental(String id, String houseId, String userId, double price, Date startDate, Date endDate, double discount) {
         super();
         this.id = id;
         this.houseId = houseId;
-        this.askerId = askerId;
+        this.userId = userId;
         this.price = price;
         this.startDate = startDate;
         this.endDate = endDate;
@@ -46,12 +45,12 @@ public class Rental {
         return houseId;
     }
 
-    public void setAskerId(String askerId) {
-        this.askerId = askerId;
+    public void setUserId(String userId) {
+        this.userId = userId;
     }
 
-    public String getAskerId() {
-        return askerId;
+    public String getUserId() {
+        return userId;
     }
 
     public void setPrice(double price) {
@@ -91,7 +90,7 @@ public class Rental {
         return "Rental{" +
                 "id='" + id + '\'' +
                 ", houseId='" + houseId + '\'' +
-                ", askerId='" + askerId + '\'' +
+                ", userId='" + userId + '\'' +
                 ", price=" + price +
                 ", startDate=" + startDate +
                 ", endDate=" + endDate +

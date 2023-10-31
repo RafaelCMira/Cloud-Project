@@ -5,6 +5,10 @@ import com.azure.storage.blob.BlobClient;
 import com.azure.storage.blob.BlobContainerClient;
 import com.azure.storage.blob.BlobContainerClientBuilder;
 import com.azure.storage.blob.models.BlobItem;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import redis.clients.jedis.Jedis;
+import scc.cache.RedisCache;
+import scc.srv.utils.Cache;
 import scc.utils.Hash;
 
 import java.util.ArrayList;
@@ -14,9 +18,11 @@ import java.util.List;
  * Resource for managing media files, such as images.
  */
 public class MediaResource implements MediaService {
+    private final ObjectMapper mapper = new ObjectMapper();
+
     public String upload(byte[] contents) {
         String id = Hash.of(contents);
-        try {
+        try (Jedis jedis = RedisCache.getCachePool().getResource()) {
             BinaryData data = BinaryData.fromBytes(contents);
 
             // Get container client
@@ -27,6 +33,9 @@ public class MediaResource implements MediaService {
 
             // Upload contents from BinaryData (check documentation for other alternatives)
             blob.upload(data);
+
+            Cache.putInCache(data, MEDIA_PREFIX, jedis);
+
         } catch (Exception e) {
             e.printStackTrace();
         }
@@ -35,6 +44,7 @@ public class MediaResource implements MediaService {
 
     public byte[] download(String id) {
         byte[] content = null;
+
         try {
             // Get container client
             BlobContainerClient containerClient = getContainerClient(MediaService.CONTAINER_NAME);
@@ -45,7 +55,8 @@ public class MediaResource implements MediaService {
             // Download contents to BinaryData (check documentation for other alternatives)
             BinaryData data = blob.downloadContent();
             content = data.toBytes();
-            if (content == null) throw new Exception(String.format("Id: %s does not exist", id));
+            if (content == null)
+                throw new Exception(String.format("Id: %s does not exist", id));
         } catch (Exception e) {
             e.printStackTrace();
         }
