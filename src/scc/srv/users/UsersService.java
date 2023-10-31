@@ -47,7 +47,6 @@ public interface UsersService {
     @Produces(MediaType.APPLICATION_JSON)
     Response updateUser(@PathParam(ID) String id, User user) throws Exception;
 
-
     @GET
     @Produces(MediaType.APPLICATION_JSON)
     Response listUsers() throws Exception;

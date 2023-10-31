@@ -1,7 +1,6 @@
 package scc.srv.users;
 
 import com.azure.cosmos.CosmosException;
-import com.azure.cosmos.implementation.ConflictException;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import jakarta.ws.rs.WebApplicationException;
@@ -35,7 +34,7 @@ public class UsersResource implements UsersService {
 
         MediaResource media = new MediaResource();
         if (!media.hasPhotos(List.of(userDAO.getPhotoId())))
-            return sendResponse(NOT_FOUND, IMAGE_MSG, "(some id)");
+            return sendResponse(NOT_FOUND, MEDIA_MSG, "(some id)");
 
         try {
             db.createItem(userDAO, CONTAINER);
@@ -69,7 +68,7 @@ public class UsersResource implements UsersService {
         } catch (CosmosException ex) {
             return processException(ex.getStatusCode(), USER_MSG, id);
         }
-        return sendResponse(OK, String.format("User %s was deleted", id));
+        return sendResponse(OK, String.format(RESOURCE_WAS_DELETED, USER_MSG, id));
     }
 
     @Override
@@ -110,24 +109,31 @@ public class UsersResource implements UsersService {
             return sendResponse(OK, updatedUser.toUser());
 
         } catch (CosmosException ex) {
-            return processException(ex.getStatusCode(), USER_MSG, id);
+            return handleUpdateException(ex.getStatusCode(), ex.getMessage(), id);
         } catch (WebApplicationException ex) {
-            return processException(ex.getResponse().getStatus(), USER_MSG, id);
+            return handleUpdateException(ex.getResponse().getStatus(), ex.getMessage(), id);
         }
+    }
+
+    private Response handleUpdateException(int statusCode, String msg, String id) {
+        if (msg.contains(MEDIA_MSG))
+            return processException(statusCode, MEDIA_MSG, id);
+        if (msg.contains(USER_MSG))
+            return processException(statusCode, USER_MSG, id);
+        else
+            return processException(statusCode, msg, id);
     }
 
     @Override
     public Response listUsers() {
         try {
-            List<User> toReturn = new ArrayList<>();
-            var res = db.getItems(CONTAINER, UserDAO.class).stream().map(UserDAO::toUser).toList();
-            if (!res.isEmpty())
-                toReturn = res;
-            return sendResponse(OK, toReturn);
+            List<User> toReturn = db.getItems(CONTAINER, UserDAO.class).stream().map(UserDAO::toUser).toList();
+
+            return sendResponse(OK, toReturn.isEmpty() ? new ArrayList<>() : toReturn);
+
         } catch (CosmosException ex) {
             return processException(ex.getStatusCode());
         }
-
     }
 
     @Override
@@ -165,7 +171,7 @@ public class UsersResource implements UsersService {
      */
     private UserDAO genUpdatedUserDAO(String id, User user) throws WebApplicationException {
         if (badParams(id))
-            throw new WebApplicationException(Response.Status.BAD_REQUEST);
+            throw new WebApplicationException(BAD_REQUEST_MSG, Response.Status.BAD_REQUEST);
 
         var result = db.getById(id, CONTAINER, UserDAO.class).stream().findFirst();
         if (result.isPresent()) {
@@ -183,14 +189,14 @@ public class UsersResource implements UsersService {
             MediaResource media = new MediaResource();
             if (!newPhoto.isEmpty())
                 if (!media.hasPhotos(List.of(newPhoto)))
-                    throw new WebApplicationException(Response.Status.NOT_FOUND);
+                    throw new WebApplicationException(MEDIA_MSG, Response.Status.NOT_FOUND);
                 else
                     userDAO.setPhotoId(newPhoto);
 
             return userDAO;
 
         } else
-            throw new WebApplicationException(Response.Status.NOT_FOUND);
+            throw new WebApplicationException(USER_MSG, Response.Status.NOT_FOUND);
     }
 
     // Usar se for necessario guardar a lista das casas do user

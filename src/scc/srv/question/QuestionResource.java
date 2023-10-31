@@ -1,6 +1,9 @@
 package scc.srv.question;
 
+import com.azure.cosmos.CosmosException;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import jakarta.ws.rs.PathParam;
+import jakarta.ws.rs.WebApplicationException;
 import jakarta.ws.rs.core.Response;
 import redis.clients.jedis.Jedis;
 import scc.cache.RedisCache;
@@ -9,6 +12,7 @@ import scc.db.CosmosDBLayer;
 import scc.srv.houses.HousesResource;
 import scc.srv.users.UsersResource;
 import scc.srv.houses.HousesService;
+import scc.srv.users.UsersService;
 
 import java.util.Optional;
 import java.util.UUID;
@@ -25,31 +29,32 @@ public class QuestionResource implements QuestionService {
     private final ObjectMapper mapper = new ObjectMapper();
 
     @Override
-    public Response createQuestion(QuestionDAO questionDAO) {
-        // TODO: Cache
-        if (badParams(questionDAO.getAskerId(), questionDAO.getHouseId(), questionDAO.getText()))
-            return sendResponse(BAD_REQUEST, BAD_REQUEST_MSG);
+    public Response createQuestion(String houseId, QuestionDAO questionDAO) {
+        try (Jedis jedis = RedisCache.getCachePool().getResource()) {
+            questionDAO.setHouseId(houseId);
 
-        // House not found
-        var houseRes = db.getById(questionDAO.getHouseId(), HousesResource.CONTAINER, HouseDAO.class).stream().findFirst();
-        if (houseRes.isEmpty())
-            return sendResponse(NOT_FOUND, HOUSE_MSG, questionDAO.getHouseId());
+            checkQuestionCreation(questionDAO, jedis);
 
-        // House not found
-        var userRes = db.getById(questionDAO.getAskerId(), UsersResource.CONTAINER, UsersResource.class).stream().findFirst();
-        if (userRes.isEmpty())
-            return sendResponse(NOT_FOUND, USER_MSG, questionDAO.getAskerId());
+            questionDAO.setId(UUID.randomUUID().toString());
+            db.createItem(questionDAO, CONTAINER);
 
-        questionDAO.setId(UUID.randomUUID().toString());
-        var createRes = db.createItem(questionDAO, CONTAINER);
-        int statusCode = createRes.getStatusCode();
-
-        if (isStatusOk(statusCode))
             return sendResponse(OK, questionDAO.toQuestion().toString());
-        else
-            return sendResponse(INTERNAL_SERVER_ERROR);
+
+        } catch (CosmosException ex) {
+            return handleCreateException(ex.getStatusCode(), ex.getMessage(), questionDAO);
+        } catch (WebApplicationException ex) {
+            return handleCreateException(ex.getResponse().getStatus(), ex.getMessage(), questionDAO);
+        }
     }
 
+    private Response handleCreateException(int statusCode, String msg, QuestionDAO questionDAO) {
+        if (msg.contains(HOUSE_MSG))
+            return processException(statusCode, HOUSE_MSG, questionDAO.getHouseId());
+        else if (msg.contains(USER_MSG))
+            return processException(statusCode, USER_MSG, questionDAO.getAskerId());
+        else
+            return processException(statusCode, msg);
+    }
 
     @Override
     public Question replyToQuestion(String houseId, String questionId, String replierId, QuestionDAO questionDAO) throws Exception {
@@ -95,6 +100,27 @@ public class QuestionResource implements QuestionService {
 
             var questions = db.listHouseQuestions(houseId).stream().map(QuestionDAO::toQuestion).toList();
             return sendResponse(OK, questions);
+        }
+    }
+
+    private void checkQuestionCreation(QuestionDAO questionDAO, Jedis jedis) throws WebApplicationException {
+        if (badParams(questionDAO.getHouseId(), questionDAO.getAskerId(), questionDAO.getText()))
+            throw new WebApplicationException(BAD_REQUEST_MSG, Response.Status.BAD_REQUEST);
+
+        // Check if house doesn't exist on Cache
+        if (jedis.get(HousesService.HOUSE_PREFIX + questionDAO.getHouseId()) == null) {
+            // Check if house exists on DB
+            var house = db.getById(questionDAO.getHouseId(), CONTAINER, HouseDAO.class).stream().findFirst();
+            if (house.isEmpty())
+                throw new WebApplicationException(HOUSE_MSG, Response.Status.NOT_FOUND);
+        }
+
+        // Check if user doesn't exist on Cache
+        if (jedis.get(UsersService.USER_PREFIX + questionDAO.getAskerId()) == null) {
+            // Check if user exists on DB
+            var user = db.getById(questionDAO.getAskerId(), UsersResource.CONTAINER, UserDAO.class).stream().findFirst();
+            if (user.isEmpty())
+                throw new WebApplicationException(USER_MSG, Response.Status.NOT_FOUND);
         }
     }
 

@@ -15,10 +15,11 @@ public class Utility {
     public static final String INTERNAL_SERVER_ERROR = "INTERNAL_SERVER_ERROR@Something went wrong";
 
     public static final String USER_MSG = "User";
-    public static final String IMAGE_MSG = "Image";
+    public static final String MEDIA_MSG = "Image";
     public static final String HOUSE_MSG = "House";
     public static final String RENTAL_MSG = "Rental";
 
+    public static final String RESOURCE_WAS_DELETED = "%s %s was deleted";
 
     public static Response sendResponse(String msg, Object... params) {
         var res = msg.split("@");

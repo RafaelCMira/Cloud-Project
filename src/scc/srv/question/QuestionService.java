@@ -24,7 +24,7 @@ public interface QuestionService {
     @Path("/{" + HOUSE_ID + "}" + QUESTION)
     @Consumes(MediaType.APPLICATION_JSON)
     @Produces(MediaType.APPLICATION_JSON)
-    Response createQuestion(QuestionDAO questionDAO) throws Exception;
+    Response createQuestion(@PathParam(HOUSE_ID) String houseId, QuestionDAO questionDAO) throws Exception;
 
     @PUT
     @Path("/{" + HOUSE_ID + "}" + QUESTION + "/{" + QUESTION_ID + "}")
