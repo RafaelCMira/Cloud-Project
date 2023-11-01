@@ -11,20 +11,21 @@ public class Rental {
     private String houseId;
     private String userId;
     private double price;
-    private Date startDate;
-    private Date endDate;
     private double discount;
+    private Date initialDate;
+    private Date endDate;
+
 
     public Rental() {
     }
 
-    public Rental(String id, String houseId, String userId, double price, Date startDate, Date endDate, double discount) {
+    public Rental(String id, String houseId, String userId, double price, Date initialDate, Date endDate, double discount) {
         super();
         this.id = id;
         this.houseId = houseId;
         this.userId = userId;
         this.price = price;
-        this.startDate = startDate;
+        this.initialDate = initialDate;
         this.endDate = endDate;
         this.discount = discount;
     }
@@ -61,12 +62,12 @@ public class Rental {
         return price;
     }
 
-    public void setStartDate(Date startDate) {
-        this.startDate = startDate;
+    public void setInitialDate(Date initialDate) {
+        this.initialDate = initialDate;
     }
 
-    public Date getStartDate() {
-        return startDate;
+    public Date getInitialDate() {
+        return initialDate;
     }
 
     public void setEndDate(Date endDate) {
@@ -92,7 +93,7 @@ public class Rental {
                 ", houseId='" + houseId + '\'' +
                 ", userId='" + userId + '\'' +
                 ", price=" + price +
-                ", startDate=" + startDate +
+                ", startDate=" + initialDate +
                 ", endDate=" + endDate +
                 ", discount=" + discount +
                 '}';

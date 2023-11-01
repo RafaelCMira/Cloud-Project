@@ -78,15 +78,15 @@ function loadData() {
 loadData();
 
 function genNewRental(context, events, done) {
-    const rentalHouse = housesIds[random(housesIds.length)];
+/*    const rentalHouse = housesIds[random(housesIds.length)];
     context.vars.id = rentalHouse + " Rental";
     context.vars.houseId = rentalHouse;
     context.vars.askerId = usersIds[random(usersIds.length)];
     context.vars.price = random(2000);
- /*   const date = datesIds[random(datesIds.length)];
-    context.vars.startDate = date[0]
+    const date = datesIds[random(datesIds.length)];
+    context.vars.initialDate = date[0]
     context.vars.endDate = date[1]
-*/
+    context.vars.discount = random(50) */
 }
 
 /**

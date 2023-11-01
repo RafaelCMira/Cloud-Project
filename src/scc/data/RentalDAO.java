@@ -23,7 +23,7 @@ public class RentalDAO implements HasId {
     }
 
     public RentalDAO(Rental r) {
-        this(r.getId(), r.getHouseId(), r.getUserId(), r.getPrice(), r.getStartDate(),
+        this(r.getId(), r.getHouseId(), r.getUserId(), r.getPrice(), r.getInitialDate(),
                 r.getEndDate(), r.getDiscount());
     }
 

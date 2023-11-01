@@ -22,12 +22,12 @@ scenarios:
                 Content-Type: application/json
                 Accept: application/json
               json:
-                id: ""
+                id: "{{ id }}"
                 houseId: "{{ houseId }}"
-                askerId: "{{ askerId }}"
+                userId: "{{ askerId }}"
                 price: "{{ price }}"
-                startDate: "{{ startDate }}"
+                initialDate: "{{ initialDate }}"
                 endDate: "{{ endDate }}"
-                answer: ""
+                discount: "{{ discount }}"
               afterResponse: "genNewRentalReply"
         count: 1
