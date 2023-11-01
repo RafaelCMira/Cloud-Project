@@ -12,6 +12,7 @@ import scc.db.CosmosDBLayer;
 import scc.srv.users.UsersResource;
 import scc.srv.media.MediaResource;
 import scc.srv.users.UsersService;
+import scc.srv.utils.Validations;
 import scc.utils.mgt.AzureManagement;
 
 import java.time.Instant;
@@ -55,6 +56,8 @@ public class HousesResource implements HousesService {
     }
 
     private Response handleCreateException(int statusCode, String msg, HouseDAO houseDAO) {
+        if (statusCode == 409)
+            return sendResponse(CONFLICT, HOUSE_MSG, houseDAO.getId());
         if (msg.contains(MEDIA_MSG))
             return processException(statusCode, MEDIA_MSG, "(some id)");
         else if (msg.contains(USER_MSG))
@@ -304,31 +307,16 @@ public class HousesResource implements HousesService {
                 houseDAO.getDiscount().toString()) || houseDAO.getPrice() <= 0 || houseDAO.getDiscount() < 0)
             throw new WebApplicationException(BAD_REQUEST_MSG, Response.Status.BAD_REQUEST);
 
-        MediaResource media = new MediaResource();
-        if (!media.hasPhotos(houseDAO.getPhotosIds()) || houseDAO.getPhotosIds() == null || houseDAO.getPhotosIds().isEmpty())
+        if (!Validations.mediaExists(houseDAO.getPhotosIds()))
             throw new WebApplicationException(MEDIA_MSG, Response.Status.NOT_FOUND);
 
-        // Check if house already exists on Cache
-        //TODO: usar Cache.getFromCache
-        if (Cache.getFromCache(HousesService.HOUSE_PREFIX, houseDAO.getId()) != null)
-            throw new WebApplicationException(HOUSE_MSG, Response.Status.CONFLICT);
-
-        // Check if house already exists on DB
-        var house = db.getById(houseDAO.getId(), CONTAINER, HouseDAO.class).stream().findFirst();
-        if (house.isPresent())
-            throw new WebApplicationException(HOUSE_MSG, Response.Status.CONFLICT);
-
-        // Checks if the user exists in cache
-        var user = Cache.getFromCache(UsersService.USER_PREFIX, houseDAO.getOwnerId());
-        if (user != null)
-            return mapper.readValue(user, UserDAO.class);
-
-        // Checks if the user exists in DB
-        var dbUser = db.getById(houseDAO.getOwnerId(), UsersResource.CONTAINER, UserDAO.class).stream().findFirst();
-        if (dbUser.isEmpty())
+        // Verify if user exists
+        if (!Validations.userExists(houseDAO.getOwnerId()))
             throw new WebApplicationException(USER_MSG, Response.Status.NOT_FOUND);
 
-        return dbUser.get();
+        //todo: podemos ter azure function para colocar a nova casa nas casas do user. (CosmosDB trigger)
+        // assim desaparecia o aviso do possivel null neste método (nunca vai dar null porque já verificamos)
+        return db.getById(houseDAO.getOwnerId(), UsersResource.CONTAINER, UserDAO.class).stream().findFirst().get();
     }
 
 

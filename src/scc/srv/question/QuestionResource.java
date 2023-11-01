@@ -12,6 +12,7 @@ import scc.srv.houses.HousesResource;
 import scc.srv.users.UsersResource;
 import scc.srv.houses.HousesService;
 import scc.srv.users.UsersService;
+import scc.srv.utils.Validations;
 
 import java.util.UUID;
 
@@ -66,7 +67,7 @@ public class QuestionResource implements QuestionService {
             if (cacheHouse != null)
                 house = mapper.readValue(cacheHouse, HouseDAO.class);
             else {
-                
+
                 var houseRes = db.getById(houseId, HousesResource.CONTAINER, HouseDAO.class).stream().findFirst();
                 if (houseRes.isEmpty())
                     return sendResponse(NOT_FOUND, HOUSE_MSG);
@@ -115,21 +116,11 @@ public class QuestionResource implements QuestionService {
         if (badParams(questionDAO.getHouseId(), questionDAO.getAskerId(), questionDAO.getText()))
             throw new WebApplicationException(BAD_REQUEST_MSG, Response.Status.BAD_REQUEST);
 
-        // Check if house exist on Cache
-        if (Cache.getFromCache(HousesService.HOUSE_PREFIX, questionDAO.getHouseId()) == null) {
-            // Check if house exists on DB
-            var house = db.getById(questionDAO.getHouseId(), CONTAINER, HouseDAO.class).stream().findFirst();
-            if (house.isEmpty())
-                throw new WebApplicationException(HOUSE_MSG, Response.Status.NOT_FOUND);
-        }
-
-        // Check if user exist on Cache
-        if (Cache.getFromCache(UsersService.USER_PREFIX, questionDAO.getAskerId()) == null) {
-            // Check if user exists on DB
-            var user = db.getById(questionDAO.getAskerId(), UsersResource.CONTAINER, UserDAO.class).stream().findFirst();
-            if (user.isEmpty())
-                throw new WebApplicationException(USER_MSG, Response.Status.NOT_FOUND);
-        }
+        if (!Validations.houseExists(questionDAO.getHouseId()))
+            throw new WebApplicationException(HOUSE_MSG, Response.Status.NOT_FOUND);
+        
+        if (!Validations.userExists(questionDAO.getAskerId()))
+            throw new WebApplicationException(USER_MSG, Response.Status.NOT_FOUND);
     }
 
 

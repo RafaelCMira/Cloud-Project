@@ -19,7 +19,6 @@ public class Utility {
     public static final String NOT_FOUND = "NOT_FOUND@%s: %s does not exist";
     public static final String CONFLICT = "CONFLICT@%s with this id: %s already exists";
     public static final String UNAUTHORIZED = "UNAUTHORIZED@%s";
-    public static final String UNAUTHORIZED_MSG = "User is unauthorized to do thi.";
     public static final String INTERNAL_SERVER_ERROR = "INTERNAL_SERVER_ERROR@Something went wrong";
 
     public static final String USER_MSG = "User";

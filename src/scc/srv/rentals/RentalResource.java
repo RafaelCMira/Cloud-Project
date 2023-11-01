@@ -12,6 +12,7 @@ import scc.srv.houses.HousesResource;
 import scc.srv.houses.HousesService;
 import scc.srv.users.UsersResource;
 import scc.srv.users.UsersService;
+import scc.srv.utils.Validations;
 import scc.utils.mgt.AzureManagement;
 
 import java.time.Instant;
@@ -210,19 +211,11 @@ public class RentalResource implements RentalService {
         if (badParams(rental.getId(), rental.getHouseId(), rental.getUserId()))
             throw new WebApplicationException(Response.Status.BAD_REQUEST);
 
-        // Verify if house exists
-        if (Cache.getFromCache(HousesService.HOUSE_PREFIX, rental.getHouseId()) == null) {
-            var houseRes = db.getById(houseId, HousesResource.CONTAINER, HouseDAO.class).stream().findFirst();
-            if (houseRes.isEmpty())
-                throw new WebApplicationException(HOUSE_MSG, Response.Status.NOT_FOUND);
-        }
+        if (!Validations.houseExists(houseId))
+            throw new WebApplicationException(HOUSE_MSG, Response.Status.NOT_FOUND);
 
-        // Verify if user exists
-        if (Cache.getFromCache(UsersService.USER_PREFIX, rental.getUserId()) == null) {
-            var userRes = db.getById(rental.getUserId(), UsersResource.CONTAINER, UserDAO.class).stream().findFirst();
-            if (userRes.isEmpty())
-                throw new WebApplicationException(USER_MSG, Response.Status.NOT_FOUND);
-        }
+        if (!Validations.userExists(rental.getUserId()))
+            throw new WebApplicationException(USER_MSG, Response.Status.NOT_FOUND);
 
         // Verify if house is available
         if (isHouseNotAvailable(houseId, rental.getInitialDate(), rental.getEndDate()))
