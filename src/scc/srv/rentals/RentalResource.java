@@ -47,7 +47,7 @@ public class RentalResource implements RentalService {
                     return sendResponse(CONFLICT, RENTAL_MSG, rentalDAO.getId());
 
                 if (AzureManagement.CREATE_REDIS) {
-                    Cache.putInCache(rentalDAO, CACHE_PREFIX);
+                    Cache.putInCache(rentalDAO, RENTAL_PREFIX);
                 }
 
                 return sendResponse(OK, rentalDAO.toRental().toString());
@@ -78,7 +78,7 @@ public class RentalResource implements RentalService {
 
         try {
             if (AzureManagement.CREATE_REDIS) {
-                String cacheRes = Cache.getFromCache(CACHE_PREFIX, id);
+                String cacheRes = Cache.getFromCache(RENTAL_PREFIX, id);
                 if (cacheRes != null)
                     return sendResponse(OK, mapper.readValue(cacheRes, RentalDAO.class).toRental());
             }
@@ -88,7 +88,7 @@ public class RentalResource implements RentalService {
                 var rentalToCache = result.get();
 
                 if (AzureManagement.CREATE_REDIS) {
-                    Cache.putInCache(rentalToCache, CACHE_PREFIX);
+                    Cache.putInCache(rentalToCache, RENTAL_PREFIX);
                 }
 
                 return sendResponse(OK, rentalToCache.toRental());
@@ -109,7 +109,7 @@ public class RentalResource implements RentalService {
             int statusCode = res.getStatusCode();
             if (isStatusOk(res.getStatusCode())) {
                 if (AzureManagement.CREATE_REDIS) {
-                    Cache.putInCache(updatedRental, CACHE_PREFIX);
+                    Cache.putInCache(updatedRental, RENTAL_PREFIX);
                 }
 
                 return sendResponse(OK, updatedRental.toRental());
@@ -146,7 +146,7 @@ public class RentalResource implements RentalService {
 
             // Delete rental in cache
             if (AzureManagement.CREATE_REDIS) {
-                Cache.deleteFromCache(CACHE_PREFIX, id);
+                Cache.deleteFromCache(RENTAL_PREFIX, id);
             }
 
             String s = String.format("StatusCode: %d \nRental %s was delete", statusCode, id);

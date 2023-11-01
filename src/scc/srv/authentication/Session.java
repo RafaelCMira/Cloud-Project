@@ -6,6 +6,8 @@ public class Session implements HasId {
 
     public static final String SESSION_PREFIX = "s:";
 
+    public static final String SESSION = "scc:session";
+
     private String sessionId;
     private String userId;
 

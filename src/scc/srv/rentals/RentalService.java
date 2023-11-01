@@ -5,6 +5,7 @@ import jakarta.ws.rs.core.Cookie;
 import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
 import scc.data.*;
+import scc.srv.authentication.Session;
 
 
 @Path(RentalService.PATH)
@@ -17,16 +18,14 @@ public interface RentalService {
 
     String DISCOUNT = "/discount";
 
-    String CACHE_PREFIX = "rental:";
-
-    String SESSION = "session";
+    String RENTAL_PREFIX = "rental:";
 
 
     @POST
     @Path("{" + HOUSE_ID + "}" + RENTAL)
     @Consumes(MediaType.APPLICATION_JSON)
     @Produces(MediaType.APPLICATION_JSON)
-    Response createRental(@CookieParam(SESSION) Cookie session, @PathParam(HOUSE_ID) String houseID, RentalDAO rentalDAO) throws Exception;
+    Response createRental(@CookieParam(Session.SESSION) Cookie session, @PathParam(HOUSE_ID) String houseID, RentalDAO rentalDAO) throws Exception;
 
     @GET
     @Path("{" + HOUSE_ID + "}" + RENTAL + "/{" + RENTAL_ID + "}")
@@ -38,7 +37,7 @@ public interface RentalService {
     @Path("/{" + HOUSE_ID + "}" + RENTAL + "/{" + RENTAL_ID + "}")
     @Produces(MediaType.APPLICATION_JSON)
     @Consumes(MediaType.APPLICATION_JSON)
-    Response updateRental(@CookieParam(SESSION) Cookie session, @PathParam(HOUSE_ID) String houseID, @PathParam(RENTAL_ID) String id,
+    Response updateRental(@CookieParam(Session.SESSION) Cookie session, @PathParam(HOUSE_ID) String houseID, @PathParam(RENTAL_ID) String id,
                           RentalDAO rentalDAO) throws Exception;
 
     @GET

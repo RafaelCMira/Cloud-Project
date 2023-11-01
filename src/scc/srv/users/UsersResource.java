@@ -37,32 +37,32 @@ public class UsersResource implements UsersService {
         if (badParams(credentials.getId(), credentials.getPwd()))
             return sendResponse(BAD_REQUEST, BAD_REQUEST_MSG);
 
-        try (Jedis jedis = Cache.getCachePool().getResource()) {
-            var id = credentials.getId();
+        String id = credentials.getId();
 
-            var res = getUser(id);
-            if (res.getStatus() != Response.Status.OK.getStatusCode())
-                return res;
+        var res = getUser(id);
+        if (res.getStatus() != Response.Status.OK.getStatusCode())
+            return res;
 
-            var user = (User) res.getEntity();
+        var user = (User) res.getEntity();
 
-            if (!Hash.of(credentials.getPwd()).equals(user.getPwd()))
-                return sendResponse(UNAUTHORIZED, "Incorrect login");
+        if (!Hash.of(credentials.getPwd()).equals(user.getPwd()))
+            return sendResponse(UNAUTHORIZED, "Incorrect login");
 
-            String uid = UUID.randomUUID().toString();
-            NewCookie cookie = new NewCookie.Builder(SESSION)
-                    .value(uid)
-                    .path("/")
-                    .comment("sessionid")
-                    .maxAge(3600)
-                    .secure(false)
-                    .httpOnly(true)
-                    .build();
+        String uid = UUID.randomUUID().toString();
+        NewCookie cookie = new NewCookie.Builder(Session.SESSION)
+                .value(id)
+                .path("/")
+                .comment("sessionid")
+                .maxAge(3600)
+                .secure(false)
+                .httpOnly(true)
+                .build();
 
-            jedis.set(Session.SESSION_PREFIX + uid, mapper.writeValueAsString(new Session(uid, credentials.getId())));
-
-            return Response.ok().cookie(cookie).build();
+        if (AzureManagement.CREATE_REDIS) {
+            Cache.putInCache(new Session(uid, id), Session.SESSION_PREFIX);
         }
+
+        return Response.ok().cookie(cookie).build();
     }
 
     @Override
@@ -88,7 +88,7 @@ public class UsersResource implements UsersService {
     }
 
     @Override
-    public Response deleteUser(Cookie session, String id) throws JsonProcessingException {
+    public Response deleteUser(Cookie session, String id) throws Exception {
         if (badParams(id))
             return sendResponse(BAD_REQUEST, BAD_REQUEST_MSG);
 
@@ -144,7 +144,7 @@ public class UsersResource implements UsersService {
     }
 
     @Override
-    public Response updateUser(Cookie session, String id, User user) throws JsonProcessingException {
+    public Response updateUser(Cookie session, String id, User user) throws Exception {
 
         try {
             var checkCookies = checkUserSession(session, id);

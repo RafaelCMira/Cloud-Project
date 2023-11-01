@@ -71,7 +71,7 @@ public class Utility {
     /**
      * Throws exception if not appropriate user for operation on House
      */
-    public static Response checkUserSession(Cookie cookie, String id) throws NotAuthorizedException, JsonProcessingException {
+    public static Response checkUserSession(Cookie cookie, String id) throws Exception {
         if (cookie == null)
             return sendResponse(UNAUTHORIZED, "No session initialized" + "cookie null ");
 
@@ -81,6 +81,7 @@ public class Utility {
         Session session = null;
 
         String cacheRes = Cache.getFromCache(Session.SESSION_PREFIX, cookie.getValue());
+
         if (cacheRes != null)
             session = mapper.readValue(cacheRes, Session.class);
 

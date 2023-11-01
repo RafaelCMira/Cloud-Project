@@ -7,6 +7,7 @@ import jakarta.ws.rs.core.Response;
 import scc.data.User;
 import scc.data.UserDAO;
 import scc.srv.authentication.Login;
+import scc.srv.authentication.Session;
 
 
 @Path(UsersService.PATH)
@@ -17,7 +18,6 @@ public interface UsersService {
     String QUERY = "query";
 
     String AUTH = "/auth";
-    String SESSION = "scc:session";
 
 
     String USER_PREFIX = "u:";
@@ -37,7 +37,7 @@ public interface UsersService {
     @DELETE
     @Path("/{" + ID + "}")
     @Produces(MediaType.APPLICATION_JSON)
-    Response deleteUser(@CookieParam(SESSION) Cookie session, @PathParam(ID) String id) throws Exception;
+    Response deleteUser(@CookieParam(Session.SESSION) Cookie session, @PathParam(ID) String id) throws Exception;
 
     @GET
     @Path("/{" + ID + "}")
@@ -48,7 +48,7 @@ public interface UsersService {
     @Path("/{" + ID + "}")
     @Consumes(MediaType.APPLICATION_JSON)
     @Produces(MediaType.APPLICATION_JSON)
-    Response updateUser(@CookieParam(SESSION) Cookie session, @PathParam(ID) String id, User user) throws Exception;
+    Response updateUser(@CookieParam(Session.SESSION) Cookie session, @PathParam(ID) String id, User user) throws Exception;
 
     @GET
     @Produces(MediaType.APPLICATION_JSON)

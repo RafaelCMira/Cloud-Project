@@ -32,7 +32,7 @@ public class HousesResource implements HousesService {
     private final ObjectMapper mapper = new ObjectMapper();
 
     @Override
-    public Response createHouse(Cookie session, HouseDAO houseDAO) throws JsonProcessingException, WebApplicationException {
+    public Response createHouse(Cookie session, HouseDAO houseDAO) throws Exception {
         try {
 
             var user = checkHouseCreation(session, houseDAO);
@@ -148,7 +148,7 @@ public class HousesResource implements HousesService {
     }
 
     @Override
-    public Response updateHouse(Cookie session, String id, House house) throws WebApplicationException, JsonProcessingException {
+    public Response updateHouse(Cookie session, String id, House house) throws Exception {
 
         try {
             var updatedHouse = genUpdatedHouse(session, id, house);
@@ -252,7 +252,7 @@ public class HousesResource implements HousesService {
      * @return updated userDAO to the method who's making the request to the database
      * @throws WebApplicationException If id is null or if the user does not exist
      */
-    private HouseDAO genUpdatedHouse(Cookie session, String id, House house) throws WebApplicationException, JsonProcessingException {
+    private HouseDAO genUpdatedHouse(Cookie session, String id, House house) throws Exception {
         if (badParams(id))
             throw new WebApplicationException(BAD_REQUEST_MSG, Response.Status.BAD_REQUEST);
 
@@ -262,7 +262,7 @@ public class HousesResource implements HousesService {
 
             var checkCookies = checkUserSession(session, houseDAO.getOwnerId());
             if (checkCookies.getStatus() != Response.Status.OK.getStatusCode())
-                throw new WebApplicationException(UNAUTHORIZED_MSG, Response.Status.UNAUTHORIZED);
+                throw new WebApplicationException(checkCookies.getEntity().toString(), Response.Status.UNAUTHORIZED);
 
             String newName = house.getName();
             if (!newName.isBlank())
@@ -305,10 +305,10 @@ public class HousesResource implements HousesService {
 
     }
 
-    private UserDAO checkHouseCreation(Cookie session, HouseDAO houseDAO) throws JsonProcessingException {
+    private UserDAO checkHouseCreation(Cookie session, HouseDAO houseDAO) throws Exception {
         var checkCookies = checkUserSession(session, houseDAO.getOwnerId());
         if (checkCookies.getStatus() != Response.Status.OK.getStatusCode())
-            throw new WebApplicationException(UNAUTHORIZED, Response.Status.UNAUTHORIZED);
+            throw new WebApplicationException(checkCookies.getEntity().toString(), Response.Status.UNAUTHORIZED);
 
         if (badParams(houseDAO.getId(), houseDAO.getName(), houseDAO.getLocation(), houseDAO.getPrice().toString(),
                 houseDAO.getDiscount().toString()) || houseDAO.getPrice() <= 0 || houseDAO.getDiscount() < 0)
