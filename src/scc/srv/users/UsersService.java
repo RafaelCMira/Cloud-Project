@@ -1,29 +1,24 @@
 package scc.srv.users;
 
 import jakarta.ws.rs.*;
+import jakarta.ws.rs.core.Cookie;
 import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
-import org.glassfish.jersey.media.multipart.FormDataContentDisposition;
-import org.glassfish.jersey.media.multipart.FormDataParam;
 import scc.data.User;
 import scc.data.UserDAO;
-import scc.srv.utils.Login;
-
-import java.io.InputStream;
-import java.util.List;
+import scc.srv.authentication.Login;
+import scc.srv.authentication.Session;
 
 
 @Path(UsersService.PATH)
 public interface UsersService {
     String PATH = "/user";
     String ID = "id"; // nickname
-    String NAME = "name";
-    String PWD = "pwd";
-    String PHOTO_ID = "photoId";
     String HOUSES = "/houses";
     String QUERY = "query";
 
     String AUTH = "/auth";
+
 
     String USER_PREFIX = "u:";
 
@@ -32,7 +27,7 @@ public interface UsersService {
     @POST
     @Path(AUTH)
     @Consumes(MediaType.APPLICATION_JSON)
-    Response authUser(Login user) throws Exception;
+    Response auth(Login credentials) throws Exception;
 
     @POST
     @Consumes(MediaType.APPLICATION_JSON)
@@ -42,7 +37,7 @@ public interface UsersService {
     @DELETE
     @Path("/{" + ID + "}")
     @Produces(MediaType.APPLICATION_JSON)
-    Response deleteUser(@PathParam(ID) String id) throws Exception;
+    Response deleteUser(@CookieParam(Session.SESSION) Cookie session, @PathParam(ID) String id) throws Exception;
 
     @GET
     @Path("/{" + ID + "}")
@@ -53,7 +48,7 @@ public interface UsersService {
     @Path("/{" + ID + "}")
     @Consumes(MediaType.APPLICATION_JSON)
     @Produces(MediaType.APPLICATION_JSON)
-    Response updateUser(@PathParam(ID) String id, User user) throws Exception;
+    Response updateUser(@CookieParam(Session.SESSION) Cookie session, @PathParam(ID) String id, User user) throws Exception;
 
     @GET
     @Produces(MediaType.APPLICATION_JSON)

@@ -1,7 +1,10 @@
 package scc.srv.media;
 
 import jakarta.ws.rs.*;
+import jakarta.ws.rs.core.Cookie;
 import jakarta.ws.rs.core.MediaType;
+import jakarta.ws.rs.core.Response;
+import scc.srv.authentication.Session;
 import scc.utils.props.AzureProperties;
 
 import java.util.List;
@@ -11,11 +14,13 @@ public interface MediaService {
 
     String PATH = "/media";
 
+    String ID = "id";
+
+
     String MEDIA_PREFIX = "media:";
 
     // Get connection string in the storage access keys page
     String storageConnectionString = System.getenv(AzureProperties.BLOB_KEY);
-    // String storageConnectionString = "DefaultEndpointsProtocol=https;AccountName=scc24st59243;" +"AccountKey=0XaT4fgMUUdro4s50zWit/YTcbrPf1LCjDx1B4kE1NNOyPILQmi+6DA42eSSf62jynB9zU3bZwxI+AStBroccA==;EndpointSuffix=core.windows.net";
 
     String CONTAINER_NAME = "media";
 
@@ -29,7 +34,7 @@ public interface MediaService {
     @POST
     @Consumes(MediaType.APPLICATION_OCTET_STREAM)
     @Produces(MediaType.APPLICATION_JSON)
-    String upload(byte[] contents);
+    String upload(@CookieParam(Session.SESSION) Cookie session, byte[] contents);
 
 
     /**
@@ -40,9 +45,9 @@ public interface MediaService {
      * @return bytes of the file
      */
     @GET
-    @Path("/{id}")
+    @Path("/{" + ID + "}")
     @Produces(MediaType.APPLICATION_OCTET_STREAM)
-    byte[] download(@PathParam("id") String id);
+    Response download(@PathParam(ID) String id);
 
 
     /**

@@ -1,33 +1,25 @@
 package scc.srv.houses;
 
 import com.azure.cosmos.CosmosException;
-import com.azure.cosmos.util.CosmosPagedIterable;
-import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import jakarta.ws.rs.NotAuthorizedException;
 import jakarta.ws.rs.WebApplicationException;
 import jakarta.ws.rs.core.Cookie;
 import jakarta.ws.rs.core.Response;
-import redis.clients.jedis.Jedis;
-import scc.cache.RedisCache;
+import scc.cache.Cache;
 import scc.data.*;
 import scc.db.CosmosDBLayer;
-import scc.srv.users.UsersResource;
-import scc.srv.utils.Cache;
-import scc.srv.media.MediaResource;
 import scc.srv.users.UsersService;
-import scc.srv.utils.Session;
+import scc.srv.utils.Validations;
 
 import java.time.Instant;
 import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
-import java.util.Optional;
 
 import static scc.srv.utils.Utility.*;
 
-public class HousesResource implements HousesService {
+public class HousesResource extends Validations implements HousesService {
 
     public static final String CONTAINER = "houses";
     public static final String PARTITION_KEY = "/id";
@@ -35,14 +27,10 @@ public class HousesResource implements HousesService {
     private final ObjectMapper mapper = new ObjectMapper();
 
     @Override
-    public Response createHouse(Cookie session, HouseDAO houseDAO) throws JsonProcessingException, WebApplicationException {
-        try (Jedis jedis = RedisCache.getCachePool().getResource()) {
+    public Response createHouse(Cookie session, HouseDAO houseDAO) throws Exception {
 
-            var checkCookies = checkCookieUser(session, houseDAO.getOwnerId());
-            if (checkCookies.getStatus() != Response.Status.OK.getStatusCode())
-                return checkCookies;
-
-            var user = checkHouseCreation(houseDAO, jedis);
+        try {
+            var user = checkHouseCreation(session, houseDAO);
             user.addHouse(houseDAO.getId());
 
             db.createItem(houseDAO, CONTAINER);
@@ -50,10 +38,10 @@ public class HousesResource implements HousesService {
             db.updateUser(user);
 
             // TODO: enviar ambos os pedidos para a cache de uma vez, o stor disse que dava para fazer
-            Cache.putInCache(houseDAO, HOUSE_PREFIX, jedis);
-            Cache.putInCache(user, UsersService.USER_PREFIX, jedis);
+            Cache.putInCache(houseDAO, HOUSE_PREFIX);
+            Cache.putInCache(user, UsersService.USER_PREFIX);
 
-            return sendResponse(OK, houseDAO.toHouse().toString());
+            return sendResponse(OK, houseDAO.toHouse());
 
         } catch (CosmosException ex) {
             return handleCreateException(ex.getStatusCode(), ex.getMessage(), houseDAO);
@@ -62,32 +50,9 @@ public class HousesResource implements HousesService {
         }
     }
 
-    /**
-     * Throws exception if not appropriate user for operation on House
-     */
-    public Response checkCookieUser(Cookie cookie, String id) throws NotAuthorizedException, JsonProcessingException {
-        if (cookie == null || cookie.getValue() == null)
-            return sendResponse(FORBIDDEN, "No session initialized");
-
-        Session session = null;
-
-        try (Jedis jedis = RedisCache.getCachePool().getResource()) {
-            String cacheRes = Cache.getFromCache(Session.SESSION_PREFIX, id, jedis);
-            if (cacheRes != null)
-                session = mapper.readValue(cacheRes, Session.class);
-        }
-
-        if (session == null || session.getId() == null || session.getId().isEmpty())
-            return sendResponse(FORBIDDEN, "No valid session initialized");
-
-        if (!session.getId().equals(id) && !session.getId().equals("admin"))
-            return sendResponse(FORBIDDEN, "Invalid user : " + session.getId());
-
-        return sendResponse(OK, "User authenticated");
-    }
-
-
     private Response handleCreateException(int statusCode, String msg, HouseDAO houseDAO) {
+        if (statusCode == 409)
+            return sendResponse(CONFLICT, HOUSE_MSG, houseDAO.getId());
         if (msg.contains(MEDIA_MSG))
             return processException(statusCode, MEDIA_MSG, "(some id)");
         else if (msg.contains(USER_MSG))
@@ -108,73 +73,70 @@ public class HousesResource implements HousesService {
     }
 
     @Override
-    public Response deleteHouse(String id) throws Exception {
-        if (badParams(id))
+    public Response deleteHouse(Cookie session, String id) throws Exception {
+        if (Validations.badParams(id))
             return sendResponse(BAD_REQUEST, BAD_REQUEST_MSG);
 
         try {
             //TODO: Quando se elimina um User, colocar nas casas (Deleted User)
-            var item = db.getById(id, CONTAINER, HouseDAO.class).stream().findFirst();
-            String ownerId = null;
-            if (item.isPresent())
-                ownerId = item.get().getOwnerId();
-            else
+            var house = Validations.houseExists(id);
+            if (house == null)
                 return sendResponse(NOT_FOUND, HOUSE_MSG, id);
+
+            String ownerId = house.getOwnerId();
+
+            var checkCookies = checkUserSession(session, ownerId);
+            if (checkCookies.getStatus() != Response.Status.OK.getStatusCode())
+                return checkCookies;
 
             db.deleteHouse(id);
 
-            var user = db.getById(ownerId, UsersResource.CONTAINER, UserDAO.class).stream().findFirst();
-            if (user.isPresent()) {
-                var updatedUser = user.get();
-                updatedUser.removeHouse(id);
-                db.updateUser(updatedUser);
-                try (Jedis jedis = RedisCache.getCachePool().getResource()) {
-                    Cache.deleteFromCache(HOUSE_PREFIX, id, jedis);
-                    Cache.putInCache(updatedUser, UsersService.USER_PREFIX, jedis);
-                }
-            }
+            var user = Validations.userExists(ownerId);
+            if (user == null)
+                return sendResponse(NOT_FOUND, USER_MSG, ownerId);
+
+            user.removeHouse(id);
+            db.updateUser(user);
+
+            Cache.deleteFromCache(HOUSE_PREFIX, id);
+            Cache.putInCache(user, UsersService.USER_PREFIX);
+
+            return sendResponse(OK, String.format(RESOURCE_WAS_DELETED, HOUSE_MSG, id));
 
         } catch (CosmosException ex) {
-            throw new Exception("Error " + ex.getStatusCode() + " " + ex.getMessage());
-            // return handleDeleteException(ex.getStatusCode(), ex.getMessage(), id/*, ownerId*/); // adicionar aqui o ownerId quando tivermos as
+            // throw new Exception("Error " + ex.getStatusCode() + " " + ex.getMessage());
+            return processException(ex.getStatusCode(), ex.getMessage(), id/*, ownerId*/); // adicionar aqui o ownerId quando tivermos as
             // cookies
         }
-
-        return sendResponse(OK, String.format(RESOURCE_WAS_DELETED, HOUSE_MSG, id));
     }
 
     @Override
     public Response getHouse(String id) throws Exception {
-        if (badParams(id))
+        if (Validations.badParams(id))
             return sendResponse(BAD_REQUEST, BAD_REQUEST_MSG);
 
-        try (Jedis jedis = RedisCache.getCachePool().getResource()) {
-
-            String house = Cache.getFromCache(HOUSE_PREFIX, id, jedis);
-            if (house != null)
-                return sendResponse(OK, mapper.readValue(house, HouseDAO.class).toHouse());
-
-            var res = db.getById(id, CONTAINER, HouseDAO.class).stream().findFirst();
-            if (res.isPresent()) {
-                var houseToCACHE = res.get();
-                Cache.putInCache(houseToCACHE, HOUSE_PREFIX, jedis);
-                return sendResponse(OK, houseToCACHE.toHouse());
-            } else
+        try {
+            var house = Validations.houseExists(id);
+            if (house == null)
                 return sendResponse(NOT_FOUND, HOUSE_MSG, id);
+
+            Cache.putInCache(house, HOUSE_PREFIX);
+
+            return sendResponse(OK, house.toHouse());
+
         } catch (CosmosException ex) {
             return processException(ex.getStatusCode(), ex.getMessage());
         }
     }
 
     @Override
-    public Response updateHouse(String id, House house) throws WebApplicationException, JsonProcessingException {
+    public Response updateHouse(Cookie session, String id, House house) throws Exception {
+
         try {
-            var updatedHouse = genUpdatedHouse(id, house);
+            var updatedHouse = genUpdatedHouse(session, id, house);
             db.updateHouse(updatedHouse);
 
-            try (Jedis jedis = RedisCache.getCachePool().getResource()) {
-                Cache.putInCache(updatedHouse, HOUSE_PREFIX, jedis);
-            }
+            Cache.putInCache(updatedHouse, HOUSE_PREFIX);
 
             return sendResponse(OK, updatedHouse.toHouse());
 
@@ -227,7 +189,6 @@ public class HousesResource implements HousesService {
         return !end1.isBefore(start2) && !end2.isBefore(start1);
     }
 
-
     @Override
     public List<House> getHouseByLocationPeriod(String location, String initialDate, String endDate) throws Exception {
         //TODO: chache
@@ -236,14 +197,14 @@ public class HousesResource implements HousesService {
 
         List<House> result = new ArrayList<>();
 
-        CosmosPagedIterable<HouseDAO> res = db.getHousesByLocation(location);
+        var res = db.getHousesByLocation(location);
         List<HouseDAO> houses = res.stream().toList();
 
         // Check if house is available in the given timeframe
         for (HouseDAO h : houses) {
             boolean available = true;
             for (String id : h.getRentalsIds()) {
-                Optional<RentalDAO> rental = db.getRentalById(h.getId(), id).stream().findFirst();
+                var rental = db.getRentalById(h.getId(), id).stream().findFirst();
                 if (rental.isEmpty()) {
                     available = false;
                 } else {
@@ -271,85 +232,73 @@ public class HousesResource implements HousesService {
      * @return updated userDAO to the method who's making the request to the database
      * @throws WebApplicationException If id is null or if the user does not exist
      */
-    private HouseDAO genUpdatedHouse(String id, House house) throws WebApplicationException {
-        if (badParams(id))
+    private HouseDAO genUpdatedHouse(Cookie session, String id, House house) throws Exception {
+        if (Validations.badParams(id))
             throw new WebApplicationException(BAD_REQUEST_MSG, Response.Status.BAD_REQUEST);
 
-        var res = db.getById(id, CONTAINER, HouseDAO.class).stream().findFirst();
-        if (res.isPresent()) {
-            HouseDAO houseDAO = res.get();
-
-            String newName = house.getName();
-            if (!newName.isBlank())
-                houseDAO.setName(newName);
-
-            String newLocation = house.getLocation();
-            if (!newLocation.isBlank())
-                houseDAO.setLocation(newLocation);
-
-            var newPhotos = house.getPhotosIds();
-            MediaResource media = new MediaResource();
-            if (!newPhotos.isEmpty())
-                if (!media.hasPhotos(newPhotos))
-                    throw new WebApplicationException(MEDIA_MSG, Response.Status.NOT_FOUND);
-                else
-                    houseDAO.setPhotosIds(newPhotos);
-
-            String newDescription = house.getDescription();
-            if (!newDescription.isBlank())
-                houseDAO.setDescription(newDescription);
-
-            var newPrice = house.getPrice();
-            if (newPrice != null)
-                if (newPrice > 0)
-                    houseDAO.setPrice(newPrice);
-                else
-                    throw new WebApplicationException("Error: Invalid price", Response.Status.BAD_REQUEST);
-
-            var newDiscount = house.getDiscount();
-            if (newDiscount != null)
-                if (newDiscount >= 0)
-                    houseDAO.setDiscount(newDiscount);
-                else
-                    throw new WebApplicationException("Error: Invalid discount", Response.Status.BAD_REQUEST);
-
-            return houseDAO;
-
-        } else
+        var houseDAO = Validations.houseExists(id);
+        if (houseDAO == null)
             throw new WebApplicationException(HOUSE_MSG, Response.Status.NOT_FOUND);
+
+        var checkCookies = checkUserSession(session, houseDAO.getOwnerId());
+        if (checkCookies.getStatus() != Response.Status.OK.getStatusCode())
+            throw new WebApplicationException(checkCookies.getEntity().toString(), Response.Status.UNAUTHORIZED);
+
+        String newName = house.getName();
+        if (!newName.isBlank())
+            houseDAO.setName(newName);
+
+        String newLocation = house.getLocation();
+        if (!newLocation.isBlank())
+            houseDAO.setLocation(newLocation);
+
+        var newPhotos = house.getPhotosIds();
+        if (!newPhotos.isEmpty())
+            if (!Validations.mediaExists(newPhotos))
+                throw new WebApplicationException(MEDIA_MSG, Response.Status.NOT_FOUND);
+            else
+                houseDAO.setPhotosIds(newPhotos);
+
+        String newDescription = house.getDescription();
+        if (!newDescription.isBlank())
+            houseDAO.setDescription(newDescription);
+
+        var newPrice = house.getPrice();
+        if (newPrice != null)
+            if (newPrice > 0)
+                houseDAO.setPrice(newPrice);
+            else
+                throw new WebApplicationException("Error: Invalid price", Response.Status.BAD_REQUEST);
+
+        var newDiscount = house.getDiscount();
+        if (newDiscount != null)
+            if (newDiscount >= 0)
+                houseDAO.setDiscount(newDiscount);
+            else
+                throw new WebApplicationException("Error: Invalid discount", Response.Status.BAD_REQUEST);
+
+        return houseDAO;
 
     }
 
-    private UserDAO checkHouseCreation(HouseDAO houseDAO, Jedis jedis) throws JsonProcessingException {
-        if (badParams(houseDAO.getId(), houseDAO.getName(), houseDAO.getLocation(), houseDAO.getPrice().toString(),
+    private UserDAO checkHouseCreation(Cookie session, HouseDAO houseDAO) throws Exception {
+        var checkCookies = checkUserSession(session, houseDAO.getOwnerId());
+        if (checkCookies.getStatus() != Response.Status.OK.getStatusCode())
+            throw new WebApplicationException(checkCookies.getEntity().toString(), Response.Status.UNAUTHORIZED);
+
+        if (Validations.badParams(houseDAO.getId(), houseDAO.getName(), houseDAO.getLocation(), houseDAO.getPrice().toString(),
                 houseDAO.getDiscount().toString()) || houseDAO.getPrice() <= 0 || houseDAO.getDiscount() < 0)
             throw new WebApplicationException(BAD_REQUEST_MSG, Response.Status.BAD_REQUEST);
 
-        MediaResource media = new MediaResource();
-        if (!media.hasPhotos(houseDAO.getPhotosIds()) || houseDAO.getPhotosIds() == null || houseDAO.getPhotosIds().isEmpty())
+        if (!Validations.mediaExists(houseDAO.getPhotosIds()))
             throw new WebApplicationException(MEDIA_MSG, Response.Status.NOT_FOUND);
 
-        // Check if house already exists on Cache
-        //TODO: usar Cache.getFromCache
-        if (jedis.get(HousesService.HOUSE_PREFIX + houseDAO.getId()) != null)
-            throw new WebApplicationException(HOUSE_MSG, Response.Status.CONFLICT);
-
-        // Check if house already exists on DB
-        var house = db.getById(houseDAO.getId(), CONTAINER, HouseDAO.class).stream().findFirst();
-        if (house.isPresent())
-            throw new WebApplicationException(HOUSE_MSG, Response.Status.CONFLICT);
-
-        // Checks if the user exists in cache
-        var user = jedis.get(UsersService.USER_PREFIX + houseDAO.getOwnerId());
-        if (user != null)
-            return mapper.readValue(user, UserDAO.class);
-
-        // Checks if the user exists in DB
-        var dbUser = db.getById(houseDAO.getOwnerId(), UsersResource.CONTAINER, UserDAO.class).stream().findFirst();
-        if (dbUser.isEmpty())
+        // Verify if user exists
+        var owner = Validations.userExists(houseDAO.getOwnerId());
+        if (owner == null)
             throw new WebApplicationException(USER_MSG, Response.Status.NOT_FOUND);
 
-        return dbUser.get();
+        return owner;
     }
 
 

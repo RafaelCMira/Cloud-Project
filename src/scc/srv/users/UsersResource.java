@@ -3,20 +3,21 @@ package scc.srv.users;
 import com.azure.cosmos.CosmosException;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import jakarta.ws.rs.NotAuthorizedException;
 import jakarta.ws.rs.WebApplicationException;
+import jakarta.ws.rs.core.Cookie;
 import jakarta.ws.rs.core.NewCookie;
 import jakarta.ws.rs.core.Response;
 import redis.clients.jedis.Jedis;
-import scc.cache.RedisCache;
+import scc.cache.Cache;
 import scc.data.User;
 import scc.data.UserDAO;
 import scc.db.CosmosDBLayer;
-import scc.srv.utils.Cache;
 import scc.srv.media.MediaResource;
-import scc.srv.utils.Login;
-import scc.srv.utils.Session;
+import scc.srv.authentication.Login;
+import scc.srv.authentication.Session;
+import scc.srv.utils.Validations;
 import scc.utils.Hash;
+import scc.utils.mgt.AzureManagement;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -25,7 +26,7 @@ import java.util.UUID;
 import static scc.srv.utils.Utility.*;
 
 
-public class UsersResource implements UsersService {
+public class UsersResource extends Validations implements UsersService {
 
     public static final String PARTITION_KEY = "/id";
     public static final String CONTAINER = "users";
@@ -33,92 +34,96 @@ public class UsersResource implements UsersService {
     private final CosmosDBLayer db = CosmosDBLayer.getInstance();
 
     @Override
-    public Response authUser(Login user) throws Exception {
-        try (Jedis jedis = RedisCache.getCachePool().getResource()) {
-            var id = user.getId();
+    public Response auth(Login credentials) throws Exception {
+        if (Validations.badParams(credentials.getId(), credentials.getPwd()))
+            return sendResponse(BAD_REQUEST, BAD_REQUEST_MSG);
 
-            var userDAO = (UserDAO) getUser(id).getEntity();
+        String id = credentials.getId();
 
-            boolean checkPwd = user.getPwd().equals(userDAO.getPwd());
+        var res = getUser(id);
+        if (res.getStatus() != Response.Status.OK.getStatusCode())
+            return res;
 
-            if (checkPwd) {
-                String uid = UUID.randomUUID().toString();
-                NewCookie cookie = new NewCookie.Builder(Session.SESSION_PREFIX + id)
-                        .value(uid)
-                        .path("/")
-                        .comment("sessionid")
-                        .maxAge(3600)
-                        .secure(false)
-                        .httpOnly(true)
-                        .build();
-                Cache.putInCache(new Session(uid, user.getId()), Session.SESSION_PREFIX + id, jedis);
-                return Response.ok().cookie(cookie).build();
-            } else
-                throw new NotAuthorizedException("Incorrect login");
+        var user = (User) res.getEntity();
+
+        if (!Hash.of(credentials.getPwd()).equals(user.getPwd()))
+            return sendResponse(UNAUTHORIZED, "Incorrect login");
+
+        String uid = UUID.randomUUID().toString();
+        NewCookie cookie = new NewCookie.Builder(Session.SESSION)
+                .value(id)
+                .path("/")
+                .comment("sessionid")
+                .maxAge(3600)
+                .secure(false)
+                .httpOnly(true)
+                .build();
+
+        if (AzureManagement.CREATE_REDIS) {
+            Cache.putInCache(new Session(uid, id), Session.SESSION_PREFIX);
         }
+
+        return Response.ok().cookie(cookie).build();
     }
 
     @Override
     public Response createUser(UserDAO userDAO) throws Exception {
-        if (badParams(userDAO.getId(), userDAO.getName(), userDAO.getPwd(), userDAO.getPhotoId()))
+        if (Validations.badParams(userDAO.getId(), userDAO.getName(), userDAO.getPwd(), userDAO.getPhotoId()))
             return sendResponse(BAD_REQUEST, BAD_REQUEST_MSG);
 
-        MediaResource media = new MediaResource();
-        if (!media.hasPhotos(List.of(userDAO.getPhotoId())))
+        if (!Validations.mediaExists(List.of(userDAO.getPhotoId())))
             return sendResponse(NOT_FOUND, MEDIA_MSG, "(some id)");
 
         try {
-
+            userDAO.setPwd(Hash.of(userDAO.getPwd()));
             db.createItem(userDAO, CONTAINER);
 
-            try (Jedis jedis = RedisCache.getCachePool().getResource()) {
-                Cache.putInCache(userDAO, USER_PREFIX, jedis);
-            }
+            Cache.putInCache(userDAO, USER_PREFIX);
+
+            return sendResponse(OK, userDAO.toUser());
 
         } catch (CosmosException ex) {
             return processException(ex.getStatusCode(), USER_MSG, userDAO.getId());
         }
-
-        return sendResponse(OK, userDAO.toUser());
     }
 
     @Override
-    public Response deleteUser(String id) {
-        if (badParams(id))
+    public Response deleteUser(Cookie session, String id) throws Exception {
+        if (Validations.badParams(id))
             return sendResponse(BAD_REQUEST, BAD_REQUEST_MSG);
 
         //TODO: colocar "Deleted User" no ownerId das casas do user eliminado e nos Rentals
         //TODO: Usar azure functions
 
+        var checkCookies = checkUserSession(session, id);
+        if (checkCookies.getStatus() != Response.Status.OK.getStatusCode())
+            return checkCookies;
+
         try {
             db.deleteUser(id);
 
-            try (Jedis jedis = RedisCache.getCachePool().getResource()) {
-                jedis.del(USER_PREFIX + id);
-            }
+            Cache.deleteFromCache(USER_PREFIX, id);
+
+            return sendResponse(OK, String.format(RESOURCE_WAS_DELETED, USER_MSG, id));
 
         } catch (CosmosException ex) {
             return processException(ex.getStatusCode(), USER_MSG, id);
         }
-        return sendResponse(OK, String.format(RESOURCE_WAS_DELETED, USER_MSG, id));
     }
 
     @Override
     public Response getUser(String id) throws JsonProcessingException {
-        if (badParams(id))
+        if (Validations.badParams(id))
             return sendResponse(BAD_REQUEST, BAD_REQUEST_MSG);
 
-        try (Jedis jedis = RedisCache.getCachePool().getResource()) {
+        try {
+            var user = Validations.userExists(id);
+            if (user != null) {
 
-            String cacheRes = jedis.get(USER_PREFIX + id);
-            if (cacheRes != null)
-                return sendResponse(OK, mapper.readValue(cacheRes, UserDAO.class).toUser());
+                Cache.putInCache(user, USER_PREFIX);
 
-            var result = db.getById(id, CONTAINER, UserDAO.class).stream().findFirst();
-            if (result.isPresent()) {
-                var user = result.get();
-                Cache.putInCache(user, USER_PREFIX, jedis);
                 return sendResponse(OK, user.toUser());
+
             } else
                 return sendResponse(NOT_FOUND, USER_MSG, id);
 
@@ -128,15 +133,17 @@ public class UsersResource implements UsersService {
     }
 
     @Override
-    public Response updateUser(String id, User user) throws JsonProcessingException {
+    public Response updateUser(Cookie session, String id, User user) throws Exception {
+
         try {
+            var checkCookies = checkUserSession(session, id);
+            if (checkCookies.getStatus() != Response.Status.OK.getStatusCode())
+                return checkCookies;
 
             var updatedUser = genUpdatedUserDAO(id, user);
             db.updateUser(updatedUser);
 
-            try (Jedis jedis = RedisCache.getCachePool().getResource()) {
-                Cache.putInCache(updatedUser, USER_PREFIX, jedis);
-            }
+            Cache.putInCache(updatedUser, USER_PREFIX);
 
             return sendResponse(OK, updatedUser.toUser());
 
@@ -170,20 +177,18 @@ public class UsersResource implements UsersService {
 
     @Override
     public Response getUserHouses(String id) throws JsonProcessingException {
-        if (badParams(id))
+        if (Validations.badParams(id))
             return sendResponse(BAD_REQUEST, BAD_REQUEST_MSG);
 
-        try (Jedis jedis = RedisCache.getCachePool().getResource()) {
+        try {
+            var user = Validations.userExists(id);
+            if (user != null) {
 
-            String user = Cache.getFromCache(USER_PREFIX, id, jedis);
-            if (user != null)
-                return sendResponse(OK, mapper.readValue(user, UserDAO.class).getHouseIds());
+                Cache.putInCache(user, USER_PREFIX);
 
-            var res = db.getById(id, CONTAINER, UserDAO.class).stream().findFirst();
-            if (res.isPresent()) {
-                var dbUser = res.get();
-                Cache.putInCache(dbUser, USER_PREFIX, jedis);
-                return sendResponse(OK, dbUser.getHouseIds());
+                //Todo: alterar o return para as casas mesmo em vez de ser apenas os ids
+                return sendResponse(OK, user.getHouseIds());
+
             } else
                 return sendResponse(NOT_FOUND, USER_MSG, id);
 
@@ -194,7 +199,7 @@ public class UsersResource implements UsersService {
 
 
     /**
-     * * Returns updated userDAO to the method who's making the request to the database
+     * Returns updated userDAO to the method who's making the request to the database
      *
      * @param id   of the user being accessed
      * @param user new user attributes
@@ -202,33 +207,30 @@ public class UsersResource implements UsersService {
      * @throws WebApplicationException If user doesn't exist or if id is empty
      */
     private UserDAO genUpdatedUserDAO(String id, User user) throws WebApplicationException {
-        if (badParams(id))
+        if (Validations.badParams(id))
             throw new WebApplicationException(BAD_REQUEST_MSG, Response.Status.BAD_REQUEST);
 
-        var result = db.getById(id, CONTAINER, UserDAO.class).stream().findFirst();
-        if (result.isPresent()) {
-            UserDAO userDAO = result.get();
-
-            String newName = user.getName();
-            if (!newName.isBlank())
-                userDAO.setName(newName);
-
-            String newPwd = Hash.of(user.getPwd());
-            if (!newPwd.isBlank())
-                userDAO.setPwd(newName);
-
-            String newPhoto = user.getPhotoId();
-            MediaResource media = new MediaResource();
-            if (!newPhoto.isEmpty())
-                if (!media.hasPhotos(List.of(newPhoto)))
-                    throw new WebApplicationException(MEDIA_MSG, Response.Status.NOT_FOUND);
-                else
-                    userDAO.setPhotoId(newPhoto);
-
-            return userDAO;
-
-        } else
+        var userDAO = Validations.userExists(id);
+        if (userDAO == null)
             throw new WebApplicationException(USER_MSG, Response.Status.NOT_FOUND);
+
+        String newName = user.getName();
+        if (!newName.isBlank())
+            userDAO.setName(newName);
+
+        String newPwd = Hash.of(user.getPwd());
+        if (!newPwd.isBlank())
+            userDAO.setPwd(newPwd);
+
+        String newPhoto = user.getPhotoId();
+        if (!newPhoto.isEmpty())
+            if (!Validations.mediaExists(List.of(newPhoto)))
+                throw new WebApplicationException(MEDIA_MSG, Response.Status.NOT_FOUND);
+            else
+                userDAO.setPhotoId(newPhoto);
+
+        return userDAO;
+
     }
 
     // Usar se for necessario guardar a lista das casas do user

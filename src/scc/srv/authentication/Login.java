@@ -1,6 +1,4 @@
-package scc.srv.utils;
-
-import scc.utils.Hash;
+package scc.srv.authentication;
 
 public class Login {
 
@@ -12,7 +10,7 @@ public class Login {
 
     public Login(String id, String pwd) {
         this.id = id;
-        this.pwd = Hash.of(pwd);
+        this.pwd = pwd;
     }
 
     public String getId() {

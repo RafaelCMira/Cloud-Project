@@ -4,24 +4,21 @@ import com.azure.cosmos.CosmosException;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import jakarta.ws.rs.WebApplicationException;
+import jakarta.ws.rs.core.Cookie;
 import jakarta.ws.rs.core.Response;
-import redis.clients.jedis.Jedis;
-import scc.cache.RedisCache;
+import scc.cache.Cache;
 import scc.data.*;
 import scc.db.CosmosDBLayer;
 import scc.srv.houses.HousesResource;
-import scc.srv.users.UsersResource;
 import scc.srv.houses.HousesService;
-import scc.srv.users.UsersService;
-import scc.srv.utils.Cache;
+import scc.srv.utils.Validations;
 
-import java.util.Optional;
 import java.util.UUID;
 
 
 import static scc.srv.utils.Utility.*;
 
-public class QuestionResource implements QuestionService {
+public class QuestionResource extends Validations implements QuestionService {
 
     public static final String CONTAINER = "questions";
     public static final String PARTITION_KEY = "/houseId";
@@ -31,17 +28,17 @@ public class QuestionResource implements QuestionService {
 
     @Override
     public Response createQuestion(String houseId, QuestionDAO questionDAO) throws JsonProcessingException {
-        try (Jedis jedis = RedisCache.getCachePool().getResource()) {
+        try {
             questionDAO.setHouseId(houseId);
 
-            checkQuestionCreation(questionDAO, jedis);
+            checkQuestionCreation(questionDAO);
 
             questionDAO.setId(UUID.randomUUID().toString());
             db.createItem(questionDAO, CONTAINER);
 
-            Cache.putInCache(questionDAO, QUESTION_PREFIX, jedis);
+            Cache.putInCache(questionDAO, QUESTION_PREFIX);
 
-            return sendResponse(OK, questionDAO.toQuestion().toString());
+            return sendResponse(OK, questionDAO.toQuestion());
 
         } catch (CosmosException ex) {
             return handleCreateException(ex.getStatusCode(), ex.getMessage(), questionDAO);
@@ -60,49 +57,41 @@ public class QuestionResource implements QuestionService {
     }
 
     @Override
-    public Response replyToQuestion(String houseId, String questionId, String replierId, QuestionDAO questionDAO) throws Exception {
-        try (Jedis jedis = RedisCache.getCachePool().getResource()) {
+    public Response replyToQuestion(Cookie session, String houseId, String questionId, QuestionDAO questionDAO) throws Exception {
 
-            // Verify if house exists
-            HouseDAO house = null;
-            var cacheHouse = jedis.get(HousesService.HOUSE_PREFIX + houseId);
-            if (cacheHouse != null)
-                house = mapper.readValue(cacheHouse, HouseDAO.class);
-            else {
-                var houseRes = db.getById(houseId, HousesResource.CONTAINER, HouseDAO.class).stream().findFirst();
-                if (houseRes.isEmpty())
-                    return sendResponse(NOT_FOUND, HOUSE_MSG);
-                house = houseRes.get();
-            }
+        try {
+            var updatedQuestion = genUpdatedQuestion(session, houseId, questionId, questionDAO);
+            db.replyToQuestion(updatedQuestion);
 
-            // Verify if user who replies is the owner
-            if (!house.getOwnerId().equals(replierId))
-                return sendResponse(FORBIDDEN, NOT_THE_OWNER);
+            Cache.putInCache(updatedQuestion, QUESTION_PREFIX);
 
-            //todo: usar cookies para verificar se ele existe
-
-            db.replyToQuestion(houseId, questionId, questionDAO.getAnswer());
-
-            jedis.set(QUESTION_PREFIX + questionId, mapper.writeValueAsString(questionDAO));
-
-            return sendResponse(OK, questionDAO.toQuestion());
+            return sendResponse(OK, updatedQuestion.toQuestion());
 
         } catch (CosmosException ex) {
-            return processException(ex.getStatusCode(), ex.getMessage());
+            return handleUpdateException(ex.getStatusCode(), ex.getMessage(), questionId);
+        } catch (WebApplicationException ex) {
+            return handleUpdateException(ex.getResponse().getStatus(), ex.getMessage(), questionId);
         }
+    }
+
+    private Response handleUpdateException(int statusCode, String msg, String id) {
+        if (statusCode == 409)
+            return Response.status(Response.Status.CONFLICT).entity(String.format("Question %s already answered", id)).build();
+        if (msg.contains(QUESTION_MSG))
+            return processException(statusCode, QUESTION_MSG, id);
+        else if (msg.contains(HOUSE_MSG))
+            return processException(statusCode, HOUSE_MSG, id);
+        else
+            return processException(statusCode, msg, id);
     }
 
     @Override
     public Response listQuestions(String houseId) {
         // TODO: colocar lista de questoes na cache
 
-        try (Jedis jedis = RedisCache.getCachePool().getResource()) {
-            // Verify if house exists
-            if (jedis.get(HousesService.HOUSE_PREFIX + houseId) == null) {
-                var houseRes = db.getById(houseId, HousesResource.CONTAINER, HouseDAO.class).stream().findFirst();
-                if (houseRes.isEmpty())
-                    return sendResponse(NOT_FOUND, HOUSE_MSG, houseId);
-            }
+        try {
+            if (Validations.houseExists(houseId) == null)
+                return sendResponse(NOT_FOUND, HOUSE_MSG, houseId);
 
             var questions = db.listHouseQuestions(houseId).stream().map(QuestionDAO::toQuestion).toList();
             return sendResponse(OK, questions);
@@ -112,25 +101,43 @@ public class QuestionResource implements QuestionService {
         }
     }
 
-    private void checkQuestionCreation(QuestionDAO questionDAO, Jedis jedis) throws WebApplicationException {
-        if (badParams(questionDAO.getHouseId(), questionDAO.getAskerId(), questionDAO.getText()))
+    private void checkQuestionCreation(QuestionDAO questionDAO) throws WebApplicationException {
+        if (Validations.badParams(questionDAO.getHouseId(), questionDAO.getAskerId(), questionDAO.getText()))
             throw new WebApplicationException(BAD_REQUEST_MSG, Response.Status.BAD_REQUEST);
 
-        // Check if house doesn't exist on Cache
-        if (jedis.get(HousesService.HOUSE_PREFIX + questionDAO.getHouseId()) == null) {
-            // Check if house exists on DB
-            var house = db.getById(questionDAO.getHouseId(), CONTAINER, HouseDAO.class).stream().findFirst();
-            if (house.isEmpty())
-                throw new WebApplicationException(HOUSE_MSG, Response.Status.NOT_FOUND);
-        }
+        if (Validations.houseExists(questionDAO.getHouseId()) == null)
+            throw new WebApplicationException(HOUSE_MSG, Response.Status.NOT_FOUND);
 
-        // Check if user doesn't exist on Cache
-        if (jedis.get(UsersService.USER_PREFIX + questionDAO.getAskerId()) == null) {
-            // Check if user exists on DB
-            var user = db.getById(questionDAO.getAskerId(), UsersResource.CONTAINER, UserDAO.class).stream().findFirst();
-            if (user.isEmpty())
-                throw new WebApplicationException(USER_MSG, Response.Status.NOT_FOUND);
-        }
+        if (Validations.userExists(questionDAO.getAskerId()) == null)
+            throw new WebApplicationException(USER_MSG, Response.Status.NOT_FOUND);
+    }
+
+    private QuestionDAO genUpdatedQuestion(Cookie session, String houseId, String questionId, QuestionDAO questionDAO) throws Exception {
+        String answer = questionDAO.getAnswer();
+
+        if (Validations.badParams(answer))
+            throw new WebApplicationException(BAD_REQUEST_MSG, Response.Status.BAD_REQUEST);
+
+        var house = Validations.houseExists(houseId);
+        if (house == null)
+            throw new WebApplicationException(HOUSE_MSG, Response.Status.NOT_FOUND);
+
+        var checkCookies = checkUserSession(session, house.getOwnerId());
+        if (checkCookies.getStatus() != Response.Status.OK.getStatusCode())
+            throw new WebApplicationException(checkCookies.getEntity().toString(), Response.Status.UNAUTHORIZED);
+
+        var question = Validations.questionExists(questionId);
+        if (question == null)
+            throw new WebApplicationException(QUESTION_MSG, Response.Status.NOT_FOUND);
+
+        // Se a questao já foi respondida
+        if (!question.getAnswer().isBlank())
+            throw new WebApplicationException(QUESTION_MSG, Response.Status.CONFLICT);
+
+        question.setAnswer(answer);
+
+        return question;
+
     }
 
 
