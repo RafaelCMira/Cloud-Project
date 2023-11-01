@@ -12,7 +12,6 @@ import scc.cache.Cache;
 import scc.data.User;
 import scc.data.UserDAO;
 import scc.db.CosmosDBLayer;
-import scc.srv.media.MediaResource;
 import scc.srv.authentication.Login;
 import scc.srv.authentication.Session;
 import scc.srv.utils.Validations;
@@ -59,11 +58,9 @@ public class UsersResource extends Validations implements UsersService {
                 .httpOnly(true)
                 .build();
 
-        if (AzureManagement.CREATE_REDIS) {
-            Cache.putInCache(new Session(uid, id), Session.SESSION_PREFIX);
-        }
+        Cache.putInCache(new Session(uid, id), Session.SESSION_PREFIX);
 
-        return Response.ok().cookie(cookie).build();
+        return Response.ok(user).cookie(cookie).build();
     }
 
     @Override
@@ -75,12 +72,13 @@ public class UsersResource extends Validations implements UsersService {
             return sendResponse(NOT_FOUND, MEDIA_MSG, "(some id)");
 
         try {
-            userDAO.setPwd(Hash.of(userDAO.getPwd()));
+            var plainPwd = userDAO.getPwd();
+            userDAO.setPwd(Hash.of(plainPwd));
             db.createItem(userDAO, CONTAINER);
 
             Cache.putInCache(userDAO, USER_PREFIX);
 
-            return sendResponse(OK, userDAO.toUser());
+            return auth(new Login(userDAO.getId(), plainPwd));
 
         } catch (CosmosException ex) {
             return processException(ex.getStatusCode(), USER_MSG, userDAO.getId());
