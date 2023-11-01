@@ -12,7 +12,6 @@ import scc.srv.houses.HousesResource;
 import scc.srv.users.UsersResource;
 import scc.srv.houses.HousesService;
 import scc.srv.users.UsersService;
-import scc.utils.mgt.AzureManagement;
 
 import java.util.UUID;
 
@@ -37,9 +36,7 @@ public class QuestionResource implements QuestionService {
             questionDAO.setId(UUID.randomUUID().toString());
             db.createItem(questionDAO, CONTAINER);
 
-            if (AzureManagement.CREATE_REDIS) {
-                Cache.putInCache(questionDAO, QUESTION_PREFIX);
-            }
+            Cache.putInCache(questionDAO, QUESTION_PREFIX);
 
             return sendResponse(OK, questionDAO.toQuestion().toString());
 
@@ -64,23 +61,16 @@ public class QuestionResource implements QuestionService {
         try {
 
             // Verify if house exists
-            HouseDAO house = null;
-            if (AzureManagement.CREATE_REDIS) {
-                var cacheHouse = Cache.getFromCache(HousesService.HOUSE_PREFIX, houseId);
-                if (cacheHouse != null)
-                    house = mapper.readValue(cacheHouse, HouseDAO.class);
-
-                else {
-                    var houseRes = db.getById(houseId, HousesResource.CONTAINER, HouseDAO.class).stream().findFirst();
-                    if (houseRes.isEmpty())
-                        return sendResponse(NOT_FOUND, HOUSE_MSG);
-                    house = houseRes.get();
-                }
-
-            } else {
+            HouseDAO house;
+            var cacheHouse = Cache.getFromCache(HousesService.HOUSE_PREFIX, houseId);
+            if (cacheHouse != null)
+                house = mapper.readValue(cacheHouse, HouseDAO.class);
+            else {
+                
                 var houseRes = db.getById(houseId, HousesResource.CONTAINER, HouseDAO.class).stream().findFirst();
                 if (houseRes.isEmpty())
                     return sendResponse(NOT_FOUND, HOUSE_MSG);
+
                 house = houseRes.get();
             }
 
@@ -92,8 +82,7 @@ public class QuestionResource implements QuestionService {
 
             db.replyToQuestion(houseId, questionId, questionDAO.getAnswer());
 
-            if (AzureManagement.CREATE_REDIS)
-                Cache.putInCache(questionDAO, QUESTION_PREFIX);
+            Cache.putInCache(questionDAO, QUESTION_PREFIX);
 
             return sendResponse(OK, questionDAO.toQuestion());
 
@@ -108,12 +97,10 @@ public class QuestionResource implements QuestionService {
 
         try {
             // Verify if house exists
-            if (AzureManagement.CREATE_REDIS) {
-                if (Cache.getFromCache(HousesService.HOUSE_PREFIX, houseId) == null) {
-                    var houseRes = db.getById(houseId, HousesResource.CONTAINER, HouseDAO.class).stream().findFirst();
-                    if (houseRes.isEmpty())
-                        return sendResponse(NOT_FOUND, HOUSE_MSG, houseId);
-                }
+            if (Cache.getFromCache(HousesService.HOUSE_PREFIX, houseId) == null) {
+                var houseRes = db.getById(houseId, HousesResource.CONTAINER, HouseDAO.class).stream().findFirst();
+                if (houseRes.isEmpty())
+                    return sendResponse(NOT_FOUND, HOUSE_MSG, houseId);
             }
 
             var questions = db.listHouseQuestions(houseId).stream().map(QuestionDAO::toQuestion).toList();
@@ -128,36 +115,21 @@ public class QuestionResource implements QuestionService {
         if (badParams(questionDAO.getHouseId(), questionDAO.getAskerId(), questionDAO.getText()))
             throw new WebApplicationException(BAD_REQUEST_MSG, Response.Status.BAD_REQUEST);
 
-        if (AzureManagement.CREATE_REDIS) {
-            // Check if house doesn't exist on Cache
-            if (Cache.getFromCache(HousesService.HOUSE_PREFIX, questionDAO.getHouseId()) == null) {
-                // Check if house exists on DB
-                var house = db.getById(questionDAO.getHouseId(), CONTAINER, HouseDAO.class).stream().findFirst();
-                if (house.isEmpty())
-                    throw new WebApplicationException(HOUSE_MSG, Response.Status.NOT_FOUND);
-            }
-        } else {
+        // Check if house exist on Cache
+        if (Cache.getFromCache(HousesService.HOUSE_PREFIX, questionDAO.getHouseId()) == null) {
             // Check if house exists on DB
             var house = db.getById(questionDAO.getHouseId(), CONTAINER, HouseDAO.class).stream().findFirst();
             if (house.isEmpty())
                 throw new WebApplicationException(HOUSE_MSG, Response.Status.NOT_FOUND);
         }
 
-        if (AzureManagement.CREATE_REDIS) {
-            // Check if user doesn't exist on Cache
-            if (Cache.getFromCache(UsersService.USER_PREFIX, questionDAO.getAskerId()) == null) {
-                // Check if user exists on DB
-                var user = db.getById(questionDAO.getAskerId(), UsersResource.CONTAINER, UserDAO.class).stream().findFirst();
-                if (user.isEmpty())
-                    throw new WebApplicationException(USER_MSG, Response.Status.NOT_FOUND);
-            }
-        } else {
+        // Check if user exist on Cache
+        if (Cache.getFromCache(UsersService.USER_PREFIX, questionDAO.getAskerId()) == null) {
             // Check if user exists on DB
             var user = db.getById(questionDAO.getAskerId(), UsersResource.CONTAINER, UserDAO.class).stream().findFirst();
             if (user.isEmpty())
                 throw new WebApplicationException(USER_MSG, Response.Status.NOT_FOUND);
         }
-
     }
 
 

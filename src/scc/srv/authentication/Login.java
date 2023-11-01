@@ -1,7 +1,5 @@
 package scc.srv.authentication;
 
-import scc.utils.Hash;
-
 public class Login {
 
     private String id;

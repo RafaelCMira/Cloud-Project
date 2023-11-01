@@ -10,6 +10,7 @@ import scc.data.*;
 import scc.db.CosmosDBLayer;
 import scc.srv.houses.HousesResource;
 import scc.srv.houses.HousesService;
+import scc.srv.users.UsersResource;
 import scc.srv.users.UsersService;
 import scc.utils.mgt.AzureManagement;
 
@@ -46,9 +47,7 @@ public class RentalResource implements RentalService {
                 else if (!rentalInDB.get().getUserId().equals(rentalDAO.getUserId()))
                     return sendResponse(CONFLICT, RENTAL_MSG, rentalDAO.getId());
 
-                if (AzureManagement.CREATE_REDIS) {
-                    Cache.putInCache(rentalDAO, RENTAL_PREFIX);
-                }
+                Cache.putInCache(rentalDAO, RENTAL_PREFIX);
 
                 return sendResponse(OK, rentalDAO.toRental().toString());
 
@@ -77,19 +76,15 @@ public class RentalResource implements RentalService {
             return sendResponse(BAD_REQUEST, BAD_REQUEST_MSG);
 
         try {
-            if (AzureManagement.CREATE_REDIS) {
-                String cacheRes = Cache.getFromCache(RENTAL_PREFIX, id);
-                if (cacheRes != null)
-                    return sendResponse(OK, mapper.readValue(cacheRes, RentalDAO.class).toRental());
-            }
+            String cacheRes = Cache.getFromCache(RENTAL_PREFIX, id);
+            if (cacheRes != null)
+                return sendResponse(OK, mapper.readValue(cacheRes, RentalDAO.class).toRental());
 
             var result = db.getRentalById(houseId, id).stream().findFirst();
             if (result.isPresent()) {
                 var rentalToCache = result.get();
 
-                if (AzureManagement.CREATE_REDIS) {
-                    Cache.putInCache(rentalToCache, RENTAL_PREFIX);
-                }
+                Cache.putInCache(rentalToCache, RENTAL_PREFIX);
 
                 return sendResponse(OK, rentalToCache.toRental());
 
@@ -108,9 +103,8 @@ public class RentalResource implements RentalService {
             var res = db.updateRental(updatedRental);
             int statusCode = res.getStatusCode();
             if (isStatusOk(res.getStatusCode())) {
-                if (AzureManagement.CREATE_REDIS) {
-                    Cache.putInCache(updatedRental, RENTAL_PREFIX);
-                }
+
+                Cache.putInCache(updatedRental, RENTAL_PREFIX);
 
                 return sendResponse(OK, updatedRental.toRental());
 
@@ -145,9 +139,7 @@ public class RentalResource implements RentalService {
             houseDAO.get().removeRental(id);
 
             // Delete rental in cache
-            if (AzureManagement.CREATE_REDIS) {
-                Cache.deleteFromCache(RENTAL_PREFIX, id);
-            }
+            Cache.deleteFromCache(RENTAL_PREFIX, id);
 
             String s = String.format("StatusCode: %d \nRental %s was delete", statusCode, id);
             return sendResponse(OK, s);
@@ -213,7 +205,7 @@ public class RentalResource implements RentalService {
     private void checkRentalCreation(Cookie session, String houseId, RentalDAO rental) throws Exception {
         var checkCookies = checkUserSession(session, rental.getUserId());
         if (checkCookies.getStatus() != Response.Status.OK.getStatusCode())
-            throw new WebApplicationException(UNAUTHORIZED, Response.Status.UNAUTHORIZED);
+            throw new WebApplicationException(checkCookies.getEntity().toString(), Response.Status.UNAUTHORIZED);
 
         if (badParams(rental.getId(), rental.getHouseId(), rental.getUserId()))
             throw new WebApplicationException(Response.Status.BAD_REQUEST);
@@ -225,9 +217,9 @@ public class RentalResource implements RentalService {
                 throw new WebApplicationException(HOUSE_MSG, Response.Status.NOT_FOUND);
         }
 
-        // Verify if house exists
+        // Verify if user exists
         if (Cache.getFromCache(UsersService.USER_PREFIX, rental.getUserId()) == null) {
-            var userRes = db.getById(rental.getUserId(), HousesResource.CONTAINER, HouseDAO.class).stream().findFirst();
+            var userRes = db.getById(rental.getUserId(), UsersResource.CONTAINER, UserDAO.class).stream().findFirst();
             if (userRes.isEmpty())
                 throw new WebApplicationException(USER_MSG, Response.Status.NOT_FOUND);
         }

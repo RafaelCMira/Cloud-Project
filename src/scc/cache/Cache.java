@@ -7,6 +7,7 @@ import redis.clients.jedis.Jedis;
 import redis.clients.jedis.JedisPool;
 import redis.clients.jedis.JedisPoolConfig;
 import scc.srv.utils.HasId;
+import scc.utils.mgt.AzureManagement;
 import scc.utils.props.AzureProperties;
 
 public class Cache {
@@ -37,26 +38,31 @@ public class Cache {
     }
 
     public static <T extends HasId> void putInCache(T obj, String prefix) throws JsonProcessingException {
-        try (Jedis jedis = Cache.getCachePool().getResource()) {
-            jedis.set(prefix + obj.getId(), mapper.writeValueAsString(obj));
-        }
+        if (AzureManagement.CREATE_REDIS)
+            try (Jedis jedis = Cache.getCachePool().getResource()) {
+                jedis.set(prefix + obj.getId(), mapper.writeValueAsString(obj));
+            }
     }
 
     public static void putInCache(BinaryData data, String prefix) throws JsonProcessingException {
-        try (Jedis jedis = Cache.getCachePool().getResource()) {
-            jedis.set(prefix + data, mapper.writeValueAsString(data));
-        }
+        if (AzureManagement.CREATE_REDIS)
+            try (Jedis jedis = Cache.getCachePool().getResource()) {
+                jedis.set(prefix + data, mapper.writeValueAsString(data));
+            }
     }
 
     public static String getFromCache(String prefix, String key) {
-        try (Jedis jedis = Cache.getCachePool().getResource()) {
-            return jedis.get(prefix + key);
-        }
+        if (AzureManagement.CREATE_REDIS)
+            try (Jedis jedis = Cache.getCachePool().getResource()) {
+                return jedis.get(prefix + key);
+            }
+        return null;
     }
 
     public static void deleteFromCache(String prefix, String id) {
-        try (Jedis jedis = Cache.getCachePool().getResource()) {
-            jedis.del(prefix + id);
-        }
+        if (AzureManagement.CREATE_REDIS)
+            try (Jedis jedis = Cache.getCachePool().getResource()) {
+                jedis.del(prefix + id);
+            }
     }
 }
