@@ -6,11 +6,16 @@ import com.azure.storage.blob.BlobContainerClient;
 import com.azure.storage.blob.BlobContainerClientBuilder;
 import com.azure.storage.blob.models.BlobItem;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import jakarta.ws.rs.WebApplicationException;
+import jakarta.ws.rs.core.Cookie;
+import jakarta.ws.rs.core.Response;
 import scc.cache.Cache;
 import scc.utils.Hash;
 
 import java.util.ArrayList;
 import java.util.List;
+
+import static scc.srv.utils.Utility.*;
 
 /**
  * Resource for managing media files, such as images.
@@ -18,7 +23,12 @@ import java.util.List;
 public class MediaResource implements MediaService {
     private final ObjectMapper mapper = new ObjectMapper();
 
-    public String upload(byte[] contents) {
+    public String upload(Cookie session, byte[] contents) {
+        //todo: tratar das cookies aqui, como posso saber qual o id de que user quero comparar?
+        /*var checkCookies = checkUserSession(session, rental.getUserId());
+        if (checkCookies.getStatus() != Response.Status.OK.getStatusCode())
+            throw new WebApplicationException(checkCookies.getEntity().toString(), Response.Status.UNAUTHORIZED);*/
+
         String id = Hash.of(contents);
         try {
             BinaryData data = BinaryData.fromBytes(contents);
@@ -40,14 +50,14 @@ public class MediaResource implements MediaService {
         return id;
     }
 
-    public byte[] download(String id) {
+    public Response download(String id) {
         byte[] content = null;
 
         try {
 
             var res = Cache.getFromCache(MEDIA_PREFIX, id);
             if (res != null)
-                return mapper.readValue(res, BinaryData.class).toBytes();
+                return Response.ok(mapper.readValue(res, BinaryData.class).toBytes()).build();
 
             // Get container client
             BlobContainerClient containerClient = getContainerClient(MediaService.CONTAINER_NAME);
@@ -58,12 +68,15 @@ public class MediaResource implements MediaService {
             // Download contents to BinaryData (check documentation for other alternatives)
             BinaryData data = blob.downloadContent();
             content = data.toBytes();
+
             if (content == null)
-                throw new Exception(String.format("Id: %s does not exist", id));
-        } catch (Exception e) {
-            e.printStackTrace();
+                return sendResponse(NOT_FOUND, MEDIA_MSG, id);
+
+        } catch (Exception ignored) {
+
         }
-        return content;
+
+        return Response.ok(content).build();
     }
 
 

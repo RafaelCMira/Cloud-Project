@@ -9,11 +9,7 @@ import scc.cache.Cache;
 import scc.data.*;
 import scc.db.CosmosDBLayer;
 import scc.srv.houses.HousesResource;
-import scc.srv.houses.HousesService;
-import scc.srv.users.UsersResource;
-import scc.srv.users.UsersService;
 import scc.srv.utils.Validations;
-import scc.utils.mgt.AzureManagement;
 
 import java.time.Instant;
 import java.util.ArrayList;

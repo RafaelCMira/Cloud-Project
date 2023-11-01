@@ -1,7 +1,6 @@
 package scc.srv.houses;
 
 import com.azure.cosmos.CosmosException;
-import com.azure.cosmos.util.CosmosPagedIterable;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import jakarta.ws.rs.WebApplicationException;
 import jakarta.ws.rs.core.Cookie;
@@ -13,14 +12,12 @@ import scc.srv.users.UsersResource;
 import scc.srv.media.MediaResource;
 import scc.srv.users.UsersService;
 import scc.srv.utils.Validations;
-import scc.utils.mgt.AzureManagement;
 
 import java.time.Instant;
 import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
-import java.util.Optional;
 
 import static scc.srv.utils.Utility.*;
 
@@ -210,14 +207,14 @@ public class HousesResource implements HousesService {
 
         List<House> result = new ArrayList<>();
 
-        CosmosPagedIterable<HouseDAO> res = db.getHousesByLocation(location);
+        var res = db.getHousesByLocation(location);
         List<HouseDAO> houses = res.stream().toList();
 
         // Check if house is available in the given timeframe
         for (HouseDAO h : houses) {
             boolean available = true;
             for (String id : h.getRentalsIds()) {
-                Optional<RentalDAO> rental = db.getRentalById(h.getId(), id).stream().findFirst();
+                var rental = db.getRentalById(h.getId(), id).stream().findFirst();
                 if (rental.isEmpty()) {
                     available = false;
                 } else {
