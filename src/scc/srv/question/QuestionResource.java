@@ -4,14 +4,13 @@ import com.azure.cosmos.CosmosException;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import jakarta.ws.rs.WebApplicationException;
+import jakarta.ws.rs.core.Cookie;
 import jakarta.ws.rs.core.Response;
 import scc.cache.Cache;
 import scc.data.*;
 import scc.db.CosmosDBLayer;
 import scc.srv.houses.HousesResource;
-import scc.srv.users.UsersResource;
 import scc.srv.houses.HousesService;
-import scc.srv.users.UsersService;
 import scc.srv.utils.Validations;
 
 import java.util.UUID;
@@ -19,7 +18,7 @@ import java.util.UUID;
 
 import static scc.srv.utils.Utility.*;
 
-public class QuestionResource implements QuestionService {
+public class QuestionResource extends Validations implements QuestionService {
 
     public static final String CONTAINER = "questions";
     public static final String PARTITION_KEY = "/houseId";
@@ -39,7 +38,7 @@ public class QuestionResource implements QuestionService {
 
             Cache.putInCache(questionDAO, QUESTION_PREFIX);
 
-            return sendResponse(OK, questionDAO.toQuestion().toString());
+            return sendResponse(OK, questionDAO.toQuestion());
 
         } catch (CosmosException ex) {
             return handleCreateException(ex.getStatusCode(), ex.getMessage(), questionDAO);
@@ -58,38 +57,32 @@ public class QuestionResource implements QuestionService {
     }
 
     @Override
-    public Response replyToQuestion(String houseId, String questionId, String replierId, QuestionDAO questionDAO) throws Exception {
+    public Response replyToQuestion(Cookie session, String houseId, String questionId, QuestionDAO questionDAO) throws Exception {
+
         try {
+            var updatedQuestion = genUpdatedQuestion(session, houseId, questionId, questionDAO);
+            db.replyToQuestion(updatedQuestion);
 
-            // Verify if house exists
-            HouseDAO house;
-            var cacheHouse = Cache.getFromCache(HousesService.HOUSE_PREFIX, houseId);
-            if (cacheHouse != null)
-                house = mapper.readValue(cacheHouse, HouseDAO.class);
-            else {
+            Cache.putInCache(updatedQuestion, QUESTION_PREFIX);
 
-                var houseRes = db.getById(houseId, HousesResource.CONTAINER, HouseDAO.class).stream().findFirst();
-                if (houseRes.isEmpty())
-                    return sendResponse(NOT_FOUND, HOUSE_MSG);
-
-                house = houseRes.get();
-            }
-
-            // Verify if user who replies is the owner
-            if (!house.getOwnerId().equals(replierId))
-                return sendResponse(FORBIDDEN, NOT_THE_OWNER);
-
-            //todo: usar cookies para verificar se ele existe
-
-            db.replyToQuestion(houseId, questionId, questionDAO.getAnswer());
-
-            Cache.putInCache(questionDAO, QUESTION_PREFIX);
-
-            return sendResponse(OK, questionDAO.toQuestion());
+            return sendResponse(OK, updatedQuestion.toQuestion());
 
         } catch (CosmosException ex) {
-            return processException(ex.getStatusCode(), ex.getMessage());
+            return handleUpdateException(ex.getStatusCode(), ex.getMessage(), questionId);
+        } catch (WebApplicationException ex) {
+            return handleUpdateException(ex.getResponse().getStatus(), ex.getMessage(), questionId);
         }
+    }
+
+    private Response handleUpdateException(int statusCode, String msg, String id) {
+        if (statusCode == 409)
+            return Response.status(Response.Status.CONFLICT).entity(String.format("Question %s already answered", id)).build();
+        if (msg.contains(QUESTION_MSG))
+            return processException(statusCode, QUESTION_MSG, id);
+        else if (msg.contains(HOUSE_MSG))
+            return processException(statusCode, HOUSE_MSG, id);
+        else
+            return processException(statusCode, msg, id);
     }
 
     @Override
@@ -97,12 +90,8 @@ public class QuestionResource implements QuestionService {
         // TODO: colocar lista de questoes na cache
 
         try {
-            // Verify if house exists
-            if (Cache.getFromCache(HousesService.HOUSE_PREFIX, houseId) == null) {
-                var houseRes = db.getById(houseId, HousesResource.CONTAINER, HouseDAO.class).stream().findFirst();
-                if (houseRes.isEmpty())
-                    return sendResponse(NOT_FOUND, HOUSE_MSG, houseId);
-            }
+            if (Validations.houseExists(houseId) == null)
+                return sendResponse(NOT_FOUND, HOUSE_MSG, houseId);
 
             var questions = db.listHouseQuestions(houseId).stream().map(QuestionDAO::toQuestion).toList();
             return sendResponse(OK, questions);
@@ -113,14 +102,42 @@ public class QuestionResource implements QuestionService {
     }
 
     private void checkQuestionCreation(QuestionDAO questionDAO) throws WebApplicationException {
-        if (badParams(questionDAO.getHouseId(), questionDAO.getAskerId(), questionDAO.getText()))
+        if (Validations.badParams(questionDAO.getHouseId(), questionDAO.getAskerId(), questionDAO.getText()))
             throw new WebApplicationException(BAD_REQUEST_MSG, Response.Status.BAD_REQUEST);
 
-        if (!Validations.houseExists(questionDAO.getHouseId()))
+        if (Validations.houseExists(questionDAO.getHouseId()) == null)
             throw new WebApplicationException(HOUSE_MSG, Response.Status.NOT_FOUND);
-        
-        if (!Validations.userExists(questionDAO.getAskerId()))
+
+        if (Validations.userExists(questionDAO.getAskerId()) == null)
             throw new WebApplicationException(USER_MSG, Response.Status.NOT_FOUND);
+    }
+
+    private QuestionDAO genUpdatedQuestion(Cookie session, String houseId, String questionId, QuestionDAO questionDAO) throws Exception {
+        String answer = questionDAO.getAnswer();
+
+        if (Validations.badParams(answer))
+            throw new WebApplicationException(BAD_REQUEST_MSG, Response.Status.BAD_REQUEST);
+
+        var house = Validations.houseExists(houseId);
+        if (house == null)
+            throw new WebApplicationException(HOUSE_MSG, Response.Status.NOT_FOUND);
+
+        var checkCookies = checkUserSession(session, house.getOwnerId());
+        if (checkCookies.getStatus() != Response.Status.OK.getStatusCode())
+            throw new WebApplicationException(checkCookies.getEntity().toString(), Response.Status.UNAUTHORIZED);
+
+        var question = Validations.questionExists(questionId);
+        if (question == null)
+            throw new WebApplicationException(QUESTION_MSG, Response.Status.NOT_FOUND);
+
+        // Se a questao já foi respondida
+        if (!question.getAnswer().isBlank())
+            throw new WebApplicationException(QUESTION_MSG, Response.Status.CONFLICT);
+
+        question.setAnswer(answer);
+
+        return question;
+
     }
 
 

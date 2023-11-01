@@ -25,6 +25,8 @@ public class Utility {
     public static final String MEDIA_MSG = "Image";
     public static final String HOUSE_MSG = "House";
     public static final String RENTAL_MSG = "Rental";
+
+    public static final String QUESTION_MSG = "Question";
     public static final String NOT_THE_OWNER = "You're the owner of this house.";
 
 

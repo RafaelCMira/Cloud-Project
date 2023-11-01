@@ -173,35 +173,13 @@ public class CosmosDBLayer {
     ////////////////////////////// QUESTIONS
     ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
-    public CosmosItemResponse<QuestionDAO> replyToQuestion(String houseID, String questionID, String answer) throws Exception {
+    public CosmosItemResponse<QuestionDAO> replyToQuestion(QuestionDAO question) throws Exception {
         init();
-        PartitionKey key = new PartitionKey(houseID);
-
-        // Verify if question exists
-        // query to retrieve the item you want to update.
-        var question = getQuestionByID(houseID, questionID).stream().findFirst();
-
-        // Check if the query returned any results.
-        if (question.isEmpty())
-            throw new NotFoundException("Question Not Found");
-
-        // Verify if it has already been answered
-        QuestionDAO existingQuestion = question.get();
-        if (existingQuestion.getAnswer().isEmpty())
-            throw new ForbiddenException("Question Already Answered");
-
-        // Update the answer
-        existingQuestion.setAnswer(answer);
-        return db.getContainer(QuestionResource.CONTAINER).replaceItem(existingQuestion, questionID, key, new CosmosItemRequestOptions());
+        var id = question.getId();
+        PartitionKey key = new PartitionKey(question.getHouseId());
+        return db.getContainer(QuestionResource.CONTAINER).replaceItem(question, id, key, new CosmosItemRequestOptions());
     }
-
-
-    public CosmosPagedIterable<QuestionDAO> getQuestionByID(String houseID, String questionID) {
-        init();
-        String query = String.format("SELECT * FROM questions WHERE questions.id = '%s' AND questions.houseId = '%s'", houseID, questionID);
-        return db.getContainer(QuestionResource.CONTAINER).queryItems(query, new CosmosQueryRequestOptions(), QuestionDAO.class);
-    }
-
+    
     public CosmosPagedIterable<QuestionDAO> listHouseQuestions(String houseId) {
         init();
         String query = String.format("SELECT * FROM questions WHERE questions.houseId=\"%s\"", houseId);

@@ -1,10 +1,12 @@
 package scc.srv.question;
 
 import jakarta.ws.rs.*;
+import jakarta.ws.rs.core.Cookie;
 import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
 import scc.data.Question;
 import scc.data.QuestionDAO;
+import scc.srv.authentication.Session;
 
 @Path(QuestionService.PATH)
 public interface QuestionService {
@@ -26,9 +28,9 @@ public interface QuestionService {
     @Path("/{" + HOUSE_ID + "}" + QUESTION + "/{" + QUESTION_ID + "}")
     @Consumes(MediaType.APPLICATION_JSON)
     @Produces(MediaType.APPLICATION_JSON)
-    Response replyToQuestion(@PathParam(HOUSE_ID) String houseId,
+    Response replyToQuestion(@CookieParam(Session.SESSION) Cookie session,
+                             @PathParam(HOUSE_ID) String houseId,
                              @PathParam(QUESTION_ID) String questionId,
-                             @QueryParam(REPLIER_ID) String replierId,
                              QuestionDAO questionDAO)
             throws Exception;
 

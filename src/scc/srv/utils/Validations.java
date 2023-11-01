@@ -4,11 +4,13 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import scc.cache.Cache;
 import scc.data.HouseDAO;
+import scc.data.QuestionDAO;
 import scc.data.UserDAO;
 import scc.db.CosmosDBLayer;
 import scc.srv.houses.HousesResource;
 import scc.srv.houses.HousesService;
 import scc.srv.media.MediaResource;
+import scc.srv.question.QuestionService;
 import scc.srv.users.UsersResource;
 import scc.srv.users.UsersService;
 
@@ -61,6 +63,22 @@ public class Validations {
             var dbUser = db.getById(userId, UsersResource.CONTAINER, UserDAO.class).stream().findFirst();
             if (dbUser.isPresent())
                 return dbUser.get();
+
+        } catch (JsonProcessingException ignore) {
+        }
+
+        return null;
+    }
+
+    protected static QuestionDAO questionExists(String questionId) {
+        try {
+            var questionCache = Cache.getFromCache(QuestionService.QUESTION_PREFIX, questionId);
+            if (questionCache != null)
+                return mapper.readValue(questionCache, QuestionDAO.class);
+
+            var dbQuestion = db.getById(questionId, UsersResource.CONTAINER, QuestionDAO.class).stream().findFirst();
+            if (dbQuestion.isPresent())
+                return dbQuestion.get();
 
         } catch (JsonProcessingException ignore) {
         }
