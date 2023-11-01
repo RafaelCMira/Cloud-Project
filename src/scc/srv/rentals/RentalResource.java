@@ -18,7 +18,7 @@ import java.util.List;
 
 import static scc.srv.utils.Utility.*;
 
-public class RentalResource implements RentalService {
+public class RentalResource extends Validations implements RentalService {
     public static final String CONTAINER = "rentals";
     public static final String PARTITION_KEY = "/houseId";
 
@@ -69,7 +69,7 @@ public class RentalResource implements RentalService {
 
     @Override
     public Response getRental(String houseId, String id) throws Exception {
-        if (badParams(id))
+        if (Validations.badParams(id))
             return sendResponse(BAD_REQUEST, BAD_REQUEST_MSG);
 
         try {
@@ -123,7 +123,7 @@ public class RentalResource implements RentalService {
 
     @Override
     public Response deleteRental(String houseId, String id) throws Exception {
-        if (badParams(id))
+        if (Validations.badParams(id))
             return sendResponse(BAD_REQUEST, BAD_REQUEST_MSG);
 
         var res = db.deleteRental(houseId, id);
@@ -147,7 +147,7 @@ public class RentalResource implements RentalService {
 
 
     private RentalDAO genUpdatedRental(Cookie session, String houseID, String id, RentalDAO rental) throws Exception {
-        if (badParams(id))
+        if (Validations.badParams(id))
             throw new WebApplicationException(BAD_REQUEST_MSG, Response.Status.BAD_REQUEST);
 
         var result = db.getRentalById(houseID, id).stream().findFirst();
@@ -204,13 +204,13 @@ public class RentalResource implements RentalService {
         if (checkCookies.getStatus() != Response.Status.OK.getStatusCode())
             throw new WebApplicationException(checkCookies.getEntity().toString(), Response.Status.UNAUTHORIZED);
 
-        if (badParams(rental.getId(), rental.getHouseId(), rental.getUserId()))
+        if (Validations.badParams(rental.getId(), rental.getHouseId(), rental.getUserId()))
             throw new WebApplicationException(Response.Status.BAD_REQUEST);
 
-        if (!Validations.houseExists(houseId))
+        if (Validations.houseExists(houseId) == null)
             throw new WebApplicationException(HOUSE_MSG, Response.Status.NOT_FOUND);
 
-        if (!Validations.userExists(rental.getUserId()))
+        if (Validations.userExists(rental.getUserId()) == null)
             throw new WebApplicationException(USER_MSG, Response.Status.NOT_FOUND);
 
         // Verify if house is available

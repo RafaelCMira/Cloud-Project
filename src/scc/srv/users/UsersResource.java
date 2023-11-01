@@ -15,6 +15,7 @@ import scc.db.CosmosDBLayer;
 import scc.srv.media.MediaResource;
 import scc.srv.authentication.Login;
 import scc.srv.authentication.Session;
+import scc.srv.utils.Validations;
 import scc.utils.Hash;
 import scc.utils.mgt.AzureManagement;
 
@@ -25,7 +26,7 @@ import java.util.UUID;
 import static scc.srv.utils.Utility.*;
 
 
-public class UsersResource implements UsersService {
+public class UsersResource extends Validations implements UsersService {
 
     public static final String PARTITION_KEY = "/id";
     public static final String CONTAINER = "users";
@@ -34,7 +35,7 @@ public class UsersResource implements UsersService {
 
     @Override
     public Response auth(Login credentials) throws Exception {
-        if (badParams(credentials.getId(), credentials.getPwd()))
+        if (Validations.badParams(credentials.getId(), credentials.getPwd()))
             return sendResponse(BAD_REQUEST, BAD_REQUEST_MSG);
 
         String id = credentials.getId();
@@ -67,11 +68,10 @@ public class UsersResource implements UsersService {
 
     @Override
     public Response createUser(UserDAO userDAO) throws Exception {
-        if (badParams(userDAO.getId(), userDAO.getName(), userDAO.getPwd(), userDAO.getPhotoId()))
+        if (Validations.badParams(userDAO.getId(), userDAO.getName(), userDAO.getPwd(), userDAO.getPhotoId()))
             return sendResponse(BAD_REQUEST, BAD_REQUEST_MSG);
 
-        MediaResource media = new MediaResource();
-        if (!media.hasPhotos(List.of(userDAO.getPhotoId())))
+        if (!Validations.mediaExists(List.of(userDAO.getPhotoId())))
             return sendResponse(NOT_FOUND, MEDIA_MSG, "(some id)");
 
         try {
@@ -80,16 +80,16 @@ public class UsersResource implements UsersService {
 
             Cache.putInCache(userDAO, USER_PREFIX);
 
+            return sendResponse(OK, userDAO.toUser());
+
         } catch (CosmosException ex) {
             return processException(ex.getStatusCode(), USER_MSG, userDAO.getId());
         }
-
-        return sendResponse(OK, userDAO.toUser());
     }
 
     @Override
     public Response deleteUser(Cookie session, String id) throws Exception {
-        if (badParams(id))
+        if (Validations.badParams(id))
             return sendResponse(BAD_REQUEST, BAD_REQUEST_MSG);
 
         //TODO: colocar "Deleted User" no ownerId das casas do user eliminado e nos Rentals
@@ -100,38 +100,27 @@ public class UsersResource implements UsersService {
             return checkCookies;
 
         try {
-
             db.deleteUser(id);
 
-            if (AzureManagement.CREATE_REDIS)
-                Cache.deleteFromCache(USER_PREFIX, id);
+            Cache.deleteFromCache(USER_PREFIX, id);
+
+            return sendResponse(OK, String.format(RESOURCE_WAS_DELETED, USER_MSG, id));
 
         } catch (CosmosException ex) {
             return processException(ex.getStatusCode(), USER_MSG, id);
         }
-
-        return sendResponse(OK, String.format(RESOURCE_WAS_DELETED, USER_MSG, id));
     }
 
     @Override
     public Response getUser(String id) throws JsonProcessingException {
-        if (badParams(id))
+        if (Validations.badParams(id))
             return sendResponse(BAD_REQUEST, BAD_REQUEST_MSG);
 
         try {
-            if (AzureManagement.CREATE_REDIS) {
-                String cacheRes = Cache.getFromCache(USER_PREFIX, id);
-                if (cacheRes != null)
-                    return sendResponse(OK, mapper.readValue(cacheRes, UserDAO.class).toUser());
-            }
+            var user = Validations.userExists(id);
+            if (user != null) {
 
-            var result = db.getById(id, CONTAINER, UserDAO.class).stream().findFirst();
-            if (result.isPresent()) {
-                var user = result.get();
-
-                if (AzureManagement.CREATE_REDIS) {
-                    Cache.putInCache(user, USER_PREFIX);
-                }
+                Cache.putInCache(user, USER_PREFIX);
 
                 return sendResponse(OK, user.toUser());
 
@@ -154,9 +143,7 @@ public class UsersResource implements UsersService {
             var updatedUser = genUpdatedUserDAO(id, user);
             db.updateUser(updatedUser);
 
-            if (AzureManagement.CREATE_REDIS) {
-                Cache.putInCache(updatedUser, USER_PREFIX);
-            }
+            Cache.putInCache(updatedUser, USER_PREFIX);
 
             return sendResponse(OK, updatedUser.toUser());
 
@@ -190,25 +177,17 @@ public class UsersResource implements UsersService {
 
     @Override
     public Response getUserHouses(String id) throws JsonProcessingException {
-        if (badParams(id))
+        if (Validations.badParams(id))
             return sendResponse(BAD_REQUEST, BAD_REQUEST_MSG);
 
         try {
-            if (AzureManagement.CREATE_REDIS) {
-                String user = Cache.getFromCache(USER_PREFIX, id);
-                if (user != null)
-                    return sendResponse(OK, mapper.readValue(user, UserDAO.class).getHouseIds());
-            }
+            var user = Validations.userExists(id);
+            if (user != null) {
 
-            var res = db.getById(id, CONTAINER, UserDAO.class).stream().findFirst();
-            if (res.isPresent()) {
-                var dbUser = res.get();
+                Cache.putInCache(user, USER_PREFIX);
 
-                if (AzureManagement.CREATE_REDIS) {
-                    Cache.putInCache(dbUser, USER_PREFIX);
-                }
-
-                return sendResponse(OK, dbUser.getHouseIds());
+                //Todo: alterar o return para as casas mesmo em vez de ser apenas os ids
+                return sendResponse(OK, user.getHouseIds());
 
             } else
                 return sendResponse(NOT_FOUND, USER_MSG, id);
@@ -227,34 +206,31 @@ public class UsersResource implements UsersService {
      * @return updated userDAO to the method who's making the request to the database
      * @throws WebApplicationException If user doesn't exist or if id is empty
      */
-    private UserDAO genUpdatedUserDAO(String id, User user) throws WebApplicationException, JsonProcessingException {
-        if (badParams(id))
+    private UserDAO genUpdatedUserDAO(String id, User user) throws WebApplicationException {
+        if (Validations.badParams(id))
             throw new WebApplicationException(BAD_REQUEST_MSG, Response.Status.BAD_REQUEST);
 
-        var result = db.getById(id, CONTAINER, UserDAO.class).stream().findFirst();
-        if (result.isPresent()) {
-            UserDAO userDAO = result.get();
-
-            String newName = user.getName();
-            if (!newName.isBlank())
-                userDAO.setName(newName);
-
-            String newPwd = Hash.of(user.getPwd());
-            if (!newPwd.isBlank())
-                userDAO.setPwd(newName);
-
-            String newPhoto = user.getPhotoId();
-            MediaResource media = new MediaResource();
-            if (!newPhoto.isEmpty())
-                if (!media.hasPhotos(List.of(newPhoto)))
-                    throw new WebApplicationException(MEDIA_MSG, Response.Status.NOT_FOUND);
-                else
-                    userDAO.setPhotoId(newPhoto);
-
-            return userDAO;
-
-        } else
+        var userDAO = Validations.userExists(id);
+        if (userDAO == null)
             throw new WebApplicationException(USER_MSG, Response.Status.NOT_FOUND);
+
+        String newName = user.getName();
+        if (!newName.isBlank())
+            userDAO.setName(newName);
+
+        String newPwd = Hash.of(user.getPwd());
+        if (!newPwd.isBlank())
+            userDAO.setPwd(newPwd);
+
+        String newPhoto = user.getPhotoId();
+        if (!newPhoto.isEmpty())
+            if (!Validations.mediaExists(List.of(newPhoto)))
+                throw new WebApplicationException(MEDIA_MSG, Response.Status.NOT_FOUND);
+            else
+                userDAO.setPhotoId(newPhoto);
+
+        return userDAO;
+
     }
 
     // Usar se for necessario guardar a lista das casas do user

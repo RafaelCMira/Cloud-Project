@@ -1,8 +1,7 @@
 package scc.srv.utils;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import jakarta.ws.rs.WebApplicationException;
-import jakarta.ws.rs.core.Response;
 import scc.cache.Cache;
 import scc.data.HouseDAO;
 import scc.data.UserDAO;
@@ -15,9 +14,6 @@ import scc.srv.users.UsersService;
 
 import java.util.List;
 
-import static scc.srv.utils.Utility.HOUSE_MSG;
-import static scc.srv.utils.Utility.USER_MSG;
-
 public class Validations {
 
     private static final CosmosDBLayer db = CosmosDBLayer.getInstance();
@@ -26,35 +22,57 @@ public class Validations {
     public Validations() {
     }
 
+    protected static boolean badParams(String... values) {
+        for (var str : values)
+            if (str == null || str.isBlank())
+                return true;
+        return false;
+    }
+
     /**
      * Verify if house exists
      */
-    public static boolean houseExists(String houseId) {
-        // Verify if house exists
-        if (Cache.getFromCache(HousesService.HOUSE_PREFIX, houseId) == null) {
-            var houseRes = db.getById(houseId, HousesResource.CONTAINER, HouseDAO.class).stream().findFirst();
-            return houseRes.isPresent();
+    protected static HouseDAO houseExists(String houseId) {
+        try {
+            var cacheHouse = Cache.getFromCache(HousesService.HOUSE_PREFIX, houseId);
+            if (cacheHouse != null)
+                return mapper.readValue(cacheHouse, HouseDAO.class);
+
+            var dbHouse = db.getById(houseId, HousesResource.CONTAINER, HouseDAO.class).stream().findFirst();
+            if (dbHouse.isPresent())
+                return dbHouse.get();
+
+        } catch (JsonProcessingException ignore) {
         }
 
-        return true;
+        return null;
     }
+
 
     /**
-     * Verify if user exists
+     * Verify if house exists
      */
-    public static boolean userExists(String userId) {
-        if (Cache.getFromCache(UsersService.USER_PREFIX, userId) == null) {
-            var userRes = db.getById(userId, UsersResource.CONTAINER, UserDAO.class).stream().findFirst();
-            return userRes.isPresent();
+    protected static UserDAO userExists(String userId) {
+        try {
+            var userCache = Cache.getFromCache(UsersService.USER_PREFIX, userId);
+            if (userCache != null)
+                return mapper.readValue(userCache, UserDAO.class);
+
+            var dbUser = db.getById(userId, UsersResource.CONTAINER, UserDAO.class).stream().findFirst();
+            if (dbUser.isPresent())
+                return dbUser.get();
+
+        } catch (JsonProcessingException ignore) {
         }
 
-        return true;
+        return null;
     }
+
 
     /**
      * Verify if media exists
      */
-    public static boolean mediaExists(List<String> mediaId) {
+    protected static boolean mediaExists(List<String> mediaId) {
         MediaResource media = new MediaResource();
         return media.hasPhotos(mediaId) && mediaId != null && !mediaId.isEmpty();
     }

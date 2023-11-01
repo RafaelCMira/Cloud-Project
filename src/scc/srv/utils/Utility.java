@@ -99,12 +99,6 @@ public class Utility {
         return sendResponse(OK, "Cenas checked");
     }
 
-    public static boolean badParams(String... values) {
-        for (var str : values)
-            if (str == null || str.isBlank())
-                return true;
-        return false;
-    }
 
     // Verifies if HTTP code is OK
     public static boolean isStatusOk(int statusCode) {
