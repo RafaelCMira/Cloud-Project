@@ -71,20 +71,13 @@ public class RentalResource extends Validations implements RentalService {
             return sendResponse(BAD_REQUEST, BAD_REQUEST_MSG);
 
         try {
-            String cacheRes = Cache.getFromCache(RENTAL_PREFIX, id);
-            if (cacheRes != null)
-                return sendResponse(OK, mapper.readValue(cacheRes, RentalDAO.class).toRental());
-
-            var result = db.getRentalById(houseId, id).stream().findFirst();
-            if (result.isPresent()) {
-                var rentalToCache = result.get();
-
-                Cache.putInCache(rentalToCache, RENTAL_PREFIX);
-
-                return sendResponse(OK, rentalToCache.toRental());
-
-            } else
+            var rental = Validations.rentalExists(id);
+            if (rental == null)
                 return sendResponse(NOT_FOUND, RENTAL_MSG, id);
+
+            Cache.putInCache(rental, RENTAL_PREFIX);
+
+            return sendResponse(OK, rental.toRental());
 
         } catch (CosmosException ex) {
             return processException(ex.getStatusCode(), ex.getMessage());
