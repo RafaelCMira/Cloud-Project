@@ -32,24 +32,22 @@ public class RentalResource extends Validations implements RentalService {
         try {
             checkRentalCreation(session, houseId, rentalDAO);
 
-            var newRental = db.createItem(rentalDAO, CONTAINER);
-            int statusCode = newRental.getStatusCode();
+            db.createItem(rentalDAO, CONTAINER);
 
-            if (isStatusOk(statusCode)) {
+            // check se realmente foi o meu rental a ir para a DB
+            var rentalInDB = Validations.rentalExists(rentalDAO.getId());
 
-                // Check if the right rental it is in the DB
-                var rentalInDB = db.getRentalById(houseId, rentalDAO.getId()).stream().findFirst();
-                if (rentalInDB.isEmpty())
-                    return sendResponse(INTERNAL_SERVER_ERROR);
-                else if (!rentalInDB.get().getUserId().equals(rentalDAO.getUserId()))
+            if (rentalInDB == null)
+                return sendResponse(INTERNAL_SERVER_ERROR);
+
+            else {
+                if (!rentalInDB.getId().equals(rentalDAO.getId()) || !rentalInDB.getUserId().equals(rentalDAO.getUserId()))
                     return sendResponse(CONFLICT, RENTAL_MSG, rentalDAO.getId());
+            }
 
-                Cache.putInCache(rentalDAO, RENTAL_PREFIX);
+            Cache.putInCache(rentalDAO, RENTAL_PREFIX);
 
-                return sendResponse(OK, rentalDAO.toRental().toString());
-
-            } else
-                return processException(statusCode, RENTAL_MSG, rentalDAO.getId());
+            return sendResponse(OK, rentalDAO.toRental());
 
         } catch (CosmosException ex) {
             return processException(ex.getStatusCode(), RENTAL_MSG, rentalDAO.getId());

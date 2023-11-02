@@ -5,12 +5,15 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import scc.cache.Cache;
 import scc.data.HouseDAO;
 import scc.data.QuestionDAO;
+import scc.data.RentalDAO;
 import scc.data.UserDAO;
 import scc.db.CosmosDBLayer;
 import scc.srv.houses.HousesResource;
 import scc.srv.houses.HousesService;
 import scc.srv.media.MediaResource;
 import scc.srv.question.QuestionService;
+import scc.srv.rentals.RentalResource;
+import scc.srv.rentals.RentalService;
 import scc.srv.users.UsersResource;
 import scc.srv.users.UsersService;
 
@@ -34,6 +37,25 @@ public class Validations {
     /**
      * Verify if house exists
      */
+    protected static UserDAO userExists(String userId) {
+        try {
+            var userCache = Cache.getFromCache(UsersService.USER_PREFIX, userId);
+            if (userCache != null)
+                return mapper.readValue(userCache, UserDAO.class);
+
+            var dbUser = db.getById(userId, UsersResource.CONTAINER, UserDAO.class).stream().findFirst();
+            if (dbUser.isPresent())
+                return dbUser.get();
+
+        } catch (JsonProcessingException ignore) {
+        }
+
+        return null;
+    }
+
+    /**
+     * Verify if house exists
+     */
     protected static HouseDAO houseExists(String houseId) {
         try {
             var cacheHouse = Cache.getFromCache(HousesService.HOUSE_PREFIX, houseId);
@@ -50,25 +72,25 @@ public class Validations {
         return null;
     }
 
-
     /**
      * Verify if house exists
      */
-    protected static UserDAO userExists(String userId) {
+    protected static RentalDAO rentalExists(String rentalId) {
         try {
-            var userCache = Cache.getFromCache(UsersService.USER_PREFIX, userId);
-            if (userCache != null)
-                return mapper.readValue(userCache, UserDAO.class);
+            var rentalCache = Cache.getFromCache(RentalService.RENTAL_PREFIX, rentalId);
+            if (rentalCache != null)
+                return mapper.readValue(rentalCache, RentalDAO.class);
 
-            var dbUser = db.getById(userId, UsersResource.CONTAINER, UserDAO.class).stream().findFirst();
-            if (dbUser.isPresent())
-                return dbUser.get();
+            var dbRental = db.getById(rentalId, RentalResource.CONTAINER, RentalDAO.class).stream().findFirst();
+            if (dbRental.isPresent())
+                return dbRental.get();
 
         } catch (JsonProcessingException ignore) {
         }
 
         return null;
     }
+
 
     protected static QuestionDAO questionExists(String questionId) {
         try {
