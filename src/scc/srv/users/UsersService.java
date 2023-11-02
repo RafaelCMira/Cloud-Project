@@ -27,6 +27,7 @@ public interface UsersService {
     @POST
     @Path(AUTH)
     @Consumes(MediaType.APPLICATION_JSON)
+    @Produces(MediaType.APPLICATION_JSON)
     Response auth(Login credentials) throws Exception;
 
     @POST
