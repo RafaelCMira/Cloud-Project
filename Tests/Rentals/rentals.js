@@ -87,6 +87,7 @@ function genNewRental(context, events, done) {
     context.vars.initialDate = date[0]
     context.vars.endDate = date[1]
     context.vars.discount = random(50) */
+    return done();
 }
 
 /**
@@ -97,7 +98,7 @@ function genNewRentalReply(requestParams, response, context, ee, next) {
 	if (response.statusCode >= 200 && response.statusCode < 300 && response.body.length > 0) {
 		let u = response.body;
 		rentals.push(u);
-		fs.writeFileSync(HOUSES_PATH, JSON.stringify(rentals));
+		fs.writeFileSync(RENTALS_PATH, JSON.stringify(rentals));
 	} else
 	    console.log(response.body)
 	return next();

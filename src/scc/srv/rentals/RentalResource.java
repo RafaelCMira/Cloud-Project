@@ -198,6 +198,9 @@ public class RentalResource extends Validations implements RentalService {
         if (Validations.badParams(rental.getId(), rental.getHouseId(), rental.getUserId()))
             throw new WebApplicationException(Response.Status.BAD_REQUEST);
 
+        if (!houseId.equals(rental.getHouseId()))
+            throw new WebApplicationException(Response.Status.BAD_REQUEST);
+
         if (Validations.houseExists(houseId) == null)
             throw new WebApplicationException(HOUSE_MSG, Response.Status.NOT_FOUND);
 
