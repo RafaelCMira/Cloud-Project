@@ -15,6 +15,8 @@ public interface HousesService {
     String PATH = "/house";
     String ID = "id";
     String LOCATION = "location";
+
+    String NEW_HOUSES = "/NewHouses";
     String INITIAL_DATE = "initialDate";
     String END_DATE = "endDate";
     String HOUSE_PREFIX = "house:";
@@ -51,4 +53,10 @@ public interface HousesService {
     @Produces(MediaType.APPLICATION_JSON)
     List<House> getHouseByLocationPeriod(@QueryParam(LOCATION) String location, @QueryParam(INITIAL_DATE) String initialDate,
                                          @QueryParam(END_DATE) String endDate) throws Exception;
+
+    @GET
+    @Path(NEW_HOUSES)
+    @Produces(MediaType.APPLICATION_JSON)
+    List<String> getNewHouses() throws Exception;
+
 }

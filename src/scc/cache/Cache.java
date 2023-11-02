@@ -10,6 +10,9 @@ import scc.srv.utils.HasId;
 import scc.utils.mgt.AzureManagement;
 import scc.utils.props.AzureProperties;
 
+import java.util.ArrayList;
+import java.util.List;
+
 public class Cache {
     private static final String RedisHostname = System.getenv(AzureProperties.REDIS_URL);
     private static final String RedisKey = System.getenv(AzureProperties.REDIS_KEY);
@@ -64,5 +67,13 @@ public class Cache {
             try (Jedis jedis = Cache.getCachePool().getResource()) {
                 jedis.del(prefix + id);
             }
+    }
+
+    public static List<String> getListFromCache(String key) {
+        if (AzureManagement.CREATE_REDIS)
+            try (Jedis jedis = Cache.getCachePool().getResource()) {
+                return jedis.lrange(key,0,-1);
+            }
+        return new ArrayList<>();
     }
 }

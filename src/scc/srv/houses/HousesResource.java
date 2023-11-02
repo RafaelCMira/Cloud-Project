@@ -5,6 +5,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import jakarta.ws.rs.WebApplicationException;
 import jakarta.ws.rs.core.Cookie;
 import jakarta.ws.rs.core.Response;
+import redis.clients.jedis.Jedis;
 import scc.cache.Cache;
 import scc.data.*;
 import scc.db.CosmosDBLayer;
@@ -24,6 +25,7 @@ public class HousesResource extends Validations implements HousesService {
     public static final String CONTAINER = "houses";
     public static final String PARTITION_KEY = "/id";
     private final CosmosDBLayer db = CosmosDBLayer.getInstance();
+    private static final ObjectMapper mapper = new ObjectMapper();
 
     @Override
     public Response createHouse(Cookie session, HouseDAO houseDAO) throws Exception {
@@ -300,5 +302,14 @@ public class HousesResource extends Validations implements HousesService {
         return owner;
     }
 
-
+    @Override
+    public List<String> getNewHouses() throws Exception {
+        return Cache.getListFromCache("houses:");
+        /*var jsonHouses = Cache.getListFromCache("houses:");
+        List<HouseDAO> houses = new ArrayList<>();
+        for (String h: jsonHouses) {
+            houses.add(mapper.readValue(h,HouseDAO.class));
+        }
+        return houses;*/
+    }
 }
