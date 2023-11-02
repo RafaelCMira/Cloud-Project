@@ -41,7 +41,7 @@ public class UsersResource extends Validations implements UsersService {
 
         var res = getUser(id);
         if (res.getStatus() != Response.Status.OK.getStatusCode())
-            return res;
+            return Response.status(res.getStatus()).entity(res.getEntity()).build();
 
         var user = (User) res.getEntity();
 
