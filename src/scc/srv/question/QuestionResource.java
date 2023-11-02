@@ -24,7 +24,6 @@ public class QuestionResource extends Validations implements QuestionService {
     public static final String PARTITION_KEY = "/houseId";
 
     private final CosmosDBLayer db = CosmosDBLayer.getInstance();
-    private final ObjectMapper mapper = new ObjectMapper();
 
     @Override
     public Response createQuestion(String houseId, QuestionDAO questionDAO) throws JsonProcessingException {

@@ -24,7 +24,6 @@ public class HousesResource extends Validations implements HousesService {
     public static final String CONTAINER = "houses";
     public static final String PARTITION_KEY = "/id";
     private final CosmosDBLayer db = CosmosDBLayer.getInstance();
-    private final ObjectMapper mapper = new ObjectMapper();
 
     @Override
     public Response createHouse(Cookie session, HouseDAO houseDAO) throws Exception {

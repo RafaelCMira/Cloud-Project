@@ -4,8 +4,6 @@ import com.azure.cosmos.*;
 import com.azure.cosmos.models.*;
 import com.azure.cosmos.util.CosmosPagedIterable;
 
-import jakarta.ws.rs.ForbiddenException;
-import jakarta.ws.rs.NotFoundException;
 import scc.data.*;
 import scc.srv.houses.HousesResource;
 import scc.srv.question.QuestionResource;
@@ -95,17 +93,17 @@ public class CosmosDBLayer {
     ////////////////////////////// USERS
     ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
-    public CosmosItemResponse<UserDAO> updateUser(UserDAO user) {
+    public void updateUser(UserDAO user) {
         init();
         var id = user.getId();
         PartitionKey key = new PartitionKey(id);
-        return db.getContainer(UsersResource.CONTAINER).replaceItem(user, id, key, new CosmosItemRequestOptions());
+        db.getContainer(UsersResource.CONTAINER).replaceItem(user, id, key, new CosmosItemRequestOptions());
     }
 
-    public CosmosItemResponse<Object> deleteUser(String id) {
+    public void deleteUser(String id) {
         init();
         PartitionKey key = new PartitionKey(id);
-        return db.getContainer(UsersResource.CONTAINER).deleteItem(id, key, new CosmosItemRequestOptions());
+        db.getContainer(UsersResource.CONTAINER).deleteItem(id, key, new CosmosItemRequestOptions());
     }
 
     // TODO: Perguntar se no listar casas de um user podemos só listar o id da casa OU se temos de listar o JSON das casas
@@ -121,17 +119,17 @@ public class CosmosDBLayer {
     ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 
-    public CosmosItemResponse<HouseDAO> updateHouse(HouseDAO house) {
+    public void updateHouse(HouseDAO house) {
         init();
         var id = house.getId();
         PartitionKey key = new PartitionKey(id);
-        return db.getContainer(HousesResource.CONTAINER).replaceItem(house, id, key, new CosmosItemRequestOptions());
+        db.getContainer(HousesResource.CONTAINER).replaceItem(house, id, key, new CosmosItemRequestOptions());
     }
 
-    public CosmosItemResponse<Object> deleteHouse(String id) {
+    public void deleteHouse(String id) {
         init();
         PartitionKey key = new PartitionKey(id);
-        return db.getContainer(HousesResource.CONTAINER).deleteItem(id, key, new CosmosItemRequestOptions());
+        db.getContainer(HousesResource.CONTAINER).deleteItem(id, key, new CosmosItemRequestOptions());
     }
 
     public CosmosPagedIterable<HouseDAO> getHousesByLocation(String location) {
@@ -173,13 +171,13 @@ public class CosmosDBLayer {
     ////////////////////////////// QUESTIONS
     ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
-    public CosmosItemResponse<QuestionDAO> replyToQuestion(QuestionDAO question) throws Exception {
+    public void replyToQuestion(QuestionDAO question) throws Exception {
         init();
         var id = question.getId();
         PartitionKey key = new PartitionKey(question.getHouseId());
-        return db.getContainer(QuestionResource.CONTAINER).replaceItem(question, id, key, new CosmosItemRequestOptions());
+        db.getContainer(QuestionResource.CONTAINER).replaceItem(question, id, key, new CosmosItemRequestOptions());
     }
-    
+
     public CosmosPagedIterable<QuestionDAO> listHouseQuestions(String houseId) {
         init();
         String query = String.format("SELECT * FROM questions WHERE questions.houseId=\"%s\"", houseId);
