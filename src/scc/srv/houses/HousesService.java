@@ -49,22 +49,20 @@ public interface HousesService {
     Response updateHouse(@CookieParam(Session.SESSION) Cookie session, @PathParam(ID) String id, House house) throws Exception;
 
     @GET
-    @Path("/")
-    @Produces(MediaType.APPLICATION_JSON)
-    Response getAvailHouseByLocation(@QueryParam(LOCATION) String location);
-
-
-    @GET
     @Path("/All")
     @Produces(MediaType.APPLICATION_JSON)
     Response listAllHouses();
 
-
+    @GET
+    @Path("/")
+    @Produces(MediaType.APPLICATION_JSON)
+    Response getAvailHouseByLocation(@QueryParam(LOCATION) String location);
+    
     @GET
     @Path("/Available/")
     @Produces(MediaType.APPLICATION_JSON)
-    List<House> getHouseByLocationPeriod(@QueryParam(LOCATION) String location, @QueryParam(INITIAL_DATE) String initialDate,
-                                         @QueryParam(END_DATE) String endDate) throws Exception;
+    Response getHouseByLocationPeriod(@QueryParam(LOCATION) String location, @QueryParam(INITIAL_DATE) String initialDate,
+                                      @QueryParam(END_DATE) String endDate);
 
     @GET
     @Path(NEW_HOUSES)
