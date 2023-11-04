@@ -68,7 +68,7 @@ public class UsersResource extends Validations implements UsersService {
         try {
             var plainPwd = userDAO.getPwd();
             userDAO.setPwd(Hash.of(plainPwd));
-            db.createItem(userDAO, CONTAINER);
+            db.create(userDAO, CONTAINER);
 
             Cache.putInCache(userDAO, USER_PREFIX);
 
@@ -92,7 +92,7 @@ public class UsersResource extends Validations implements UsersService {
             return checkCookies;
 
         try {
-            db.deleteUser(id);
+            db.delete(id, CONTAINER, PARTITION_KEY);
 
             Cache.deleteFromCache(USER_PREFIX, id);
 
@@ -133,7 +133,8 @@ public class UsersResource extends Validations implements UsersService {
                 return checkCookies;
 
             var updatedUser = genUpdatedUserDAO(id, user);
-            db.updateUser(updatedUser);
+
+            db.update(updatedUser, CONTAINER, updatedUser.getId());
 
             Cache.putInCache(updatedUser, USER_PREFIX);
 
@@ -158,7 +159,7 @@ public class UsersResource extends Validations implements UsersService {
     @Override
     public Response listUsers() {
         try {
-            List<User> toReturn = db.getItems(CONTAINER, UserDAO.class).stream().map(UserDAO::toUser).toList();
+            List<User> toReturn = db.getAll(CONTAINER, UserDAO.class).stream().map(UserDAO::toUser).toList();
 
             return sendResponse(OK, toReturn.isEmpty() ? new ArrayList<>() : toReturn);
 

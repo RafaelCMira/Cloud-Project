@@ -28,7 +28,7 @@ public class QuestionResource extends Validations implements QuestionService {
             checkQuestionCreation(questionDAO);
 
             questionDAO.setId(UUID.randomUUID().toString());
-            db.createItem(questionDAO, CONTAINER);
+            db.create(questionDAO, CONTAINER);
 
             Cache.putInCache(questionDAO, QUESTION_PREFIX);
 

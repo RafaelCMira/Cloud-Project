@@ -27,7 +27,7 @@ public class RentalResource extends Validations implements RentalService {
         try {
             checkRentalCreation(session, houseId, rentalDAO);
 
-            db.createItem(rentalDAO, CONTAINER);
+            db.create(rentalDAO, CONTAINER);
 
             // check se realmente foi o meu rental a ir para a DB
             var rentalInDB = Validations.rentalExists(rentalDAO.getId());
@@ -82,7 +82,8 @@ public class RentalResource extends Validations implements RentalService {
 
         try {
             var updatedRental = genUpdatedRental(session, houseId, id, rentalDAO);
-            db.updateRental(updatedRental);
+
+            db.update(updatedRental, RentalService.CONTAINER, updatedRental.getHouseId());
 
             Cache.putInCache(updatedRental, RENTAL_PREFIX);
 
@@ -97,7 +98,7 @@ public class RentalResource extends Validations implements RentalService {
     @Override
     public Response listRentals(String houseID) {
         //TODO: cache ?
-        var res = db.getItems(CONTAINER, RentalDAO.class).stream().map(RentalDAO::toRental).toList();
+        var res = db.getAll(CONTAINER, RentalDAO.class).stream().map(RentalDAO::toRental).toList();
         return sendResponse(OK, res);
     }
 
@@ -111,7 +112,7 @@ public class RentalResource extends Validations implements RentalService {
             if (house == null)
                 return sendResponse(NOT_FOUND, HOUSE_MSG, id);
 
-            db.deleteRental(houseId, id);
+            db.delete(id, CONTAINER, PARTITION_KEY);
 
             Cache.deleteFromCache(RENTAL_PREFIX, id);
 
@@ -119,7 +120,8 @@ public class RentalResource extends Validations implements RentalService {
             // acho que não porque temos os rentals guardados por houseId como partitionKey logo quando fizermos uma query seria eficiente
             // Eliminavam-se estas 3 linhas abaixo
             house.removeRental(id);
-            db.updateHouse(house);
+            db.update(house, HousesService.CONTAINER, house.getId());
+
             Cache.putInCache(house, HousesService.HOUSE_PREFIX);
 
             return sendResponse(OK, String.format(RESOURCE_WAS_DELETED, RENTAL_MSG, id));

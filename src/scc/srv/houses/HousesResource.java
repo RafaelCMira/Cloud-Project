@@ -29,9 +29,9 @@ public class HousesResource extends Validations implements HousesService {
             var user = checkHouseCreation(session, houseDAO);
             user.addHouse(houseDAO.getId());
 
-            db.createItem(houseDAO, CONTAINER);
+            db.create(houseDAO, CONTAINER);
 
-            db.updateUser(user);
+            db.update(user, UsersService.CONTAINER, user.getId());
 
             // TODO: enviar ambos os pedidos para a cache de uma vez, o stor disse que dava para fazer
             Cache.putInCache(houseDAO, HOUSE_PREFIX);
@@ -85,14 +85,14 @@ public class HousesResource extends Validations implements HousesService {
             if (checkCookies.getStatus() != Response.Status.OK.getStatusCode())
                 return checkCookies;
 
-            db.deleteHouse(id);
+            db.delete(id, CONTAINER, PARTITION_KEY);
 
             var user = Validations.userExists(ownerId);
             if (user == null)
                 return sendResponse(NOT_FOUND, USER_MSG, ownerId);
 
             user.removeHouse(id);
-            db.updateUser(user);
+            db.update(user, UsersService.CONTAINER, user.getId());
 
             Cache.deleteFromCache(HOUSE_PREFIX, id);
             Cache.putInCache(user, UsersService.USER_PREFIX);
@@ -130,7 +130,8 @@ public class HousesResource extends Validations implements HousesService {
 
         try {
             var updatedHouse = genUpdatedHouse(session, id, house);
-            db.updateHouse(updatedHouse);
+
+            db.update(updatedHouse, CONTAINER, updatedHouse.getId());
 
             Cache.putInCache(updatedHouse, HOUSE_PREFIX);
 

@@ -9,6 +9,7 @@ import scc.srv.houses.HousesResource;
 import scc.srv.question.QuestionResource;
 import scc.srv.rentals.RentalResource;
 import scc.srv.users.UsersResource;
+import scc.srv.utils.HasId;
 import scc.utils.props.AzureProperties;
 
 public class CosmosDBLayer {
@@ -52,59 +53,41 @@ public class CosmosDBLayer {
     ////////////////////////////// GENERICS
     ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
-    public CosmosItemResponse<Object> createItem(Object item, String container) {
+    public void create(Object item, String container) {
         init();
-        return db.getContainer(container).createItem(item);
+        db.getContainer(container).createItem(item);
     }
 
-    public <T> CosmosPagedIterable<T> getById(String id, String container, Class<T> c) {
+    public void delete(String id, String container, String partitionKey) {
+        init();
+        PartitionKey key = new PartitionKey(partitionKey);
+        db.getContainer(container).deleteItem(id, key, new CosmosItemRequestOptions());
+    }
+
+    public <T extends HasId> void update(T item, String container, String partitionKey) {
+        init();
+        var id = item.getId();
+        PartitionKey key = new PartitionKey(partitionKey);
+        db.getContainer(container).replaceItem(item, id, key, new CosmosItemRequestOptions());
+    }
+
+    public <T> CosmosPagedIterable<T> get(String id, String container, Class<T> c) {
         init();
         String query = String.format("SELECT * FROM %s WHERE %s.id=\"%s\"", container, container, id);
         return db.getContainer(container).queryItems(query, new CosmosQueryRequestOptions(), c);
     }
 
-    public <T> CosmosPagedIterable<T> getItems(String container, Class<T> c) {
+    public <T> CosmosPagedIterable<T> getAll(String container, Class<T> c) {
         init();
         String query = String.format("SELECT * FROM %s", container);
         return db.getContainer(container).queryItems(query, new CosmosQueryRequestOptions(), c);
     }
 
-    //  TODO: Nao funcionam (só para não tentar outra vez) DELETE E PU têm de ser feitos em separado para cada
-/*    public CosmosItemResponse<Object> updateById(Object item, String id, String container, String partitionKey) {
-        init();
-        PartitionKey key = new PartitionKey(partitionKey);
-        return db.getContainer(container).replaceItem(item, id, key, new CosmosItemRequestOptions());
-    }
-
-    public <T> CosmosItemResponse<T> updateById2(T item, String id, String container, String partitionKey) {
-        init();
-        PartitionKey key = new PartitionKey(partitionKey);
-        return db.getContainer(container).replaceItem(item, id, key, new CosmosItemRequestOptions());
-    }
-
-    public CosmosItemResponse<Object> deleteById(String id, String container, String partitionKey) throws Exception {
-        init();
-        PartitionKey key = new PartitionKey(partitionKey);
-        return db.getContainer(container).deleteItem(id, key, new CosmosItemRequestOptions());
-    }*/
-
+    //  TODO: Nao funcionam (só para não tentar outra vez) PUT tem de ser feitos em separado para cada
 
     ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
     ////////////////////////////// USERS
     ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-
-    public void updateUser(UserDAO user) {
-        init();
-        var id = user.getId();
-        PartitionKey key = new PartitionKey(id);
-        db.getContainer(UsersResource.CONTAINER).replaceItem(user, id, key, new CosmosItemRequestOptions());
-    }
-
-    public void deleteUser(String id) {
-        init();
-        PartitionKey key = new PartitionKey(id);
-        db.getContainer(UsersResource.CONTAINER).deleteItem(id, key, new CosmosItemRequestOptions());
-    }
 
     // TODO: Perguntar se no listar casas de um user podemos só listar o id da casa OU se temos de listar o JSON das casas
     public CosmosPagedIterable<String> listUserHouses(String id) {
@@ -118,20 +101,6 @@ public class CosmosDBLayer {
     ////////////////////////////// HOUSES
     ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
-
-    public void updateHouse(HouseDAO house) {
-        init();
-        var id = house.getId();
-        PartitionKey key = new PartitionKey(id);
-        db.getContainer(HousesResource.CONTAINER).replaceItem(house, id, key, new CosmosItemRequestOptions());
-    }
-
-    public void deleteHouse(String id) {
-        init();
-        PartitionKey key = new PartitionKey(id);
-        db.getContainer(HousesResource.CONTAINER).deleteItem(id, key, new CosmosItemRequestOptions());
-    }
-
     public CosmosPagedIterable<HouseDAO> getHousesByLocation(String location) {
         init();
         String query = String.format("SELECT * FROM houses WHERE houses.location=\"%s\"", location);
@@ -141,18 +110,6 @@ public class CosmosDBLayer {
     ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
     ////////////////////////////// RENTALS
     ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-
-    public CosmosItemResponse<RentalDAO> updateRental(RentalDAO rental) {
-        init();
-        PartitionKey key = new PartitionKey(rental.getHouseId());
-        return db.getContainer(RentalResource.CONTAINER).replaceItem(rental, rental.getId(), key, new CosmosItemRequestOptions());
-    }
-
-    public CosmosItemResponse<Object> deleteRental(String houseId, String id) {
-        init();
-        PartitionKey key = new PartitionKey(houseId);
-        return db.getContainer(RentalResource.CONTAINER).deleteItem(id, key, new CosmosItemRequestOptions());
-    }
 
     public CosmosPagedIterable<RentalDAO> getRentalById(String houseId, String id) {
         init();
