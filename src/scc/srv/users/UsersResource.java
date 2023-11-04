@@ -94,7 +94,7 @@ public class UsersResource extends Validations implements UsersService {
             return checkCookies;
 
         try {
-            db.delete(id, CONTAINER, PARTITION_KEY);
+            db.delete(id, CONTAINER, id);
 
             Cache.deleteFromCache(USER_PREFIX, id);
 

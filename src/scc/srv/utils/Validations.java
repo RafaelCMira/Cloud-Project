@@ -119,7 +119,7 @@ public class Validations {
     }
 
     protected static boolean isAvailable(String houseId, Date start, Date end) {
-        var rentals = db.getHouseRentals(houseId).stream().toList();
+        var rentals = db.getHouseRentals(houseId);
 
         for (RentalDAO rental : rentals)
             if (rental.getInitialDate().before(end) && rental.getEndDate().after(start))

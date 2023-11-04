@@ -84,6 +84,27 @@ public class RentalResource extends Validations implements RentalService {
     }
 
     @Override
+    public Response deleteRental(String houseId, String id) {
+        if (Validations.badParams(id))
+            return sendResponse(BAD_REQUEST, BAD_REQUEST_MSG);
+
+        try {
+            var house = Validations.houseExists(id);
+            if (house == null)
+                return sendResponse(NOT_FOUND, HOUSE_MSG, id);
+
+            db.delete(id, CONTAINER, houseId);
+
+            Cache.deleteFromCache(RENTAL_PREFIX, id);
+
+            return sendResponse(OK, String.format(RESOURCE_WAS_DELETED, RENTAL_MSG, id));
+
+        } catch (CosmosException ex) {
+            return processException(ex.getStatusCode(), ex.getMessage(), id);
+        }
+    }
+
+    @Override
     public Response updateRental(Cookie session, String houseId, String id, RentalDAO rentalDAO) throws Exception {
 
         try {
@@ -113,27 +134,18 @@ public class RentalResource extends Validations implements RentalService {
         }
     }
 
+
     @Override
-    public Response deleteRental(String houseId, String id) {
-        if (Validations.badParams(id))
-            return sendResponse(BAD_REQUEST, BAD_REQUEST_MSG);
-
-        try {
-            var house = Validations.houseExists(id);
-            if (house == null)
-                return sendResponse(NOT_FOUND, HOUSE_MSG, id);
-
-            db.delete(id, CONTAINER, PARTITION_KEY);
-
-            Cache.deleteFromCache(RENTAL_PREFIX, id);
-
-            return sendResponse(OK, String.format(RESOURCE_WAS_DELETED, RENTAL_MSG, id));
-
-        } catch (CosmosException ex) {
-            return processException(ex.getStatusCode(), ex.getMessage(), id);
+    public Response getDiscountedRentals(String houseID) throws Exception {
+        //TODO: cache & tem ser updated de x em x tempo
+        var rentalsDAO = db.getHouseRentals(houseID);
+        List<Rental> res = new ArrayList<>();
+        for (RentalDAO r : rentalsDAO) {
+            if (r.getDiscount() > 0 && !r.getInitialDate().before(Date.from(Instant.now())))
+                res.add(r.toRental());
         }
+        return sendResponse(OK, res);
     }
-
 
     private RentalDAO genUpdatedRental(Cookie session, String houseId, String id, RentalDAO rental) throws Exception {
         if (Validations.badParams(id))
@@ -166,18 +178,6 @@ public class RentalResource extends Validations implements RentalService {
             rentalDAO.setEndDate(rentalDAOEndDate);
 
         return rentalDAO;
-    }
-
-    @Override
-    public Response getDiscountedRentals(String houseID) throws Exception {
-        //TODO: cache & tem ser updated de x em x tempo
-        var rentalsDAO = db.getHouseRentals(houseID);
-        List<Rental> res = new ArrayList<>();
-        for (RentalDAO r : rentalsDAO) {
-            if (r.getDiscount() > 0 && !r.getInitialDate().before(Date.from(Instant.now())))
-                res.add(r.toRental());
-        }
-        return sendResponse(OK, res);
     }
 
     /**

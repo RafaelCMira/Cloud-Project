@@ -2,6 +2,7 @@ package scc.data;
 
 import scc.srv.utils.HasId;
 
+import java.time.Instant;
 import java.util.Date;
 
 /**
@@ -22,11 +23,11 @@ public class RentalDAO implements HasId {
     public RentalDAO() {
     }
 
-    /*public RentalDAO(Rental r) {
-        this(r.getId(), r.getHouseId(), r.getUserId(), r.getPrice(), r.getInitialDate(),
-                r.getEndDate(), r.getDiscount());
+    public RentalDAO(Rental r) {
+        this(r.getId(), r.getHouseId(), r.getUserId(), r.getPrice(), Date.from(Instant.parse(r.getInitialDate())),
+                Date.from(Instant.parse(r.getEndDate())), r.getDiscount());
     }
-*/
+
     public RentalDAO(String id, String houseId, String userId, double price, Date initialDate, Date endDate, double discount) {
         super();
         this.id = id;

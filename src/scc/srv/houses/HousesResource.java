@@ -79,7 +79,7 @@ public class HousesResource extends Validations implements HousesService {
             if (checkCookies.getStatus() != Response.Status.OK.getStatusCode())
                 return checkCookies;
 
-            db.delete(id, CONTAINER, PARTITION_KEY);
+            db.delete(id, CONTAINER, id);
 
             var user = Validations.userExists(ownerId);
             if (user == null)
@@ -135,36 +135,6 @@ public class HousesResource extends Validations implements HousesService {
     }
 
     @Override
-    public Response getAvailHouseByLocation(String location) {
-        //TODO: chache
-
-        try {
-            var houses = db.getHousesByLocation(location);
-            var availableHouses = new ArrayList<>();
-            Date currentDate = Date.from(Instant.now());
-
-            for (HouseDAO house : houses) {
-                var rentals = db.getHouseRentals(house.getId());
-                boolean isAvailable = true;
-                for (RentalDAO rental : rentals) {
-                    // Check if the rental is currently occupied
-                    if (Utility.datesOverlap(currentDate, rental)) {
-                        isAvailable = false;
-                        break;
-                    }
-                }
-                if (isAvailable)
-                    availableHouses.add(house.toHouse());
-            }
-
-            return sendResponse(OK, availableHouses);
-
-        } catch (CosmosException ex) {
-            return processException(ex.getStatusCode(), ex.getMessage());
-        }
-    }
-
-    @Override
     public Response listAllHouses() {
         try {
             List<House> toReturn = db.getAll(CONTAINER, HouseDAO.class).stream().map(HouseDAO::toHouse).toList();
@@ -176,14 +146,40 @@ public class HousesResource extends Validations implements HousesService {
         }
     }
 
-/*    public boolean datesOverlap(Date start1, Date end1, Date start2, Date end2) {
-        return start1.before(end2) && start2.before(end1);
-    }*/
-
-
     @Override
+    public Response getAvailHouseByLocation(String location) {
+        //TODO: chache
+
+        try {
+            var houses = db.getHousesByLocation(location);
+            var availableHouses = new ArrayList<>();
+            Date currentDate = Date.from(Instant.now());
+
+            for (HouseDAO house : houses) {
+                /*var rentals = db.getHouseRentals(house.getId());
+                boolean isAvailable = true;
+                for (RentalDAO rental : rentals) {
+                    if (Utility.datesOverlap(currentDate, rental)) {
+                        isAvailable = false;
+                        break;
+                    }
+                }
+                if (isAvailable)
+                    availableHouses.add(house.toHouse());*/
+                if (Validations.isAvailable(house.getId(), currentDate, currentDate))
+                    availableHouses.add(house.toHouse());
+            }
+
+            return sendResponse(OK, availableHouses);
+
+        } catch (CosmosException ex) {
+            return processException(ex.getStatusCode(), ex.getMessage());
+        }
+    }
+
+  /*  @Override
     public List<House> getHouseByLocationPeriod(String location, String initialDate, String endDate) throws Exception {
-        /*//TODO: chache
+        //TODO: chache
         Date iniDate = Date.from(Instant.parse(initialDate));
         Date eDate = Date.from(Instant.parse(endDate));
 
@@ -212,8 +208,29 @@ public class HousesResource extends Validations implements HousesService {
             return result;
         } else {
             throw new Exception("Error: 404");
-        }*/
-        return null;
+        }
+    }*/
+
+    @Override
+    public Response getHouseByLocationPeriod(String location, String initialDate, String endDate) {
+        //TODO: chache
+        Date start = Date.from(Instant.parse(initialDate));
+        Date end = Date.from(Instant.parse(endDate));
+
+        try {
+            var houses = db.getHousesByLocation(location);
+            var availableHouses = new ArrayList<>();
+
+            for (HouseDAO house : houses) {
+                if (Validations.isAvailable(house.getId(), start, end))
+                    availableHouses.add(house.toHouse());
+            }
+
+            return sendResponse(OK, availableHouses);
+
+        } catch (CosmosException ex) {
+            return processException(ex.getStatusCode(), ex.getMessage());
+        }
     }
 
     /**
