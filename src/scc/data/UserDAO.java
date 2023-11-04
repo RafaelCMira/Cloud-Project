@@ -15,22 +15,20 @@ public class UserDAO implements HasId {
     private String name;
     private String pwd;
     private String photoId;
-    private List<String> houseIds;
 
     public UserDAO() {
     }
 
     public UserDAO(User u) {
-        this(u.getId(), u.getName(), u.getPwd(), u.getPhotoId(), u.getHouseIds());
+        this(u.getId(), u.getName(), u.getPwd(), u.getPhotoId());
     }
 
-    public UserDAO(String userID, String name, String pwd, String photoId, List<String> houseIds) {
+    public UserDAO(String userID, String name, String pwd, String photoId) {
         super();
         this.id = userID;
         this.name = name;
         this.pwd = Hash.of(pwd);
         this.photoId = photoId;
-        this.houseIds = houseIds;
     }
 
     public String get_rid() {
@@ -82,25 +80,9 @@ public class UserDAO implements HasId {
         this.photoId = photoId;
     }
 
-    public List<String> getHouseIds() {
-        return houseIds;
-    }
-
-    public void setHouseIds(List<String> houseIds) {
-        this.houseIds = houseIds;
-    }
-
-    public void addHouse(String houseId) {
-        if (!houseIds.contains(houseId))
-            houseIds.add(houseId);
-    }
-
-    public void removeHouse(String houseId) {
-        houseIds.remove(houseId);
-    }
 
     public User toUser() {
-        return new User(id, name, pwd, photoId, houseIds);
+        return new User(id, name, pwd, photoId);
     }
 
     @Override
@@ -112,7 +94,6 @@ public class UserDAO implements HasId {
                 ", name='" + name + '\'' +
                 ", pwd='" + pwd + '\'' +
                 ", photoId='" + photoId + '\'' +
-                ", houseIds=" + houseIds +
                 '}';
     }
 }

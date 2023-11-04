@@ -15,18 +15,16 @@ public class User implements HasId {
     private String name;
     private String pwd;
     private String photoId;
-    private List<String> houseIds;
 
     public User() {
     }
 
-    public User(String id, String name, String pwd, String photoId, List<String> houseIds) {
+    public User(String id, String name, String pwd, String photoId) {
         super();
         this.id = id;
         this.name = name;
         this.pwd = pwd;
         this.photoId = photoId;
-        this.houseIds = houseIds;
     }
 
     @Override
@@ -62,14 +60,6 @@ public class User implements HasId {
         this.photoId = photoId;
     }
 
-    public List<String> getHouseIds() {
-        return houseIds == null ? List.of(new String[0]) : houseIds;
-    }
-
-    public void setHouseIds(List<String> houseIds) {
-        this.houseIds = houseIds;
-    }
-
     @Override
     public String toString() {
         return "User{" +
@@ -77,7 +67,6 @@ public class User implements HasId {
                 ", name='" + name + '\'' +
                 ", pwd='" + pwd + '\'' +
                 ", photoId='" + photoId + '\'' +
-                ", houseIds=" + houseIds +
                 '}';
     }
 }

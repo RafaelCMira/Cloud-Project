@@ -26,16 +26,11 @@ public class HousesResource extends Validations implements HousesService {
     public Response createHouse(Cookie session, HouseDAO houseDAO) throws Exception {
 
         try {
-            var user = checkHouseCreation(session, houseDAO);
-            user.addHouse(houseDAO.getId());
+            checkHouseCreation(session, houseDAO);
 
             db.create(houseDAO, CONTAINER);
 
-            db.update(user, UsersService.CONTAINER, user.getId());
-
-            // TODO: enviar ambos os pedidos para a cache de uma vez, o stor disse que dava para fazer
             Cache.putInCache(houseDAO, HOUSE_PREFIX);
-            Cache.putInCache(user, UsersService.USER_PREFIX);
 
             return sendResponse(OK, houseDAO.toHouse());
 
@@ -74,7 +69,6 @@ public class HousesResource extends Validations implements HousesService {
             return sendResponse(BAD_REQUEST, BAD_REQUEST_MSG);
 
         try {
-            //TODO: Quando se elimina um User, colocar nas casas (Deleted User)
             var house = Validations.houseExists(id);
             if (house == null)
                 return sendResponse(NOT_FOUND, HOUSE_MSG, id);
@@ -91,11 +85,7 @@ public class HousesResource extends Validations implements HousesService {
             if (user == null)
                 return sendResponse(NOT_FOUND, USER_MSG, ownerId);
 
-            user.removeHouse(id);
-            db.update(user, UsersService.CONTAINER, user.getId());
-
             Cache.deleteFromCache(HOUSE_PREFIX, id);
-            Cache.putInCache(user, UsersService.USER_PREFIX);
 
             return sendResponse(OK, String.format(RESOURCE_WAS_DELETED, HOUSE_MSG, id));
 
@@ -194,8 +184,7 @@ public class HousesResource extends Validations implements HousesService {
 
         List<House> result = new ArrayList<>();
 
-        var res = db.getHousesByLocation(location);
-        List<HouseDAO> houses = res.stream().toList();
+        var houses = db.getHousesByLocation(location).stream().toList();
 
         // Check if house is available in the given timeframe
         for (HouseDAO h : houses) {
@@ -278,7 +267,7 @@ public class HousesResource extends Validations implements HousesService {
 
     }
 
-    private UserDAO checkHouseCreation(Cookie session, HouseDAO houseDAO) throws Exception {
+    private void checkHouseCreation(Cookie session, HouseDAO houseDAO) throws Exception {
         var checkCookies = checkUserSession(session, houseDAO.getOwnerId());
         if (checkCookies.getStatus() != Response.Status.OK.getStatusCode())
             throw new WebApplicationException(checkCookies.getEntity().toString(), Response.Status.UNAUTHORIZED);
@@ -291,11 +280,8 @@ public class HousesResource extends Validations implements HousesService {
             throw new WebApplicationException(MEDIA_MSG, Response.Status.NOT_FOUND);
 
         // Verify if user exists
-        var owner = Validations.userExists(houseDAO.getOwnerId());
-        if (owner == null)
+        if (Validations.userExists(houseDAO.getOwnerId()) == null)
             throw new WebApplicationException(USER_MSG, Response.Status.NOT_FOUND);
-
-        return owner;
     }
 
     @Override

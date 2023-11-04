@@ -35,6 +35,5 @@ scenarios:
                 name: "{{ name }}"
                 pwd: "{{ pwd }}"
                 photoId: "{{ imageId }}"
-                houseIds: [ ]
               afterResponse: "genNewUserReply"    # capture result and store in file
-        count: 5
+        count: 1
