@@ -13,13 +13,18 @@ import java.util.List;
 @Path(HousesService.PATH)
 public interface HousesService {
     String PATH = "/house";
+
+    
+    String PARTITION_KEY = "/id";
+    String CONTAINER = "houses";
+    String HOUSE_PREFIX = "h:";
+
+
     String ID = "id";
     String LOCATION = "location";
-
     String NEW_HOUSES = "/NewHouses";
     String INITIAL_DATE = "initialDate";
     String END_DATE = "endDate";
-    String HOUSE_PREFIX = "house:";
 
 
     @POST

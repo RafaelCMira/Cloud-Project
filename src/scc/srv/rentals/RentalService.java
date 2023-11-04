@@ -12,13 +12,17 @@ import scc.srv.authentication.Session;
 
 public interface RentalService {
     String PATH = "/house";
+
+
+    String PARTITION_KEY = "/houseId";
+    String CONTAINER = "rentals";
+    String RENTAL_PREFIX = "r:";
+
+
     String HOUSE_ID = "houseId";
     String RENTAL_ID = "id";
     String RENTAL = "/rental";
-
     String DISCOUNT = "/discount";
-
-    String RENTAL_PREFIX = "rental:";
 
 
     @POST

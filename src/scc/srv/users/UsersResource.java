@@ -2,12 +2,10 @@ package scc.srv.users;
 
 import com.azure.cosmos.CosmosException;
 import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import jakarta.ws.rs.WebApplicationException;
 import jakarta.ws.rs.core.Cookie;
 import jakarta.ws.rs.core.NewCookie;
 import jakarta.ws.rs.core.Response;
-import redis.clients.jedis.Jedis;
 import scc.cache.Cache;
 import scc.data.User;
 import scc.data.UserDAO;
@@ -16,7 +14,6 @@ import scc.srv.authentication.Login;
 import scc.srv.authentication.Session;
 import scc.srv.utils.Validations;
 import scc.utils.Hash;
-import scc.utils.mgt.AzureManagement;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -27,9 +24,6 @@ import static scc.srv.utils.Utility.*;
 
 public class UsersResource extends Validations implements UsersService {
 
-    public static final String PARTITION_KEY = "/id";
-    public static final String CONTAINER = "users";
-    private final ObjectMapper mapper = new ObjectMapper();
     private final CosmosDBLayer db = CosmosDBLayer.getInstance();
 
     @Override
@@ -231,9 +225,5 @@ public class UsersResource extends Validations implements UsersService {
 
     }
 
-    // Usar se for necessario guardar a lista das casas do user
-    private void putListInCache(String prefix, List<String> list, Jedis jedis) throws JsonProcessingException {
-        jedis.set(prefix, mapper.writeValueAsString(list));
-    }
 
 }

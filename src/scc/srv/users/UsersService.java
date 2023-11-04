@@ -13,16 +13,17 @@ import scc.srv.authentication.Session;
 @Path(UsersService.PATH)
 public interface UsersService {
     String PATH = "/user";
-    String ID = "id"; // nickname
-    String HOUSES = "/houses";
-    String QUERY = "query";
+    
 
-    String AUTH = "/auth";
-
-
+    String PARTITION_KEY = "/id";
+    String CONTAINER = "users";
     String USER_PREFIX = "u:";
 
-    String USER_HOUSES_PREFIX = "h:";
+
+    String ID = "id";
+    String HOUSES = "/houses";
+    String AUTH = "/auth";
+
 
     @POST
     @Path(AUTH)

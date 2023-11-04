@@ -11,18 +11,16 @@ import java.util.List;
 
 @Path(MediaService.PATH)
 public interface MediaService {
-
     String PATH = "/media";
+
+    
+    String CONTAINER_NAME = "media";
+    String MEDIA_PREFIX = "media:";
+
 
     String ID = "id";
 
-
-    String MEDIA_PREFIX = "media:";
-
-    // Get connection string in the storage access keys page
     String storageConnectionString = System.getenv(AzureProperties.BLOB_KEY);
-
-    String CONTAINER_NAME = "media";
 
 
     /**

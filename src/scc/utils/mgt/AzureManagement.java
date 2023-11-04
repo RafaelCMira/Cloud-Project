@@ -35,10 +35,14 @@ import com.azure.cosmos.models.UniqueKey;
 import com.azure.cosmos.models.UniqueKeyPolicy;
 import scc.db.CosmosDBLayer;
 import scc.srv.houses.HousesResource;
+import scc.srv.houses.HousesService;
 import scc.srv.media.MediaService;
 import scc.srv.question.QuestionResource;
+import scc.srv.question.QuestionService;
 import scc.srv.rentals.RentalResource;
+import scc.srv.rentals.RentalService;
 import scc.srv.users.UsersResource;
+import scc.srv.users.UsersService;
 
 
 public class AzureManagement {
@@ -472,10 +476,10 @@ public class AzureManagement {
                             createCosmosDatabase(cosmosClient, AZURE_COSMOSDB_DATABASE);
 
                             //TODO: create the collections you have in your application
-                            createCosmosCollection(cosmosClient, AZURE_COSMOSDB_DATABASE, UsersResource.CONTAINER, UsersResource.PARTITION_KEY, null);
-                            createCosmosCollection(cosmosClient, AZURE_COSMOSDB_DATABASE, HousesResource.CONTAINER, HousesResource.PARTITION_KEY, null);
-                            createCosmosCollection(cosmosClient, AZURE_COSMOSDB_DATABASE, RentalResource.CONTAINER, RentalResource.PARTITION_KEY, null);
-                            createCosmosCollection(cosmosClient, AZURE_COSMOSDB_DATABASE, QuestionResource.CONTAINER, QuestionResource.PARTITION_KEY, null);
+                            createCosmosCollection(cosmosClient, AZURE_COSMOSDB_DATABASE, UsersService.CONTAINER, UsersService.PARTITION_KEY, null);
+                            createCosmosCollection(cosmosClient, AZURE_COSMOSDB_DATABASE, HousesService.CONTAINER, HousesService.PARTITION_KEY, null);
+                            createCosmosCollection(cosmosClient, AZURE_COSMOSDB_DATABASE, RentalService.CONTAINER, RentalService.PARTITION_KEY, null);
+                            createCosmosCollection(cosmosClient, AZURE_COSMOSDB_DATABASE, QuestionService.CONTAINER, QuestionService.PARTITION_KEY, null);
 
                             System.err.println("Azure Cosmos DB resources created with success");
 

@@ -7,7 +7,6 @@ import jakarta.ws.rs.core.Response;
 import scc.cache.Cache;
 import scc.data.*;
 import scc.db.CosmosDBLayer;
-import scc.srv.houses.HousesResource;
 import scc.srv.houses.HousesService;
 import scc.srv.utils.Validations;
 
@@ -19,8 +18,6 @@ import java.util.List;
 import static scc.srv.utils.Utility.*;
 
 public class RentalResource extends Validations implements RentalService {
-    public static final String CONTAINER = "rentals";
-    public static final String PARTITION_KEY = "/houseId";
 
     private final CosmosDBLayer db = CosmosDBLayer.getInstance();
 
@@ -136,7 +133,7 @@ public class RentalResource extends Validations implements RentalService {
     private RentalDAO genUpdatedRental(Cookie session, String houseId, String id, RentalDAO rental) throws Exception {
         if (Validations.badParams(id))
             throw new WebApplicationException(BAD_REQUEST_MSG, Response.Status.BAD_REQUEST);
-        
+
         var house = Validations.houseExists(houseId);
         if (house == null)
             throw new WebApplicationException(HOUSE_MSG, Response.Status.NOT_FOUND);

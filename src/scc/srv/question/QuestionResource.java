@@ -2,15 +2,12 @@ package scc.srv.question;
 
 import com.azure.cosmos.CosmosException;
 import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import jakarta.ws.rs.WebApplicationException;
 import jakarta.ws.rs.core.Cookie;
 import jakarta.ws.rs.core.Response;
 import scc.cache.Cache;
 import scc.data.*;
 import scc.db.CosmosDBLayer;
-import scc.srv.houses.HousesResource;
-import scc.srv.houses.HousesService;
 import scc.srv.utils.Validations;
 
 import java.util.UUID;
@@ -20,8 +17,6 @@ import static scc.srv.utils.Utility.*;
 
 public class QuestionResource extends Validations implements QuestionService {
 
-    public static final String CONTAINER = "questions";
-    public static final String PARTITION_KEY = "/houseId";
 
     private final CosmosDBLayer db = CosmosDBLayer.getInstance();
 
