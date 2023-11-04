@@ -4,11 +4,11 @@ import com.azure.cosmos.CosmosException;
 import jakarta.ws.rs.WebApplicationException;
 import jakarta.ws.rs.core.Cookie;
 import jakarta.ws.rs.core.Response;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import scc.cache.Cache;
 import scc.data.*;
 import scc.db.CosmosDBLayer;
 import scc.srv.houses.HousesResource;
+import scc.srv.houses.HousesService;
 import scc.srv.utils.Validations;
 
 import java.time.Instant;
@@ -24,8 +24,6 @@ public class RentalResource extends Validations implements RentalService {
 
     private final CosmosDBLayer db = CosmosDBLayer.getInstance();
 
-    private final ObjectMapper mapper = new ObjectMapper();
-
     @Override
     public Response createRental(Cookie session, String houseId, RentalDAO rentalDAO) throws Exception {
         //TODO: add rental to house with azure functions
@@ -40,10 +38,8 @@ public class RentalResource extends Validations implements RentalService {
             if (rentalInDB == null)
                 return sendResponse(INTERNAL_SERVER_ERROR);
 
-            else {
-                if (!rentalInDB.getId().equals(rentalDAO.getId()) || !rentalInDB.getUserId().equals(rentalDAO.getUserId()))
-                    return sendResponse(CONFLICT, RENTAL_MSG, rentalDAO.getId());
-            }
+            if (!rentalInDB.getId().equals(rentalDAO.getId()) || !rentalInDB.getUserId().equals(rentalDAO.getUserId()))
+                return sendResponse(CONFLICT, RENTAL_MSG, rentalDAO.getId());
 
             Cache.putInCache(rentalDAO, RENTAL_PREFIX);
 
@@ -86,18 +82,14 @@ public class RentalResource extends Validations implements RentalService {
 
     @Override
     public Response updateRental(Cookie session, String houseId, String id, RentalDAO rentalDAO) throws Exception {
-        RentalDAO updatedRental = genUpdatedRental(session, houseId, id, rentalDAO);
+
         try {
-            var res = db.updateRental(updatedRental);
-            int statusCode = res.getStatusCode();
-            if (isStatusOk(res.getStatusCode())) {
+            var updatedRental = genUpdatedRental(session, houseId, id, rentalDAO);
+            db.updateRental(updatedRental);
 
-                Cache.putInCache(updatedRental, RENTAL_PREFIX);
+            Cache.putInCache(updatedRental, RENTAL_PREFIX);
 
-                return sendResponse(OK, updatedRental.toRental());
-
-            } else
-                return processException(statusCode, RENTAL_MSG, id);
+            return sendResponse(OK, updatedRental.toRental());
 
         } catch (CosmosException ex) {
             return processException(ex.getStatusCode(), RENTAL_MSG, id);
@@ -117,58 +109,61 @@ public class RentalResource extends Validations implements RentalService {
         if (Validations.badParams(id))
             return sendResponse(BAD_REQUEST, BAD_REQUEST_MSG);
 
-        var res = db.deleteRental(houseId, id);
-        int statusCode = res.getStatusCode();
+        try {
+            var house = Validations.houseExists(id);
+            if (house == null)
+                return sendResponse(NOT_FOUND, HOUSE_MSG, id);
 
-        if (isStatusOk(statusCode)) {
-            // TODO - This could be made with azure functions
-            var houseDAO = db.getById(houseId, HousesResource.CONTAINER, HouseDAO.class).stream().findFirst();
-            if (houseDAO.isEmpty()) return sendResponse(NOT_FOUND, HOUSE_MSG, houseId);
-            houseDAO.get().removeRental(id);
+            db.deleteRental(houseId, id);
 
-            // Delete rental in cache
             Cache.deleteFromCache(RENTAL_PREFIX, id);
 
-            String s = String.format("StatusCode: %d \nRental %s was delete", statusCode, id);
-            return sendResponse(OK, s);
-        } else {
-            throw new Exception("Error: " + statusCode);
+            //TODO: é mesmo necessário guardar os Ids dos rentals??
+            // acho que não porque temos os rentals guardados por houseId como partitionKey logo quando fizermos uma query seria eficiente
+            // Eliminavam-se estas 3 linhas abaixo
+            house.removeRental(id);
+            db.updateHouse(house);
+            Cache.putInCache(house, HousesService.HOUSE_PREFIX);
+
+            return sendResponse(OK, String.format(RESOURCE_WAS_DELETED, RENTAL_MSG, id));
+
+        } catch (CosmosException ex) {
+            return processException(ex.getStatusCode(), ex.getMessage(), id);
         }
     }
 
 
-    private RentalDAO genUpdatedRental(Cookie session, String houseID, String id, RentalDAO rental) throws Exception {
+    private RentalDAO genUpdatedRental(Cookie session, String houseId, String id, RentalDAO rental) throws Exception {
         if (Validations.badParams(id))
             throw new WebApplicationException(BAD_REQUEST_MSG, Response.Status.BAD_REQUEST);
+        
+        var house = Validations.houseExists(houseId);
+        if (house == null)
+            throw new WebApplicationException(HOUSE_MSG, Response.Status.NOT_FOUND);
 
-        var result = db.getRentalById(houseID, id).stream().findFirst();
-        if (result.isPresent()) {
-            RentalDAO rentalDAO = result.get();
-
-            //todo: Quem pode fazer update ao rental? O dono da casa ou o user que aluga?
-           /* var checkCookies = checkUserSession(session, rentalDAO.getUserId());
-            if (checkCookies.getStatus() != Response.Status.OK.getStatusCode())
-                throw new WebApplicationException(UNAUTHORIZED_MSG, Response.Status.UNAUTHORIZED);
-            */
-
-            //TODO: ver o que se pode alterar num rental. Verficar datas de novo
-            double rentalDAOPrice = rental.getPrice();
-            if (rentalDAO.getPrice() != (rentalDAOPrice))
-                rentalDAO.setPrice(rentalDAOPrice);
-
-            Date rentalDAOInitialDate = rental.getInitialDate();
-            if (!rentalDAO.getInitialDate().equals(rentalDAOInitialDate))
-                rentalDAO.setInitialDate(rentalDAOInitialDate);
-
-            Date rentalDAOEndDate = rental.getEndDate();
-            if (!rentalDAO.getEndDate().equals(rentalDAOEndDate))
-                rentalDAO.setEndDate(rentalDAOEndDate);
-
-            return rentalDAO;
-
-        } else {
+        var rentalDAO = Validations.rentalExists(id);
+        if (rentalDAO == null)
             throw new WebApplicationException(RENTAL_MSG, Response.Status.NOT_FOUND);
-        }
+
+        //todo: Apenas o dono da casa pode fazer update
+        var checkCookies = checkUserSession(session, house.getOwnerId());
+        if (checkCookies.getStatus() != Response.Status.OK.getStatusCode())
+            throw new WebApplicationException(checkCookies.getEntity().toString(), Response.Status.UNAUTHORIZED);
+
+        //TODO: ver o que se pode alterar num rental. Verficar datas de novo
+        double rentalDAOPrice = rental.getPrice();
+        if (rentalDAO.getPrice() != (rentalDAOPrice))
+            rentalDAO.setPrice(rentalDAOPrice);
+
+        Date rentalDAOInitialDate = rental.getInitialDate();
+        if (!rentalDAO.getInitialDate().equals(rentalDAOInitialDate))
+            rentalDAO.setInitialDate(rentalDAOInitialDate);
+
+        Date rentalDAOEndDate = rental.getEndDate();
+        if (!rentalDAO.getEndDate().equals(rentalDAOEndDate))
+            rentalDAO.setEndDate(rentalDAOEndDate);
+
+        return rentalDAO;
     }
 
     @Override
