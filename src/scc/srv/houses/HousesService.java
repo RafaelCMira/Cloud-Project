@@ -14,7 +14,7 @@ import java.util.List;
 public interface HousesService {
     String PATH = "/house";
 
-    
+
     String PARTITION_KEY = "/id";
     String CONTAINER = "houses";
     String HOUSE_PREFIX = "h:";
@@ -51,7 +51,14 @@ public interface HousesService {
     @GET
     @Path("/")
     @Produces(MediaType.APPLICATION_JSON)
-    Response getAvailHouseByLocation(@QueryParam(LOCATION) String location) throws Exception;
+    Response getAvailHouseByLocation(@QueryParam(LOCATION) String location);
+
+
+    @GET
+    @Path("/All")
+    @Produces(MediaType.APPLICATION_JSON)
+    Response listAllHouses();
+
 
     @GET
     @Path("/Available/")

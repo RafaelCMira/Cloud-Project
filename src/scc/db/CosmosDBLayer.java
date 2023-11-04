@@ -9,9 +9,15 @@ import scc.srv.houses.HousesResource;
 import scc.srv.houses.HousesService;
 import scc.srv.question.QuestionResource;
 import scc.srv.rentals.RentalResource;
+import scc.srv.rentals.RentalService;
 import scc.srv.users.UsersResource;
 import scc.srv.utils.HasId;
 import scc.utils.props.AzureProperties;
+
+import java.time.Instant;
+import java.util.ArrayList;
+import java.util.Date;
+import java.util.List;
 
 public class CosmosDBLayer {
 
@@ -106,16 +112,11 @@ public class CosmosDBLayer {
         return db.getContainer(HousesResource.CONTAINER).queryItems(query, new CosmosQueryRequestOptions(), HouseDAO.class);
     }
 
+
     ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
     ////////////////////////////// RENTALS
     ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-
-    public CosmosPagedIterable<RentalDAO> getRentalById(String houseId, String id) {
-        init();
-        String query = "SELECT * FROM rentals WHERE rentals.houseId = \"" + houseId + "\" AND rentals.id=\"" + id + "\"";
-        return db.getContainer(RentalResource.CONTAINER).queryItems(query, new CosmosQueryRequestOptions(), RentalDAO.class);
-    }
-
+    
     public CosmosPagedIterable<RentalDAO> getHouseRentals(String houseId) {
         init();
         PartitionKey key = new PartitionKey(houseId);

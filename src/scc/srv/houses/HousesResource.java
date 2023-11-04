@@ -7,7 +7,7 @@ import jakarta.ws.rs.core.Response;
 import scc.cache.Cache;
 import scc.data.*;
 import scc.db.CosmosDBLayer;
-import scc.srv.users.UsersService;
+import scc.srv.utils.Utility;
 import scc.srv.utils.Validations;
 
 import java.time.Instant;
@@ -134,51 +134,56 @@ public class HousesResource extends Validations implements HousesService {
         }
     }
 
-    // TODO: Quando fazemos RENTAL
-    // 1 - Write na DB
-    // 2.1 - Get do resultado? - se o rental que nós fizemos ficar na DB então podemos enviar a resposta ao cliente de sucesso
-    // 2.2 - Se não ficar, enviar msg a dizer que já está alugado
     @Override
-    public Response getAvailHouseByLocation(String location) throws Exception {
+    public Response getAvailHouseByLocation(String location) {
         //TODO: chache
 
-        List<House> result = new ArrayList<>();
-
         try {
-            var houses = db.getHousesByLocation(location).stream().toList();
+            var houses = db.getHousesByLocation(location);
+            var availableHouses = new ArrayList<>();
+            Date currentDate = Date.from(Instant.now());
 
-            // Check if house is available
-            // TODO: há uma forma melhor de fazer isto
-
-            for (HouseDAO h : houses) {
-                boolean available = true;
-                for (String rentalId : h.getRentalsIds()) {
-                    var rental = db.getRentalById(h.getId(), rentalId).stream().findFirst();
-                    if (rental.isPresent() && rental.get().getEndDate().before(Date.from(Instant.now())))
-                        available = false;
+            for (HouseDAO house : houses) {
+                var rentals = db.getHouseRentals(house.getId());
+                boolean isAvailable = true;
+                for (RentalDAO rental : rentals) {
+                    // Check if the rental is currently occupied
+                    if (Utility.datesOverlap(currentDate, rental)) {
+                        isAvailable = false;
+                        break;
+                    }
                 }
-                if (available)
-                    result.add(h.toHouse());
+                if (isAvailable)
+                    availableHouses.add(house.toHouse());
             }
+
+            return sendResponse(OK, availableHouses);
+
         } catch (CosmosException ex) {
-            return processException(ex.getStatusCode(), "Mudar este nome");
+            return processException(ex.getStatusCode(), ex.getMessage());
         }
-
-        return sendResponse(OK, result);
     }
 
-    private boolean isDateInBetween(LocalDate start, LocalDate end) {
-        var currentDate = LocalDate.now();
-        return !currentDate.isBefore(start) && !currentDate.isAfter(end);
+    @Override
+    public Response listAllHouses() {
+        try {
+            List<House> toReturn = db.getAll(CONTAINER, HouseDAO.class).stream().map(HouseDAO::toHouse).toList();
+
+            return sendResponse(OK, toReturn.isEmpty() ? new ArrayList<>() : toReturn);
+
+        } catch (CosmosException ex) {
+            return processException(ex.getStatusCode());
+        }
     }
 
-    private boolean doDatesIntersect(LocalDate start1, LocalDate end1, LocalDate start2, LocalDate end2) {
-        return !end1.isBefore(start2) && !end2.isBefore(start1);
-    }
+/*    public boolean datesOverlap(Date start1, Date end1, Date start2, Date end2) {
+        return start1.before(end2) && start2.before(end1);
+    }*/
+
 
     @Override
     public List<House> getHouseByLocationPeriod(String location, String initialDate, String endDate) throws Exception {
-        //TODO: chache
+        /*//TODO: chache
         Date iniDate = Date.from(Instant.parse(initialDate));
         Date eDate = Date.from(Instant.parse(endDate));
 
@@ -207,7 +212,8 @@ public class HousesResource extends Validations implements HousesService {
             return result;
         } else {
             throw new Exception("Error: 404");
-        }
+        }*/
+        return null;
     }
 
     /**
@@ -279,7 +285,6 @@ public class HousesResource extends Validations implements HousesService {
         if (!Validations.mediaExists(houseDAO.getPhotosIds()))
             throw new WebApplicationException(MEDIA_MSG, Response.Status.NOT_FOUND);
 
-        // Verify if user exists
         if (Validations.userExists(houseDAO.getOwnerId()) == null)
             throw new WebApplicationException(USER_MSG, Response.Status.NOT_FOUND);
     }

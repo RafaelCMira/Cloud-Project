@@ -22,11 +22,11 @@ public class RentalDAO implements HasId {
     public RentalDAO() {
     }
 
-    public RentalDAO(Rental r) {
+    /*public RentalDAO(Rental r) {
         this(r.getId(), r.getHouseId(), r.getUserId(), r.getPrice(), r.getInitialDate(),
                 r.getEndDate(), r.getDiscount());
     }
-
+*/
     public RentalDAO(String id, String houseId, String userId, double price, Date initialDate, Date endDate, double discount) {
         super();
         this.id = id;

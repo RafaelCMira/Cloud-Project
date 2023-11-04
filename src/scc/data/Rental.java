@@ -1,5 +1,6 @@
 package scc.data;
 
+import java.text.SimpleDateFormat;
 import java.util.Date;
 
 /**
@@ -12,9 +13,8 @@ public class Rental {
     private String userId;
     private double price;
     private double discount;
-    private Date initialDate;
-    private Date endDate;
-
+    private String initialDate;
+    private String endDate;
 
     public Rental() {
     }
@@ -25,8 +25,11 @@ public class Rental {
         this.houseId = houseId;
         this.userId = userId;
         this.price = price;
-        this.initialDate = initialDate;
-        this.endDate = endDate;
+
+        SimpleDateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd");
+        this.initialDate = dateFormat.format(initialDate);
+        this.endDate = dateFormat.format(endDate);
+
         this.discount = discount;
     }
 
@@ -62,20 +65,20 @@ public class Rental {
         return price;
     }
 
-    public void setInitialDate(Date initialDate) {
-        this.initialDate = initialDate;
-    }
-
-    public Date getInitialDate() {
+    public String getInitialDate() {
         return initialDate;
     }
 
-    public void setEndDate(Date endDate) {
-        this.endDate = endDate;
+    public void setInitialDate(String initialDate) {
+        this.initialDate = initialDate;
     }
 
-    public Date getEndDate() {
+    public String getEndDate() {
         return endDate;
+    }
+
+    public void setEndDate(String endDate) {
+        this.endDate = endDate;
     }
 
     public double getDiscount() {

@@ -6,7 +6,10 @@ import jakarta.ws.rs.NotAuthorizedException;
 import jakarta.ws.rs.core.Cookie;
 import jakarta.ws.rs.core.Response;
 import scc.cache.Cache;
+import scc.data.RentalDAO;
 import scc.srv.authentication.Session;
+
+import java.util.Date;
 
 /**
  * Class with common check functions to validate requests input
@@ -102,8 +105,8 @@ public class Utility {
     }
 
 
-    // Verifies if HTTP code is OK
-    public static boolean isStatusOk(int statusCode) {
-        return statusCode >= 200 && statusCode < 300;
+    public static boolean datesOverlap(Date currentDate, RentalDAO rental) {
+        return currentDate.before(rental.getEndDate()) && rental.getInitialDate().before(currentDate);
     }
+
 }

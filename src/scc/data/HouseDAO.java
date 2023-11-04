@@ -20,8 +20,6 @@ public class HouseDAO implements HasId {
 
     private List<String> photosIds;
 
-    private List<String> rentalsIds;
-
     private String ownerId;
 
     private Integer price;
@@ -33,18 +31,17 @@ public class HouseDAO implements HasId {
 
     public HouseDAO(House h) {
         this(h.getId(), h.getName(), h.getLocation(), h.getDescription(),
-                h.getPhotosIds(), h.getRentalsIds(), h.getOwnerId(), h.getPrice(), h.getDiscount());
+                h.getPhotosIds(), h.getOwnerId(), h.getPrice(), h.getDiscount());
     }
 
     public HouseDAO(String id, String name, String location, String description, List<String> photosIds,
-                    List<String> rentalsIds, String ownerId, Integer price, Integer discount) {
+                    String ownerId, Integer price, Integer discount) {
         super();
         this.id = id;
         this.name = name;
         this.location = location;
         this.description = description;
         this.photosIds = photosIds;
-        this.rentalsIds = rentalsIds;
         this.ownerId = ownerId;
         this.price = price;
         this.discount = discount;
@@ -107,10 +104,6 @@ public class HouseDAO implements HasId {
         this.photosIds = photosIds;
     }
 
-    public List<String> getRentalsIds() {
-        return rentalsIds;
-    }
-
     public String getOwnerId() {
         return ownerId;
     }
@@ -136,7 +129,7 @@ public class HouseDAO implements HasId {
     }
 
     public House toHouse() {
-        return new House(id, name, location, description, photosIds, rentalsIds, ownerId, price, discount);
+        return new House(id, name, location, description, photosIds, ownerId, price, discount);
     }
 
     @Override
@@ -149,20 +142,9 @@ public class HouseDAO implements HasId {
                 ", location='" + location + '\'' +
                 ", description='" + description + '\'' +
                 ", photosIds=" + photosIds +
-                ", rentalsIds=" + rentalsIds +
                 ", ownerId='" + ownerId + '\'' +
                 ", price=" + price +
                 ", discount=" + discount +
                 '}';
     }
-
-    public void addRental(String rentalID) {
-        rentalsIds.add(rentalID);
-    }
-
-    public void removeRental(String rentalID) {
-        rentalsIds.remove(rentalID);
-    }
-
-
 }

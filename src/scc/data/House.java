@@ -20,8 +20,6 @@ public class House implements HasId {
 
     private List<String> photosIds;
 
-    private List<String> rentalsIds;
-
     private String ownerId;
 
     private Integer price;
@@ -32,14 +30,13 @@ public class House implements HasId {
     }
 
     public House(String id, String name, String location, String description,
-                 List<String> photosIds, List<String> rentalsIds, String ownerId, Integer price, Integer discount) {
+                 List<String> photosIds, String ownerId, Integer price, Integer discount) {
         super();
         this.id = id;
         this.name = name;
         this.location = location;
         this.description = description;
         this.photosIds = photosIds;
-        this.rentalsIds = rentalsIds;
         this.ownerId = ownerId;
         this.price = price;
         this.discount = discount;
@@ -86,11 +83,6 @@ public class House implements HasId {
         this.photosIds = photosIds;
     }
 
-    public List<String> getRentalsIds() {
-        return rentalsIds;
-    }
-
-
     public String getOwnerId() {
         return ownerId;
     }
@@ -123,18 +115,9 @@ public class House implements HasId {
                 ", location='" + location + '\'' +
                 ", description='" + description + '\'' +
                 ", photosIds=" + photosIds +
-                ", rentalsIds=" + rentalsIds +
                 ", ownerId='" + ownerId + '\'' +
                 ", price=" + price +
                 ", discount=" + discount +
                 '}';
-    }
-
-    public void addRental(String rentalID) {
-        rentalsIds.add(rentalID);
-    }
-
-    public void removeRental(String rentalID) {
-        rentalsIds.remove(rentalID);
     }
 }

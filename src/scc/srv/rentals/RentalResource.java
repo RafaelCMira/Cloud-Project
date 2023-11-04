@@ -14,6 +14,7 @@ import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
+import java.util.UUID;
 
 import static scc.srv.utils.Utility.*;
 
@@ -23,8 +24,9 @@ public class RentalResource extends Validations implements RentalService {
 
     @Override
     public Response createRental(Cookie session, String houseId, RentalDAO rentalDAO) throws Exception {
-        //TODO: add rental to house with azure functions
+
         try {
+            rentalDAO.setId(UUID.randomUUID().toString());
             checkRentalCreation(session, houseId, rentalDAO);
 
             db.create(rentalDAO, CONTAINER);
@@ -50,6 +52,10 @@ public class RentalResource extends Validations implements RentalService {
     }
 
     private Response handleCreateException(int statusCode, String msg, RentalDAO rental) {
+        if (statusCode == 409)
+            return Response.status(Response.Status.CONFLICT)
+                    .entity(String.format("House %s already rented for this period", rental.getHouseId()))
+                    .build();
         if (msg.contains(HOUSE_MSG))
             return processException(statusCode, HOUSE_MSG, rental.getHouseId());
         else if (msg.contains(USER_MSG))
@@ -92,18 +98,23 @@ public class RentalResource extends Validations implements RentalService {
         } catch (CosmosException ex) {
             return processException(ex.getStatusCode(), RENTAL_MSG, id);
         }
-
     }
 
     @Override
     public Response listRentals(String houseID) {
         //TODO: cache ?
-        var res = db.getAll(CONTAINER, RentalDAO.class).stream().map(RentalDAO::toRental).toList();
-        return sendResponse(OK, res);
+        try {
+            List<Rental> toReturn = db.getAll(CONTAINER, RentalDAO.class).stream().map(RentalDAO::toRental).toList();
+
+            return sendResponse(OK, toReturn.isEmpty() ? new ArrayList<>() : toReturn);
+
+        } catch (CosmosException ex) {
+            return processException(ex.getStatusCode());
+        }
     }
 
     @Override
-    public Response deleteRental(String houseId, String id) throws Exception {
+    public Response deleteRental(String houseId, String id) {
         if (Validations.badParams(id))
             return sendResponse(BAD_REQUEST, BAD_REQUEST_MSG);
 
@@ -115,14 +126,6 @@ public class RentalResource extends Validations implements RentalService {
             db.delete(id, CONTAINER, PARTITION_KEY);
 
             Cache.deleteFromCache(RENTAL_PREFIX, id);
-
-            //TODO: é mesmo necessário guardar os Ids dos rentals??
-            // acho que não porque temos os rentals guardados por houseId como partitionKey logo quando fizermos uma query seria eficiente
-            // Eliminavam-se estas 3 linhas abaixo
-            house.removeRental(id);
-            db.update(house, HousesService.CONTAINER, house.getId());
-
-            Cache.putInCache(house, HousesService.HOUSE_PREFIX);
 
             return sendResponse(OK, String.format(RESOURCE_WAS_DELETED, RENTAL_MSG, id));
 
@@ -189,10 +192,7 @@ public class RentalResource extends Validations implements RentalService {
         if (checkCookies.getStatus() != Response.Status.OK.getStatusCode())
             throw new WebApplicationException(checkCookies.getEntity().toString(), Response.Status.UNAUTHORIZED);
 
-        if (Validations.badParams(rental.getId(), rental.getHouseId(), rental.getUserId()))
-            throw new WebApplicationException(Response.Status.BAD_REQUEST);
-
-        if (!houseId.equals(rental.getHouseId()))
+        if (Validations.badParams(rental.getId(), rental.getHouseId(), rental.getUserId()) || !houseId.equals(rental.getHouseId()))
             throw new WebApplicationException(Response.Status.BAD_REQUEST);
 
         if (Validations.houseExists(houseId) == null)
@@ -202,26 +202,8 @@ public class RentalResource extends Validations implements RentalService {
             throw new WebApplicationException(USER_MSG, Response.Status.NOT_FOUND);
 
         // Verify if house is available
-        if (isHouseNotAvailable(houseId, rental.getInitialDate(), rental.getEndDate()))
+        if (!Validations.isAvailable(houseId, rental.getInitialDate(), rental.getEndDate()))
             throw new WebApplicationException(RENTAL_MSG, Response.Status.CONFLICT);
     }
 
-    /**
-     * Checks if the House is not available in the given time.
-     *
-     * @param houseId - The id of the house.
-     * @param sTime   - The start Date of the Rental.
-     * @param eTime   - The end Date of the Rental
-     * @return true if the house is not available in the given time, false otherwise.
-     */
-    private boolean isHouseNotAvailable(String houseId, Date sTime, Date eTime) {
-        var rentals = db.getHouseRentals(houseId).stream().toList();
-
-        for (RentalDAO r : rentals) {
-            if (!r.getInitialDate().after(eTime) && !r.getEndDate().before(sTime))
-                return true;
-        }
-
-        return false;
-    }
 }

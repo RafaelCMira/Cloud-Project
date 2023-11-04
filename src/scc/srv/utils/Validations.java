@@ -17,6 +17,7 @@ import scc.srv.rentals.RentalService;
 import scc.srv.users.UsersResource;
 import scc.srv.users.UsersService;
 
+import java.util.Date;
 import java.util.List;
 
 public class Validations {
@@ -115,6 +116,16 @@ public class Validations {
     protected static boolean mediaExists(List<String> mediaId) {
         MediaResource media = new MediaResource();
         return media.hasPhotos(mediaId) && mediaId != null && !mediaId.isEmpty();
+    }
+
+    protected static boolean isAvailable(String houseId, Date start, Date end) {
+        var rentals = db.getHouseRentals(houseId).stream().toList();
+
+        for (RentalDAO rental : rentals)
+            if (rental.getInitialDate().before(end) && rental.getEndDate().after(start))
+                return false;
+
+        return true;
     }
 
 }
