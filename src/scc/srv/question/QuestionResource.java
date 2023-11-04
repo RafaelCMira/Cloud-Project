@@ -62,19 +62,19 @@ public class QuestionResource extends Validations implements QuestionService {
             return sendResponse(OK, updatedQuestion.toQuestion());
 
         } catch (CosmosException ex) {
-            return handleUpdateException(ex.getStatusCode(), ex.getMessage(), questionId);
+            return handleUpdateException(ex.getStatusCode(), ex.getMessage(), questionId, houseId);
         } catch (WebApplicationException ex) {
-            return handleUpdateException(ex.getResponse().getStatus(), ex.getMessage(), questionId);
+            return handleUpdateException(ex.getResponse().getStatus(), ex.getMessage(), questionId, houseId);
         }
     }
 
-    private Response handleUpdateException(int statusCode, String msg, String id) {
+    private Response handleUpdateException(int statusCode, String msg, String id, String houseId) {
         if (statusCode == 409)
             return Response.status(Response.Status.CONFLICT).entity(String.format("Question %s already answered", id)).build();
         if (msg.contains(QUESTION_MSG))
             return processException(statusCode, QUESTION_MSG, id);
         else if (msg.contains(HOUSE_MSG))
-            return processException(statusCode, HOUSE_MSG, id);
+            return processException(statusCode, HOUSE_MSG, houseId);
         else
             return processException(statusCode, msg, id);
     }
