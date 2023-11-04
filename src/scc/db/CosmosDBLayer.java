@@ -117,9 +117,9 @@ public class CosmosDBLayer {
         return db.getContainer(RentalResource.CONTAINER).queryItems(query, new CosmosQueryRequestOptions(), RentalDAO.class);
     }
 
-    public CosmosPagedIterable<RentalDAO> getRentals(String houseID) {
+    public CosmosPagedIterable<RentalDAO> getHouseRentals(String houseId) {
         init();
-        PartitionKey key = new PartitionKey(houseID);
+        PartitionKey key = new PartitionKey(houseId);
         return db.getContainer(RentalResource.CONTAINER).readAllItems(key, RentalDAO.class); // (query, new CosmosQueryRequestOptions(), RentalDAO.class);
     }
 
@@ -128,12 +128,12 @@ public class CosmosDBLayer {
     ////////////////////////////// QUESTIONS
     ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
-    public void replyToQuestion(QuestionDAO question) throws Exception {
+/*    public void replyToQuestion(QuestionDAO question) throws Exception {
         init();
         var id = question.getId();
         PartitionKey key = new PartitionKey(question.getHouseId());
         db.getContainer(QuestionResource.CONTAINER).replaceItem(question, id, key, new CosmosItemRequestOptions());
-    }
+    }*/
 
     public CosmosPagedIterable<QuestionDAO> listHouseQuestions(String houseId) {
         init();

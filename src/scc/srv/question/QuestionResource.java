@@ -17,7 +17,6 @@ import static scc.srv.utils.Utility.*;
 
 public class QuestionResource extends Validations implements QuestionService {
 
-
     private final CosmosDBLayer db = CosmosDBLayer.getInstance();
 
     @Override
@@ -55,7 +54,8 @@ public class QuestionResource extends Validations implements QuestionService {
 
         try {
             var updatedQuestion = genUpdatedQuestion(session, houseId, questionId, questionDAO);
-            db.replyToQuestion(updatedQuestion);
+            // db.replyToQuestion(updatedQuestion);
+            db.update(updatedQuestion, CONTAINER, updatedQuestion.getHouseId());
 
             Cache.putInCache(updatedQuestion, QUESTION_PREFIX);
 

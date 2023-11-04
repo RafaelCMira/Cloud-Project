@@ -43,7 +43,7 @@ public class Validations {
             if (userCache != null)
                 return mapper.readValue(userCache, UserDAO.class);
 
-            var dbUser = db.get(userId, UsersResource.CONTAINER, UserDAO.class).stream().findFirst();
+            var dbUser = db.get(userId, UsersService.CONTAINER, UserDAO.class).stream().findFirst();
             if (dbUser.isPresent())
                 return dbUser.get();
 
@@ -62,7 +62,7 @@ public class Validations {
             if (cacheHouse != null)
                 return mapper.readValue(cacheHouse, HouseDAO.class);
 
-            var dbHouse = db.get(houseId, HousesResource.CONTAINER, HouseDAO.class).stream().findFirst();
+            var dbHouse = db.get(houseId, HousesService.CONTAINER, HouseDAO.class).stream().findFirst();
             if (dbHouse.isPresent())
                 return dbHouse.get();
 
@@ -81,7 +81,7 @@ public class Validations {
             if (rentalCache != null)
                 return mapper.readValue(rentalCache, RentalDAO.class);
 
-            var dbRental = db.get(rentalId, RentalResource.CONTAINER, RentalDAO.class).stream().findFirst();
+            var dbRental = db.get(rentalId, RentalService.CONTAINER, RentalDAO.class).stream().findFirst();
             if (dbRental.isPresent())
                 return dbRental.get();
 
@@ -98,7 +98,7 @@ public class Validations {
             if (questionCache != null)
                 return mapper.readValue(questionCache, QuestionDAO.class);
 
-            var dbQuestion = db.get(questionId, UsersResource.CONTAINER, QuestionDAO.class).stream().findFirst();
+            var dbQuestion = db.get(questionId, QuestionService.CONTAINER, QuestionDAO.class).stream().findFirst();
             if (dbQuestion.isPresent())
                 return dbQuestion.get();
 

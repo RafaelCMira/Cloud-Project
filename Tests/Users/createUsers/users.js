@@ -111,7 +111,7 @@ function genNewUser(context, events, done) {
 	const last = `${faker.name.lastName()}`;
 	context.vars.id = first + "." + last;
 	context.vars.name = first + " " + last;
-	context.vars.pwd = `${faker.internet.password()}`;
+	context.vars.pwd = first + "." + last;//`${faker.internet.password()}`;
 	return done();
 }
 

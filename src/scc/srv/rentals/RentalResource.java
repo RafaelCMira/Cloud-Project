@@ -168,7 +168,7 @@ public class RentalResource extends Validations implements RentalService {
     @Override
     public Response getDiscountedRentals(String houseID) throws Exception {
         //TODO: cache & tem ser updated de x em x tempo
-        var rentalsDAO = db.getRentals(houseID);
+        var rentalsDAO = db.getHouseRentals(houseID);
         List<Rental> res = new ArrayList<>();
         for (RentalDAO r : rentalsDAO) {
             if (r.getDiscount() > 0 && !r.getInitialDate().before(Date.from(Instant.now())))
@@ -215,7 +215,7 @@ public class RentalResource extends Validations implements RentalService {
      * @return true if the house is not available in the given time, false otherwise.
      */
     private boolean isHouseNotAvailable(String houseId, Date sTime, Date eTime) {
-        var rentals = db.getRentals(houseId).stream().toList();
+        var rentals = db.getHouseRentals(houseId).stream().toList();
 
         for (RentalDAO r : rentals) {
             if (!r.getInitialDate().after(eTime) && !r.getEndDate().before(sTime))
