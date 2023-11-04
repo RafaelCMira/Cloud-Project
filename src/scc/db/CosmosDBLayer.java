@@ -6,6 +6,7 @@ import com.azure.cosmos.util.CosmosPagedIterable;
 
 import scc.data.*;
 import scc.srv.houses.HousesResource;
+import scc.srv.houses.HousesService;
 import scc.srv.question.QuestionResource;
 import scc.srv.rentals.RentalResource;
 import scc.srv.users.UsersResource;
@@ -83,17 +84,15 @@ public class CosmosDBLayer {
         return db.getContainer(container).queryItems(query, new CosmosQueryRequestOptions(), c);
     }
 
-    //  TODO: Nao funcionam (só para não tentar outra vez) PUT tem de ser feitos em separado para cada
-
     ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
     ////////////////////////////// USERS
     ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
     // TODO: Perguntar se no listar casas de um user podemos só listar o id da casa OU se temos de listar o JSON das casas
-    public CosmosPagedIterable<String> listUserHouses(String id) {
+    public CosmosPagedIterable<HouseDAO> listUserHouses(String id) {
         init();
-        String query = String.format("SELECT housesIds FROM users WHERE users.id=\"%s\"", id);
-        return db.getContainer(UsersResource.CONTAINER).queryItems(query, new CosmosQueryRequestOptions(), String.class);
+        String query = String.format("SELECT * FROM houses WHERE houses.ownerId=\"%s\"", id);
+        return db.getContainer(HousesService.CONTAINER).queryItems(query, new CosmosQueryRequestOptions(), HouseDAO.class);
     }
 
 

@@ -7,6 +7,8 @@ import jakarta.ws.rs.core.Cookie;
 import jakarta.ws.rs.core.NewCookie;
 import jakarta.ws.rs.core.Response;
 import scc.cache.Cache;
+import scc.data.House;
+import scc.data.HouseDAO;
 import scc.data.User;
 import scc.data.UserDAO;
 import scc.db.CosmosDBLayer;
@@ -179,8 +181,8 @@ public class UsersResource extends Validations implements UsersService {
 
                 Cache.putInCache(user, USER_PREFIX);
 
-                //Todo: alterar o return para as casas mesmo em vez de ser apenas os ids
-                return sendResponse(OK, user.getHouseIds());
+                List<House> toReturn = db.listUserHouses(id).stream().map(HouseDAO::toHouse).toList();
+                return sendResponse(OK, toReturn.isEmpty() ? new ArrayList<>() : toReturn);
 
             } else
                 return sendResponse(NOT_FOUND, USER_MSG, id);
