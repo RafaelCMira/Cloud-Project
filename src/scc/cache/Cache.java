@@ -87,4 +87,11 @@ public class Cache {
                 jedis.expire(prefix,CACHE_EXPIRE_TIME);
             }
     }
+
+    public static <T> void addToListInCache(T obj, String prefix) throws JsonProcessingException {
+        if (AzureManagement.CREATE_REDIS)
+            try (Jedis jedis = Cache.getCachePool().getResource()) {
+                jedis.lpush(prefix,mapper.writeValueAsString(obj));
+            }
+    }
 }

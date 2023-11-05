@@ -24,6 +24,9 @@ public interface RentalService {
     String RENTAL = "/rental";
     String DISCOUNT = "/discount";
 
+    String HOUSE_RENTALS = "houses:r:";
+    String DISCOUNTED_HOUSES = "houses:disc:";
+
 
     @POST
     @Path("{" + HOUSE_ID + "}" + RENTAL)

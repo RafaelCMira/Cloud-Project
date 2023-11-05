@@ -36,9 +36,7 @@ public class QuestionResource extends Validations implements QuestionService {
             Cache.putInCache(questionDAO, QUESTION_PREFIX);
 
             // Put the new question in the Cache list of question
-            List<Question> l = new ArrayList<>(1);
-            l.add(questionDAO.toQuestion());
-            Cache.uploadListToCache(l,CACHE_LIST+houseId);
+            Cache.addToListInCache(questionDAO.toQuestion(),CACHE_LIST+houseId);
 
             return sendResponse(OK, questionDAO.toQuestion());
 

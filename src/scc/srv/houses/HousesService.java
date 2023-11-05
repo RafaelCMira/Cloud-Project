@@ -8,8 +8,6 @@ import scc.data.HouseDAO;
 import scc.data.House;
 import scc.srv.authentication.Session;
 
-import java.util.List;
-
 @Path(HousesService.PATH)
 public interface HousesService {
     String PATH = "/house";
@@ -68,6 +66,6 @@ public interface HousesService {
     @GET
     @Path(NEW_HOUSES)
     @Produces(MediaType.APPLICATION_JSON)
-    List<String> getNewHouses() throws Exception;
+    Response getNewHouses() throws Exception;
 
 }

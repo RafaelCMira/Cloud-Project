@@ -1,10 +1,11 @@
 package scc.srv.rentals;
 
 import com.azure.cosmos.CosmosException;
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import jakarta.ws.rs.WebApplicationException;
 import jakarta.ws.rs.core.Cookie;
 import jakarta.ws.rs.core.Response;
-import reactor.netty.ReactorNetty;
 import scc.cache.Cache;
 import scc.data.*;
 import scc.db.CosmosDBLayer;
@@ -13,10 +14,8 @@ import scc.srv.users.UsersService;
 import scc.srv.utils.Validations;
 
 import java.time.Instant;
-import java.time.LocalDate;
 import java.time.ZoneId;
 import java.time.temporal.ChronoUnit;
-import java.time.temporal.TemporalUnit;
 import java.util.*;
 
 import static scc.srv.utils.Utility.*;
@@ -24,6 +23,7 @@ import static scc.srv.utils.Utility.*;
 public class RentalResource extends Validations implements RentalService {
 
     private final CosmosDBLayer db = CosmosDBLayer.getInstance();
+    private static final ObjectMapper mapper = new ObjectMapper();
 
     @Override
     public Response createRental(Cookie session, String houseId, RentalDAO rentalDAO) throws Exception {
@@ -52,6 +52,7 @@ public class RentalResource extends Validations implements RentalService {
                 return sendResponse(CONFLICT, RENTAL_MSG, rentalDAO.getId());
 
             Cache.putInCache(rentalDAO, RENTAL_PREFIX);
+            Cache.addToListInCache(rentalDAO.toRental(),HOUSE_RENTALS);
 
             return sendResponse(OK, rentalDAO.toRental());
 
@@ -105,7 +106,8 @@ public class RentalResource extends Validations implements RentalService {
         if (Validations.badParams(id))
             return sendResponse(BAD_REQUEST, BAD_REQUEST_MSG);
 
-        //todo: quando fazemos delete de um rental que não é desta casa vai dar erro que não tratamos ainda
+        // TODO - update cache
+        // todo: quando fazemos delete de um rental que não é desta casa vai dar erro que não tratamos ainda
         try {
             var house = Validations.houseExists(houseId);
             if (house == null)
@@ -141,36 +143,63 @@ public class RentalResource extends Validations implements RentalService {
 
     @Override
     public Response listHouseRentals(String houseId) {
-        //TODO: cache ?
         try {
-            List<Rental> toReturn = db.getHouseRentals(houseId).stream().map(RentalDAO::toRental).toList();
+            var list = Cache.getListFromCache(HOUSE_RENTALS);
+            List<Rental> toReturn = new ArrayList<>();
+            for (String s: list) {
+                toReturn.add(mapper.readValue(s,Rental.class));
+            }
+
+            if (toReturn.isEmpty())
+                toReturn = db.getHouseRentals(houseId).stream().map(RentalDAO::toRental).toList();
 
             return sendResponse(OK, toReturn.isEmpty() ? new ArrayList<>() : toReturn);
 
         } catch (CosmosException ex) {
             return processException(ex.getStatusCode());
+        } catch (JsonProcessingException e) {
+            return processException(500);
         }
     }
 
 
     @Override
     public Response getHousesInDiscount() {
-        //TODO: cache & tem ser updated de x em x tempo
-        var houses = db.getAll(HousesService.CONTAINER, HouseDAO.class);
+        //TODO: make an azure function to updated the cache in x time
+        try {
+            List<HouseDAO> houses = new ArrayList<>();
+            boolean updateCache = false;
 
-        var result = new ArrayList<House>();
-
-        for (HouseDAO house : houses) {
-            if (!house.getOwnerId().equals(UsersService.DELETED_USER)) {
-                var currentDate = Date.from(Instant.now());
-                var oneMonthFromNow = Date.from(Instant.now().plus(30, ChronoUnit.DAYS));
-
-                if (house.getDiscount() > 0 && Validations.isAvailable(house.getId(), currentDate, oneMonthFromNow))
-                    result.add(house.toHouse());
+            var list = Cache.getListFromCache(DISCOUNTED_HOUSES);
+            for (String s : list) {
+                houses.add(mapper.readValue(s, HouseDAO.class));
             }
-        }
 
-        return sendResponse(OK, result);
+            if (houses.isEmpty()) {
+                houses = db.getAll(HousesService.CONTAINER, HouseDAO.class).stream().toList();
+                updateCache = true;
+            }
+
+            var result = new ArrayList<House>();
+
+            for (HouseDAO house : houses) {
+                if (!house.getOwnerId().equals(UsersService.DELETED_USER)) {
+                    var currentDate = Date.from(Instant.now());
+                    var oneMonthFromNow = Date.from(Instant.now().plus(30, ChronoUnit.DAYS));
+
+                    if (house.getDiscount() > 0 && Validations.isAvailable(house.getId(), currentDate, oneMonthFromNow)) {
+                        result.add(house.toHouse());
+                        if (updateCache) Cache.addToListInCache(house, DISCOUNTED_HOUSES);
+                    }
+                }
+            }
+
+            return sendResponse(OK, result);
+
+        } catch (JsonProcessingException e) {
+            return processException(500, "Error while parsing questions");
+
+        }
     }
 
     private RentalDAO genUpdatedRental(Cookie session, String houseId, String id, RentalDAO rental) throws Exception {
