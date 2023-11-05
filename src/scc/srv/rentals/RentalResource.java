@@ -4,6 +4,7 @@ import com.azure.cosmos.CosmosException;
 import jakarta.ws.rs.WebApplicationException;
 import jakarta.ws.rs.core.Cookie;
 import jakarta.ws.rs.core.Response;
+import reactor.netty.ReactorNetty;
 import scc.cache.Cache;
 import scc.data.*;
 import scc.db.CosmosDBLayer;
@@ -12,6 +13,8 @@ import scc.srv.users.UsersService;
 import scc.srv.utils.Validations;
 
 import java.time.Instant;
+import java.time.LocalDate;
+import java.time.ZoneId;
 import java.time.temporal.ChronoUnit;
 import java.time.temporal.TemporalUnit;
 import java.util.*;
@@ -28,7 +31,14 @@ public class RentalResource extends Validations implements RentalService {
         try {
             rentalDAO.setId(UUID.randomUUID().toString());
             rentalDAO.setHouseId(houseId);
-            checkRentalCreation(session, houseId, rentalDAO);
+            var house = checkRentalCreation(session, houseId, rentalDAO);
+
+            long daysBetween = ChronoUnit.DAYS.between(
+                    rentalDAO.getInitialDate().toInstant().atZone(ZoneId.systemDefault()).toLocalDate(),
+                    rentalDAO.getEndDate().toInstant().atZone(ZoneId.systemDefault()).toLocalDate()
+            );
+
+            rentalDAO.setPrice(daysBetween * (house.getPrice() - house.getDiscount()));
 
             db.create(rentalDAO, CONTAINER);
 
@@ -203,7 +213,7 @@ public class RentalResource extends Validations implements RentalService {
      * @param rental  - the rental
      * @throws Exception - WebApplicationException depending on the result of the checks
      */
-    private void checkRentalCreation(Cookie session, String houseId, RentalDAO rental) throws Exception {
+    private HouseDAO checkRentalCreation(Cookie session, String houseId, RentalDAO rental) throws Exception {
         if (Validations.userExists(rental.getUserId()) == null)
             throw new WebApplicationException(USER_MSG, Response.Status.NOT_FOUND);
 
@@ -224,6 +234,8 @@ public class RentalResource extends Validations implements RentalService {
 
         if (!Validations.isAvailable(houseId, rental.getInitialDate(), rental.getEndDate()))
             throw new WebApplicationException(RENTAL_MSG, Response.Status.CONFLICT);
+
+        return house;
     }
 
 }
