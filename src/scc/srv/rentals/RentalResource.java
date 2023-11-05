@@ -38,7 +38,7 @@ public class RentalResource extends Validations implements RentalService {
                     rentalDAO.getEndDate().toInstant().atZone(ZoneId.systemDefault()).toLocalDate()
             );
 
-            rentalDAO.setPrice(daysBetween * (house.getPrice() - house.getDiscount()));
+            rentalDAO.setPrice((int) (daysBetween * (house.getPrice() - house.getDiscount())));
 
             db.create(rentalDAO, CONTAINER);
 
@@ -185,23 +185,19 @@ public class RentalResource extends Validations implements RentalService {
         if (rentalDAO == null)
             throw new WebApplicationException(RENTAL_MSG, Response.Status.NOT_FOUND);
 
-        //todo: Apenas o dono da casa pode fazer update
         var checkCookies = checkUserSession(session, house.getOwnerId());
         if (checkCookies.getStatus() != Response.Status.OK.getStatusCode())
             throw new WebApplicationException(checkCookies.getEntity().toString(), Response.Status.UNAUTHORIZED);
 
-        //TODO: ver o que se pode alterar num rental. Verficar datas de novo
-        double rentalDAOPrice = rental.getPrice();
-        if (rentalDAO.getPrice() != (rentalDAOPrice))
-            rentalDAO.setPrice(rentalDAOPrice);
+        // TODO: ver o que se pode alterar num rental
+        // Acho que só o preço é que faz sentido. Alterar datas mais vale fazer outro rental
 
-        Date rentalDAOInitialDate = rental.getInitialDate();
-        if (!rentalDAO.getInitialDate().equals(rentalDAOInitialDate))
-            rentalDAO.setInitialDate(rentalDAOInitialDate);
-
-        Date rentalDAOEndDate = rental.getEndDate();
-        if (!rentalDAO.getEndDate().equals(rentalDAOEndDate))
-            rentalDAO.setEndDate(rentalDAOEndDate);
+        var newPrice = rental.getPrice();
+        if (newPrice != null)
+            if (newPrice > 0)
+                rentalDAO.setPrice(newPrice);
+            else
+                throw new WebApplicationException("Error: Invalid price", Response.Status.BAD_REQUEST);
 
         return rentalDAO;
     }

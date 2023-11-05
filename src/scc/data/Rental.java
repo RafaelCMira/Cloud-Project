@@ -11,15 +11,14 @@ public class Rental {
     private String id;
     private String houseId;
     private String userId;
-    private double price;
-    private double discount;
+    private Integer price;
     private String initialDate;
     private String endDate;
 
     public Rental() {
     }
 
-    public Rental(String id, String houseId, String userId, double price, Date initialDate, Date endDate, double discount) {
+    public Rental(String id, String houseId, String userId, Integer price, Date initialDate, Date endDate) {
         super();
         this.id = id;
         this.houseId = houseId;
@@ -29,8 +28,6 @@ public class Rental {
         SimpleDateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd");
         this.initialDate = dateFormat.format(initialDate);
         this.endDate = dateFormat.format(endDate);
-
-        this.discount = discount;
     }
 
     public void setId(String id) {
@@ -57,11 +54,11 @@ public class Rental {
         return userId;
     }
 
-    public void setPrice(double price) {
+    public void setPrice(Integer price) {
         this.price = price;
     }
 
-    public double getPrice() {
+    public Integer getPrice() {
         return price;
     }
 
@@ -81,14 +78,6 @@ public class Rental {
         this.endDate = endDate;
     }
 
-    public double getDiscount() {
-        return discount;
-    }
-
-    public void setDiscount(double discount) {
-        this.discount = discount;
-    }
-
     @Override
     public String toString() {
         return "Rental{" +
@@ -96,9 +85,8 @@ public class Rental {
                 ", houseId='" + houseId + '\'' +
                 ", userId='" + userId + '\'' +
                 ", price=" + price +
-                ", startDate=" + initialDate +
-                ", endDate=" + endDate +
-                ", discount=" + discount +
+                ", initialDate='" + initialDate + '\'' +
+                ", endDate='" + endDate + '\'' +
                 '}';
     }
 }
