@@ -15,8 +15,7 @@ public class RentalDAO implements HasId {
     private String id;
     private String houseId;
     private String userId;
-    private double price;
-    private double discount;
+    private Integer price;
     private Date initialDate;
     private Date endDate;
 
@@ -25,10 +24,10 @@ public class RentalDAO implements HasId {
 
     public RentalDAO(Rental r) {
         this(r.getId(), r.getHouseId(), r.getUserId(), r.getPrice(), Date.from(Instant.parse(r.getInitialDate())),
-                Date.from(Instant.parse(r.getEndDate())), r.getDiscount());
+                Date.from(Instant.parse(r.getEndDate())));
     }
 
-    public RentalDAO(String id, String houseId, String userId, double price, Date initialDate, Date endDate, double discount) {
+    public RentalDAO(String id, String houseId, String userId, Integer price, Date initialDate, Date endDate) {
         super();
         this.id = id;
         this.houseId = houseId;
@@ -36,7 +35,6 @@ public class RentalDAO implements HasId {
         this.price = price;
         this.initialDate = initialDate;
         this.endDate = endDate;
-        this.discount = discount;
     }
 
     public String get_rid() {
@@ -79,11 +77,11 @@ public class RentalDAO implements HasId {
         return userId;
     }
 
-    public void setPrice(double price) {
+    public void setPrice(Integer price) {
         this.price = price;
     }
 
-    public double getPrice() {
+    public Integer getPrice() {
         return price;
     }
 
@@ -104,15 +102,7 @@ public class RentalDAO implements HasId {
     }
 
     public Rental toRental() {
-        return new Rental(id, houseId, userId, price, initialDate, endDate, discount);
-    }
-
-    public double getDiscount() {
-        return discount;
-    }
-
-    public void setDiscount(double discount) {
-        this.discount = discount;
+        return new Rental(id, houseId, userId, price, initialDate, endDate);
     }
 
     @Override
@@ -124,7 +114,6 @@ public class RentalDAO implements HasId {
                 ", houseId='" + houseId + '\'' +
                 ", userId='" + userId + '\'' +
                 ", price=" + price +
-                ", discount=" + discount +
                 ", initialDate=" + initialDate +
                 ", endDate=" + endDate +
                 '}';
