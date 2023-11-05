@@ -22,6 +22,8 @@ public interface HousesService {
 
     String ID = "id";
     String LOCATION = "location";
+    String ALL = "/all";
+    String AVAILABLE = "/available";
     String NEW_HOUSES = "/NewHouses";
     String INITIAL_DATE = "initialDate";
     String END_DATE = "endDate";
@@ -49,17 +51,16 @@ public interface HousesService {
     Response updateHouse(@CookieParam(Session.SESSION) Cookie session, @PathParam(ID) String id, House house) throws Exception;
 
     @GET
-    @Path("/All")
+    @Path(ALL)
     @Produces(MediaType.APPLICATION_JSON)
     Response listAllHouses();
 
     @GET
-    @Path("/")
     @Produces(MediaType.APPLICATION_JSON)
     Response getAvailHouseByLocation(@QueryParam(LOCATION) String location);
-    
+
     @GET
-    @Path("/Available/")
+    @Path(AVAILABLE)
     @Produces(MediaType.APPLICATION_JSON)
     Response getHouseByLocationPeriod(@QueryParam(LOCATION) String location, @QueryParam(INITIAL_DATE) String initialDate,
                                       @QueryParam(END_DATE) String endDate);

@@ -8,13 +8,10 @@ import scc.data.QuestionDAO;
 import scc.data.RentalDAO;
 import scc.data.UserDAO;
 import scc.db.CosmosDBLayer;
-import scc.srv.houses.HousesResource;
 import scc.srv.houses.HousesService;
 import scc.srv.media.MediaResource;
 import scc.srv.question.QuestionService;
-import scc.srv.rentals.RentalResource;
 import scc.srv.rentals.RentalService;
-import scc.srv.users.UsersResource;
 import scc.srv.users.UsersService;
 
 import java.util.Date;
@@ -93,6 +90,9 @@ public class Validations {
     }
 
 
+    /**
+     * Verify if questiom exists
+     */
     protected static QuestionDAO questionExists(String questionId) {
         try {
             var questionCache = Cache.getFromCache(QuestionService.QUESTION_PREFIX, questionId);
@@ -118,14 +118,19 @@ public class Validations {
         return media.hasPhotos(mediaId) && mediaId != null && !mediaId.isEmpty();
     }
 
+    /**
+     * Verify if house is available
+     */
     protected static boolean isAvailable(String houseId, Date start, Date end) {
         var rentals = db.getHouseRentals(houseId);
 
-        for (RentalDAO rental : rentals)
-            if (rental.getInitialDate().before(end) && rental.getEndDate().after(start))
+        for (RentalDAO rental : rentals) {
+            if (!(start.after(rental.getEndDate()) || rental.getInitialDate().after(end)))
                 return false;
+        }
 
         return true;
     }
+
 
 }

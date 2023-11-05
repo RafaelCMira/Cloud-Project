@@ -7,7 +7,6 @@ import jakarta.ws.rs.core.Response;
 import scc.cache.Cache;
 import scc.data.*;
 import scc.db.CosmosDBLayer;
-import scc.srv.houses.HousesService;
 import scc.srv.utils.Validations;
 
 import java.time.Instant;
@@ -27,6 +26,7 @@ public class RentalResource extends Validations implements RentalService {
 
         try {
             rentalDAO.setId(UUID.randomUUID().toString());
+            rentalDAO.setHouseId(houseId);
             checkRentalCreation(session, houseId, rentalDAO);
 
             db.create(rentalDAO, CONTAINER);
@@ -61,7 +61,7 @@ public class RentalResource extends Validations implements RentalService {
         else if (msg.contains(USER_MSG))
             return processException(statusCode, USER_MSG, rental.getUserId());
         else
-            return processException(statusCode, RENTAL_MSG, rental.getId());
+            return processException(statusCode, msg, rental.getId());
     }
 
     @Override
@@ -88,10 +88,11 @@ public class RentalResource extends Validations implements RentalService {
         if (Validations.badParams(id))
             return sendResponse(BAD_REQUEST, BAD_REQUEST_MSG);
 
+        //todo: quando fazemos delete de um rental que não é desta casa vai dar erro que não tratamos ainda
         try {
-            var house = Validations.houseExists(id);
+            var house = Validations.houseExists(houseId);
             if (house == null)
-                return sendResponse(NOT_FOUND, HOUSE_MSG, id);
+                return sendResponse(NOT_FOUND, HOUSE_MSG, houseId);
 
             db.delete(id, CONTAINER, houseId);
 
@@ -122,10 +123,10 @@ public class RentalResource extends Validations implements RentalService {
     }
 
     @Override
-    public Response listRentals(String houseID) {
+    public Response listHouseRentals(String houseId) {
         //TODO: cache ?
         try {
-            List<Rental> toReturn = db.getAll(CONTAINER, RentalDAO.class).stream().map(RentalDAO::toRental).toList();
+            List<Rental> toReturn = db.getHouseRentals(houseId).stream().map(RentalDAO::toRental).toList();
 
             return sendResponse(OK, toReturn.isEmpty() ? new ArrayList<>() : toReturn);
 
@@ -188,20 +189,21 @@ public class RentalResource extends Validations implements RentalService {
      * @throws Exception - WebApplicationException depending on the result of the checks
      */
     private void checkRentalCreation(Cookie session, String houseId, RentalDAO rental) throws Exception {
+        if (Validations.userExists(rental.getUserId()) == null)
+            throw new WebApplicationException(USER_MSG, Response.Status.NOT_FOUND);
+
         var checkCookies = checkUserSession(session, rental.getUserId());
         if (checkCookies.getStatus() != Response.Status.OK.getStatusCode())
             throw new WebApplicationException(checkCookies.getEntity().toString(), Response.Status.UNAUTHORIZED);
 
-        if (Validations.badParams(rental.getId(), rental.getHouseId(), rental.getUserId()) || !houseId.equals(rental.getHouseId()))
-            throw new WebApplicationException(Response.Status.BAD_REQUEST);
+        if (Validations.badParams(rental.getId(), rental.getHouseId(), rental.getUserId())
+                || !houseId.equals(rental.getHouseId())
+                || rental.getInitialDate().after(rental.getEndDate()))
+            throw new WebApplicationException("Something in your request ir wrong. Check dates pls.", Response.Status.BAD_REQUEST);
 
         if (Validations.houseExists(houseId) == null)
             throw new WebApplicationException(HOUSE_MSG, Response.Status.NOT_FOUND);
-
-        if (Validations.userExists(rental.getUserId()) == null)
-            throw new WebApplicationException(USER_MSG, Response.Status.NOT_FOUND);
-
-        // Verify if house is available
+        
         if (!Validations.isAvailable(houseId, rental.getInitialDate(), rental.getEndDate()))
             throw new WebApplicationException(RENTAL_MSG, Response.Status.CONFLICT);
     }

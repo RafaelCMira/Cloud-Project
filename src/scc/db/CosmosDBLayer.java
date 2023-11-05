@@ -3,21 +3,13 @@ package scc.db;
 import com.azure.cosmos.*;
 import com.azure.cosmos.models.*;
 import com.azure.cosmos.util.CosmosPagedIterable;
-
 import scc.data.*;
 import scc.srv.houses.HousesResource;
 import scc.srv.houses.HousesService;
 import scc.srv.question.QuestionResource;
 import scc.srv.rentals.RentalResource;
-import scc.srv.rentals.RentalService;
-import scc.srv.users.UsersResource;
 import scc.srv.utils.HasId;
 import scc.utils.props.AzureProperties;
-
-import java.time.Instant;
-import java.util.ArrayList;
-import java.util.Date;
-import java.util.List;
 
 public class CosmosDBLayer {
 
@@ -101,7 +93,6 @@ public class CosmosDBLayer {
         return db.getContainer(HousesService.CONTAINER).queryItems(query, new CosmosQueryRequestOptions(), HouseDAO.class);
     }
 
-
     ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
     ////////////////////////////// HOUSES
     ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -112,35 +103,25 @@ public class CosmosDBLayer {
         return db.getContainer(HousesResource.CONTAINER).queryItems(query, new CosmosQueryRequestOptions(), HouseDAO.class);
     }
 
-
     ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
     ////////////////////////////// RENTALS
     ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-    
+
     public CosmosPagedIterable<RentalDAO> getHouseRentals(String houseId) {
         init();
         PartitionKey key = new PartitionKey(houseId);
         return db.getContainer(RentalResource.CONTAINER).readAllItems(key, RentalDAO.class); // (query, new CosmosQueryRequestOptions(), RentalDAO.class);
     }
 
-
     ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
     ////////////////////////////// QUESTIONS
     ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-
-/*    public void replyToQuestion(QuestionDAO question) throws Exception {
-        init();
-        var id = question.getId();
-        PartitionKey key = new PartitionKey(question.getHouseId());
-        db.getContainer(QuestionResource.CONTAINER).replaceItem(question, id, key, new CosmosItemRequestOptions());
-    }*/
 
     public CosmosPagedIterable<QuestionDAO> listHouseQuestions(String houseId) {
         init();
         String query = String.format("SELECT * FROM questions WHERE questions.houseId=\"%s\"", houseId);
         return db.getContainer(QuestionResource.CONTAINER).queryItems(query, new CosmosQueryRequestOptions(), QuestionDAO.class);
     }
-
 
     public void close() {
         client.close();

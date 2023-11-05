@@ -7,11 +7,12 @@ import jakarta.ws.rs.core.Response;
 import scc.cache.Cache;
 import scc.data.*;
 import scc.db.CosmosDBLayer;
-import scc.srv.utils.Utility;
 import scc.srv.utils.Validations;
 
 import java.time.Instant;
 import java.time.LocalDate;
+import java.time.ZoneId;
+import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
@@ -156,16 +157,6 @@ public class HousesResource extends Validations implements HousesService {
             Date currentDate = Date.from(Instant.now());
 
             for (HouseDAO house : houses) {
-                /*var rentals = db.getHouseRentals(house.getId());
-                boolean isAvailable = true;
-                for (RentalDAO rental : rentals) {
-                    if (Utility.datesOverlap(currentDate, rental)) {
-                        isAvailable = false;
-                        break;
-                    }
-                }
-                if (isAvailable)
-                    availableHouses.add(house.toHouse());*/
                 if (Validations.isAvailable(house.getId(), currentDate, currentDate))
                     availableHouses.add(house.toHouse());
             }
@@ -177,52 +168,19 @@ public class HousesResource extends Validations implements HousesService {
         }
     }
 
-  /*  @Override
-    public List<House> getHouseByLocationPeriod(String location, String initialDate, String endDate) throws Exception {
-        //TODO: chache
-        Date iniDate = Date.from(Instant.parse(initialDate));
-        Date eDate = Date.from(Instant.parse(endDate));
-
-        List<House> result = new ArrayList<>();
-
-        var houses = db.getHousesByLocation(location).stream().toList();
-
-        // Check if house is available in the given timeframe
-        for (HouseDAO h : houses) {
-            boolean available = true;
-            for (String id : h.getRentalsIds()) {
-                var rental = db.getRentalById(h.getId(), id).stream().findFirst();
-                if (rental.isEmpty()) {
-                    available = false;
-                } else {
-                    RentalDAO r = rental.get();
-                    available = r.getInitialDate().after(eDate) || r.getEndDate().before(iniDate);
-                }
-
-            }
-            if (available)
-                result.add(h.toHouse());
-        }
-
-        if (!result.isEmpty()) {
-            return result;
-        } else {
-            throw new Exception("Error: 404");
-        }
-    }*/
-
     @Override
     public Response getHouseByLocationPeriod(String location, String initialDate, String endDate) {
         //TODO: chache
-        Date start = Date.from(Instant.parse(initialDate));
-        Date end = Date.from(Instant.parse(endDate));
-
         try {
+            DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd");
+            Instant start = LocalDate.parse(initialDate, formatter).atStartOfDay(ZoneId.systemDefault()).toInstant();
+            Instant end = LocalDate.parse(endDate, formatter).atStartOfDay(ZoneId.systemDefault()).toInstant();
+
             var houses = db.getHousesByLocation(location);
             var availableHouses = new ArrayList<>();
 
             for (HouseDAO house : houses) {
-                if (Validations.isAvailable(house.getId(), start, end))
+                if (Validations.isAvailable(house.getId(), Date.from(start), Date.from(end)))
                     availableHouses.add(house.toHouse());
             }
 
