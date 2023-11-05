@@ -7,6 +7,7 @@ import jakarta.ws.rs.core.Response;
 import scc.cache.Cache;
 import scc.data.*;
 import scc.db.CosmosDBLayer;
+import scc.srv.users.UsersService;
 import scc.srv.utils.Validations;
 
 import java.time.Instant;
@@ -56,12 +57,18 @@ public class RentalResource extends Validations implements RentalService {
             return Response.status(Response.Status.CONFLICT)
                     .entity(String.format("House %s already rented for this period", rental.getHouseId()))
                     .build();
+        if (statusCode == 403)
+            return Response.status(Response.Status.FORBIDDEN)
+                    .entity("Can't rent this house. Owner is no longer in the system.")
+                    .build();
         if (msg.contains(HOUSE_MSG))
             return processException(statusCode, HOUSE_MSG, rental.getHouseId());
         else if (msg.contains(USER_MSG))
             return processException(statusCode, USER_MSG, rental.getUserId());
+        else if (msg.contains(RENTAL_MSG))
+            return processException(statusCode, RENTAL_MSG, rental.getId());
         else
-            return processException(statusCode, msg, rental.getId());
+            return processException(statusCode, msg);
     }
 
     @Override
@@ -199,11 +206,14 @@ public class RentalResource extends Validations implements RentalService {
         if (Validations.badParams(rental.getId(), rental.getHouseId(), rental.getUserId())
                 || !houseId.equals(rental.getHouseId())
                 || rental.getInitialDate().after(rental.getEndDate()))
-            throw new WebApplicationException("Something in your request ir wrong. Check dates pls.", Response.Status.BAD_REQUEST);
+            throw new WebApplicationException("Something in your request is wrong. Check dates pls.", Response.Status.BAD_REQUEST);
 
-        if (Validations.houseExists(houseId) == null)
+        var house = Validations.houseExists(houseId);
+        if (house == null)
             throw new WebApplicationException(HOUSE_MSG, Response.Status.NOT_FOUND);
-        
+        else if (house.getOwnerId().equals(UsersService.DELETED_USER))
+            throw new WebApplicationException(Response.Status.FORBIDDEN);
+
         if (!Validations.isAvailable(houseId, rental.getInitialDate(), rental.getEndDate()))
             throw new WebApplicationException(RENTAL_MSG, Response.Status.CONFLICT);
     }

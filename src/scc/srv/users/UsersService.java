@@ -13,7 +13,7 @@ import scc.srv.authentication.Session;
 @Path(UsersService.PATH)
 public interface UsersService {
     String PATH = "/user";
-    
+
 
     String PARTITION_KEY = "/id";
     String CONTAINER = "users";
@@ -23,6 +23,7 @@ public interface UsersService {
     String ID = "id";
     String HOUSES = "/houses";
     String AUTH = "/auth";
+    String DELETED_USER = "Deleted User";
 
 
     @POST

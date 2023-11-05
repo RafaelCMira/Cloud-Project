@@ -30,8 +30,6 @@ import static scc.srv.utils.Utility.*;
 
 public class UsersResource extends Validations implements UsersService {
 
-    private static final String DELETED_USER = "Deleted User";
-
     private final CosmosDBLayer db = CosmosDBLayer.getInstance();
 
     @Override
@@ -97,14 +95,14 @@ public class UsersResource extends Validations implements UsersService {
             return checkCookies;
 
         try {
-            //TODO: colocar "Deleted User" no ownerId das casas do user eliminado e nos Rentals
             var userHouses = db.getUserHouses(id);
             var userRentals = db.getUserRentals(id);
-            
+
             var updateHouses = CompletableFuture.runAsync(() -> {
                 for (var house : userHouses) {
                     house.setOwnerId(DELETED_USER);
                     db.update(house, HousesService.CONTAINER, house.getId());
+                    Cache.deleteFromCache(HousesService.HOUSE_PREFIX, house.getId());
                 }
             });
 
