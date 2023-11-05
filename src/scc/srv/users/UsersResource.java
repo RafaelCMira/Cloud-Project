@@ -14,17 +14,23 @@ import scc.data.UserDAO;
 import scc.db.CosmosDBLayer;
 import scc.srv.authentication.Login;
 import scc.srv.authentication.Session;
+import scc.srv.houses.HousesResource;
+import scc.srv.houses.HousesService;
+import scc.srv.rentals.RentalService;
 import scc.srv.utils.Validations;
 import scc.utils.Hash;
 
 import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
+import java.util.concurrent.CompletableFuture;
 
 import static scc.srv.utils.Utility.*;
 
 
 public class UsersResource extends Validations implements UsersService {
+
+    private static final String DELETED_USER = "Deleted User";
 
     private final CosmosDBLayer db = CosmosDBLayer.getInstance();
 
@@ -86,14 +92,32 @@ public class UsersResource extends Validations implements UsersService {
         if (Validations.badParams(id))
             return sendResponse(BAD_REQUEST, BAD_REQUEST_MSG);
 
-        //TODO: colocar "Deleted User" no ownerId das casas do user eliminado e nos Rentals
-        //TODO: Usar azure functions
-
         var checkCookies = checkUserSession(session, id);
         if (checkCookies.getStatus() != Response.Status.OK.getStatusCode())
             return checkCookies;
 
         try {
+            //TODO: colocar "Deleted User" no ownerId das casas do user eliminado e nos Rentals
+            var userHouses = db.getUserHouses(id);
+            var userRentals = db.getUserRentals(id);
+            
+            var updateHouses = CompletableFuture.runAsync(() -> {
+                for (var house : userHouses) {
+                    house.setOwnerId(DELETED_USER);
+                    db.update(house, HousesService.CONTAINER, house.getId());
+                }
+            });
+
+            var updateRentals = CompletableFuture.runAsync(() -> {
+                for (var rental : userRentals) {
+                    rental.setUserId(DELETED_USER);
+                    db.update(rental, RentalService.CONTAINER, rental.getHouseId());
+                }
+            });
+
+            var allUpdates = CompletableFuture.allOf(updateHouses, updateRentals);
+            allUpdates.join();
+
             db.delete(id, CONTAINER, id);
 
             Cache.deleteFromCache(USER_PREFIX, id);

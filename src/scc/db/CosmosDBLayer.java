@@ -8,6 +8,7 @@ import scc.srv.houses.HousesResource;
 import scc.srv.houses.HousesService;
 import scc.srv.question.QuestionResource;
 import scc.srv.rentals.RentalResource;
+import scc.srv.rentals.RentalService;
 import scc.srv.utils.HasId;
 import scc.utils.props.AzureProperties;
 
@@ -103,6 +104,12 @@ public class CosmosDBLayer {
         return db.getContainer(HousesResource.CONTAINER).queryItems(query, new CosmosQueryRequestOptions(), HouseDAO.class);
     }
 
+    public CosmosPagedIterable<HouseDAO> getUserHouses(String ownerId) {
+        init();
+        String query = String.format("SELECT * FROM houses WHERE houses.ownerId=\"%s\"", ownerId);
+        return db.getContainer(HousesResource.CONTAINER).queryItems(query, new CosmosQueryRequestOptions(), HouseDAO.class);
+    }
+
     ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
     ////////////////////////////// RENTALS
     ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -111,6 +118,12 @@ public class CosmosDBLayer {
         init();
         PartitionKey key = new PartitionKey(houseId);
         return db.getContainer(RentalResource.CONTAINER).readAllItems(key, RentalDAO.class); // (query, new CosmosQueryRequestOptions(), RentalDAO.class);
+    }
+
+    public CosmosPagedIterable<RentalDAO> getUserRentals(String userId) {
+        init();
+        String query = String.format("SELECT * FROM rentals WHERE rentals.userId=\"%s\"", userId);
+        return db.getContainer(RentalService.CONTAINER).queryItems(query, new CosmosQueryRequestOptions(), RentalDAO.class);
     }
 
     ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
