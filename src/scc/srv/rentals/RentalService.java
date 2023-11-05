@@ -57,9 +57,8 @@ public interface RentalService {
 
 
     @GET
-    @Path("/{" + HOUSE_ID + "}" + DISCOUNT)
+    @Path(DISCOUNT)
     @Produces(MediaType.APPLICATION_JSON)
-    @Consumes(MediaType.APPLICATION_JSON)
-    Response getDiscountedRentals(@PathParam(HOUSE_ID) String houseID) throws Exception;
+    Response getHousesInDiscount();
 
 }

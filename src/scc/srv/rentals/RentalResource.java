@@ -7,14 +7,14 @@ import jakarta.ws.rs.core.Response;
 import scc.cache.Cache;
 import scc.data.*;
 import scc.db.CosmosDBLayer;
+import scc.srv.houses.HousesService;
 import scc.srv.users.UsersService;
 import scc.srv.utils.Validations;
 
 import java.time.Instant;
-import java.util.ArrayList;
-import java.util.Date;
-import java.util.List;
-import java.util.UUID;
+import java.time.temporal.ChronoUnit;
+import java.time.temporal.TemporalUnit;
+import java.util.*;
 
 import static scc.srv.utils.Utility.*;
 
@@ -144,15 +144,23 @@ public class RentalResource extends Validations implements RentalService {
 
 
     @Override
-    public Response getDiscountedRentals(String houseID) throws Exception {
+    public Response getHousesInDiscount() {
         //TODO: cache & tem ser updated de x em x tempo
-        var rentalsDAO = db.getHouseRentals(houseID);
-        List<Rental> res = new ArrayList<>();
-        for (RentalDAO r : rentalsDAO) {
-            if (r.getDiscount() > 0 && !r.getInitialDate().before(Date.from(Instant.now())))
-                res.add(r.toRental());
+        var houses = db.getAll(HousesService.CONTAINER, HouseDAO.class);
+
+        var result = new ArrayList<House>();
+
+        for (HouseDAO house : houses) {
+            if (!house.getOwnerId().equals(UsersService.DELETED_USER)) {
+                var currentDate = Date.from(Instant.now());
+                var oneMonthFromNow = Date.from(Instant.now().plus(30, ChronoUnit.DAYS));
+
+                if (house.getDiscount() > 0 && Validations.isAvailable(house.getId(), currentDate, oneMonthFromNow))
+                    result.add(house.toHouse());
+            }
         }
-        return sendResponse(OK, res);
+
+        return sendResponse(OK, result);
     }
 
     private RentalDAO genUpdatedRental(Cookie session, String houseId, String id, RentalDAO rental) throws Exception {
