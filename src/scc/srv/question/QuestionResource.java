@@ -2,6 +2,7 @@ package scc.srv.question;
 
 import com.azure.cosmos.CosmosException;
 import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import jakarta.ws.rs.WebApplicationException;
 import jakarta.ws.rs.core.Cookie;
 import jakarta.ws.rs.core.Response;
@@ -10,6 +11,8 @@ import scc.data.*;
 import scc.db.CosmosDBLayer;
 import scc.srv.utils.Validations;
 
+import java.util.ArrayList;
+import java.util.List;
 import java.util.UUID;
 
 
@@ -18,6 +21,7 @@ import static scc.srv.utils.Utility.*;
 public class QuestionResource extends Validations implements QuestionService {
 
     private final CosmosDBLayer db = CosmosDBLayer.getInstance();
+    private static final ObjectMapper mapper = new ObjectMapper();
 
     @Override
     public Response createQuestion(String houseId, QuestionDAO questionDAO) throws JsonProcessingException {
@@ -30,6 +34,11 @@ public class QuestionResource extends Validations implements QuestionService {
             db.create(questionDAO, CONTAINER);
 
             Cache.putInCache(questionDAO, QUESTION_PREFIX);
+
+            // Put the new question in the Cache list of question
+            List<Question> l = new ArrayList<>(1);
+            l.add(questionDAO.toQuestion());
+            Cache.uploadListToCache(l,CACHE_LIST+houseId);
 
             return sendResponse(OK, questionDAO.toQuestion());
 
@@ -80,17 +89,28 @@ public class QuestionResource extends Validations implements QuestionService {
 
     @Override
     public Response listQuestions(String houseId) {
-        // TODO: colocar lista de questoes na cache
-
         try {
+            List<String> list = Cache.getListFromCache(CACHE_LIST + houseId);
+            if (!list.isEmpty()) {
+                List<Question> questions = new ArrayList<>();
+                for (String s: list) { questions.add(mapper.readValue(s,Question.class));}
+                return sendResponse(OK, questions);
+            }
+
             if (Validations.houseExists(houseId) == null)
                 return sendResponse(NOT_FOUND, HOUSE_MSG, houseId);
 
             var questions = db.listHouseQuestions(houseId).stream().map(QuestionDAO::toQuestion).toList();
+            for (Question q: questions) {
+                list.add(mapper.writeValueAsString(q));
+            }
+            Cache.uploadListToCache(questions,CACHE_LIST+houseId);
             return sendResponse(OK, questions);
 
         } catch (CosmosException ex) {
             return processException(ex.getStatusCode(), ex.getMessage());
+        } catch (JsonProcessingException e) {
+            return processException(500, "Error while parsing questions");
         }
     }
 

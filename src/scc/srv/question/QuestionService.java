@@ -4,7 +4,6 @@ import jakarta.ws.rs.*;
 import jakarta.ws.rs.core.Cookie;
 import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
-import scc.data.Question;
 import scc.data.QuestionDAO;
 import scc.srv.authentication.Session;
 
@@ -16,7 +15,7 @@ public interface QuestionService {
     String PARTITION_KEY = "/houseId";
     String CONTAINER = "questions";
     String QUESTION_PREFIX = "q:";
-
+    String CACHE_LIST = "list:q:";
 
     String HOUSE_ID = "id";
     String QUESTION = "/question";

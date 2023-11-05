@@ -76,4 +76,13 @@ public class Cache {
             }
         return new ArrayList<>();
     }
+
+    public static <T extends HasId> void uploadListToCache(List<T> data, String prefix) throws JsonProcessingException {
+        if (AzureManagement.CREATE_REDIS)
+            try (Jedis jedis = Cache.getCachePool().getResource()) {
+                for(T obj: data) {
+                    jedis.lpush(prefix,mapper.writeValueAsString(obj));
+                }
+            }
+    }
 }

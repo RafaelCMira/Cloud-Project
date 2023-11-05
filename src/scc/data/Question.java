@@ -1,11 +1,13 @@
 package scc.data;
 
+import scc.srv.utils.HasId;
+
 /**
  * Represents a discussion (one question with only one answer) between a customer and the owner,
  * as returned to the client
  */
 
-public class Question {
+public class Question implements HasId {
 
     private String id;
     private String askerId;
