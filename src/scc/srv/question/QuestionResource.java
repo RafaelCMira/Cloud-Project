@@ -27,16 +27,16 @@ public class QuestionResource extends Validations implements QuestionService {
     public Response createQuestion(String houseId, QuestionDAO questionDAO) throws JsonProcessingException {
         try {
             questionDAO.setHouseId(houseId);
+            questionDAO.setId(UUID.randomUUID().toString());
 
             checkQuestionCreation(questionDAO);
 
-            questionDAO.setId(UUID.randomUUID().toString());
             db.create(questionDAO, CONTAINER);
 
             Cache.putInCache(questionDAO, QUESTION_PREFIX);
 
-            // Put the new question in the Cache list of question
-            Cache.addToListInCache(questionDAO.toQuestion(),CACHE_LIST+houseId);
+            // Put the new question in the list of question of the house
+            Cache.addToListInCache(questionDAO.toQuestion(), QUESTIONS_LIST_PREFIX + houseId);
 
             return sendResponse(OK, questionDAO.toQuestion());
 
@@ -65,6 +65,9 @@ public class QuestionResource extends Validations implements QuestionService {
 
             Cache.putInCache(updatedQuestion, QUESTION_PREFIX);
 
+            // Put the updated question in the list of question of the house
+            Cache.addToListInCache(questionDAO.toQuestion(), QUESTIONS_LIST_PREFIX + houseId);
+
             return sendResponse(OK, updatedQuestion.toQuestion());
 
         } catch (CosmosException ex) {
@@ -76,7 +79,7 @@ public class QuestionResource extends Validations implements QuestionService {
 
     private Response handleUpdateException(int statusCode, String msg, String id, String houseId) {
         if (statusCode == 409)
-            return Response.status(Response.Status.CONFLICT).entity(String.format("Question %s already answered", id)).build();
+            return Response.status(Response.Status.CONFLICT).entity(String.format(QUESTION_ALREADY_ANSWERED, id)).build();
         if (msg.contains(QUESTION_MSG))
             return processException(statusCode, QUESTION_MSG, id);
         else if (msg.contains(HOUSE_MSG))
@@ -87,11 +90,18 @@ public class QuestionResource extends Validations implements QuestionService {
 
     @Override
     public Response listQuestions(String houseId) {
+
         try {
-            List<String> list = Cache.getListFromCache(CACHE_LIST + houseId);
-            if (!list.isEmpty()) {
-                List<Question> questions = new ArrayList<>();
-                for (String s: list) { questions.add(mapper.readValue(s,Question.class));}
+            //TODO: acho que não podemos ter isto assim porque pode não estar atualizado
+            // Se apenas enviamos o que está na cache podemos apenas enviar a última question feita
+            // e as outras que são mais antigas já sairam da cache e não vao aparecer na lista
+            var cacheQuestions = Cache.getListFromCache(QUESTIONS_LIST_PREFIX + houseId);
+
+            if (!cacheQuestions.isEmpty()) {
+                var questions = new ArrayList<>();
+                for (String question : cacheQuestions) {
+                    questions.add(mapper.readValue(question, Question.class));
+                }
                 return sendResponse(OK, questions);
             }
 
@@ -99,10 +109,9 @@ public class QuestionResource extends Validations implements QuestionService {
                 return sendResponse(NOT_FOUND, HOUSE_MSG, houseId);
 
             var questions = db.listHouseQuestions(houseId).stream().map(QuestionDAO::toQuestion).toList();
-            for (Question q: questions) {
-                list.add(mapper.writeValueAsString(q));
-            }
-            Cache.uploadListToCache(questions,CACHE_LIST+houseId);
+
+            Cache.uploadListToCache(questions, QUESTIONS_LIST_PREFIX + houseId);
+
             return sendResponse(OK, questions);
 
         } catch (CosmosException ex) {
@@ -141,7 +150,6 @@ public class QuestionResource extends Validations implements QuestionService {
         if (question == null)
             throw new WebApplicationException(QUESTION_MSG, Response.Status.NOT_FOUND);
 
-        // Se a questao já foi respondida
         if (!question.getAnswer().isBlank())
             throw new WebApplicationException(QUESTION_MSG, Response.Status.CONFLICT);
 
@@ -150,6 +158,5 @@ public class QuestionResource extends Validations implements QuestionService {
         return question;
 
     }
-
-
+    
 }

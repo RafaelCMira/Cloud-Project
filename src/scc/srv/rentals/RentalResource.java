@@ -52,7 +52,7 @@ public class RentalResource extends Validations implements RentalService {
                 return sendResponse(CONFLICT, RENTAL_MSG, rentalDAO.getId());
 
             Cache.putInCache(rentalDAO, RENTAL_PREFIX);
-            Cache.addToListInCache(rentalDAO.toRental(),HOUSE_RENTALS);
+            Cache.addToListInCache(rentalDAO.toRental(), HOUSE_RENTALS);
 
             return sendResponse(OK, rentalDAO.toRental());
 
@@ -143,17 +143,19 @@ public class RentalResource extends Validations implements RentalService {
 
     @Override
     public Response listHouseRentals(String houseId) {
+        //TODO: rafactor this method
         try {
-            var list = Cache.getListFromCache(HOUSE_RENTALS);
+            var houseRentals = Cache.getListFromCache(HOUSE_RENTALS);
+
             List<Rental> toReturn = new ArrayList<>();
-            for (String s: list) {
-                toReturn.add(mapper.readValue(s,Rental.class));
+            for (String rental : houseRentals) {
+                toReturn.add(mapper.readValue(rental, RentalDAO.class).toRental());
             }
 
             if (toReturn.isEmpty()) {
                 toReturn = db.getHouseRentals(houseId).stream().map(RentalDAO::toRental).toList();
-                for (Rental r: toReturn) {
-                    Cache.addToListInCache(mapper.writeValueAsString(r),HOUSE_RENTALS);
+                for (Rental rental : toReturn) {
+                    Cache.addToListInCache(mapper.writeValueAsString(rental), HOUSE_RENTALS);
                 }
             }
 
@@ -174,9 +176,9 @@ public class RentalResource extends Validations implements RentalService {
             List<HouseDAO> houses = new ArrayList<>();
             boolean updateCache = false;
 
-            var list = Cache.getListFromCache(DISCOUNTED_HOUSES);
-            for (String s : list) {
-                houses.add(mapper.readValue(s, HouseDAO.class));
+            var discountedHouses = Cache.getListFromCache(DISCOUNTED_HOUSES);
+            for (String house : discountedHouses) {
+                houses.add(mapper.readValue(house, HouseDAO.class));
             }
 
             if (houses.isEmpty()) {
@@ -193,7 +195,8 @@ public class RentalResource extends Validations implements RentalService {
 
                     if (house.getDiscount() > 0 && Validations.isAvailable(house.getId(), currentDate, oneMonthFromNow)) {
                         result.add(house.toHouse());
-                        if (updateCache) Cache.addToListInCache(house, DISCOUNTED_HOUSES);
+                        if (updateCache)
+                            Cache.addToListInCache(house, DISCOUNTED_HOUSES);
                     }
                 }
             }
@@ -202,7 +205,6 @@ public class RentalResource extends Validations implements RentalService {
 
         } catch (JsonProcessingException e) {
             return processException(500, "Error while parsing questions");
-
         }
     }
 
@@ -221,9 +223,6 @@ public class RentalResource extends Validations implements RentalService {
         var checkCookies = checkUserSession(session, house.getOwnerId());
         if (checkCookies.getStatus() != Response.Status.OK.getStatusCode())
             throw new WebApplicationException(checkCookies.getEntity().toString(), Response.Status.UNAUTHORIZED);
-
-        // TODO: ver o que se pode alterar num rental
-        // Acho que só o preço é que faz sentido. Alterar datas mais vale fazer outro rental
 
         var newPrice = rental.getPrice();
         if (newPrice != null)

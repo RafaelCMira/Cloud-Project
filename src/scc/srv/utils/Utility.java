@@ -1,14 +1,15 @@
 package scc.srv.utils;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import jakarta.ws.rs.NotAuthorizedException;
 import jakarta.ws.rs.core.Cookie;
 import jakarta.ws.rs.core.Response;
 import scc.cache.Cache;
-import scc.data.RentalDAO;
 import scc.srv.authentication.Session;
 
+import java.time.Instant;
+import java.time.LocalDate;
+import java.time.ZoneId;
+import java.time.format.DateTimeFormatter;
 import java.util.Date;
 
 /**
@@ -30,7 +31,10 @@ public class Utility {
     public static final String RENTAL_MSG = "Rental";
 
     public static final String QUESTION_MSG = "Question";
-    public static final String NOT_THE_OWNER = "You're the owner of this house.";
+
+    public static final String QUESTION_ALREADY_ANSWERED = "Question %s already answered";
+    
+    public static final String INCORRECT_LOGIN = "Incorrect login.";
 
 
     public static final String RESOURCE_WAS_DELETED = "%s %s was deleted";
@@ -102,12 +106,13 @@ public class Utility {
         if (!session.getId().equals(id) && !session.getId().equals("admin"))
             return sendResponse(UNAUTHORIZED, "Invalid user : " + session.getId());
 
-        return sendResponse(OK, "Cenas checked");
+        return sendResponse(OK, "Session checked");
     }
 
 
-    public static boolean datesOverlap(Date currentDate, RentalDAO rental) {
-        return currentDate.before(rental.getEndDate()) && rental.getInitialDate().before(currentDate);
+    public static Date formatDat(String date) {
+        DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd");
+        Instant start = LocalDate.parse(date, formatter).atStartOfDay(ZoneId.systemDefault()).toInstant();
+        return Date.from(start);
     }
-
 }

@@ -66,6 +66,6 @@ public interface HousesService {
     @GET
     @Path(NEW_HOUSES)
     @Produces(MediaType.APPLICATION_JSON)
-    Response getNewHouses() throws Exception;
+    Response getNewHouses();
 
 }

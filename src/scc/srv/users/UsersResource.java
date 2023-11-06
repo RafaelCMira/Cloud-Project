@@ -46,7 +46,7 @@ public class UsersResource extends Validations implements UsersService {
         var user = (User) res.getEntity();
 
         if (!Hash.of(credentials.getPwd()).equals(user.getPwd()))
-            return sendResponse(UNAUTHORIZED, "Incorrect login");
+            return sendResponse(UNAUTHORIZED, INCORRECT_LOGIN);
 
         String uid = UUID.randomUUID().toString();
         NewCookie cookie = new NewCookie.Builder(Session.SESSION)
@@ -110,6 +110,7 @@ public class UsersResource extends Validations implements UsersService {
                 for (var rental : userRentals) {
                     rental.setUserId(DELETED_USER);
                     db.update(rental, RentalService.CONTAINER, rental.getHouseId());
+                    Cache.deleteFromCache(RentalService.RENTAL_PREFIX, rental.getId());
                 }
             });
 
@@ -203,8 +204,8 @@ public class UsersResource extends Validations implements UsersService {
 
                 Cache.putInCache(user, USER_PREFIX);
 
-                List<House> toReturn = db.listUserHouses(id).stream().map(HouseDAO::toHouse).toList();
-                return sendResponse(OK, toReturn.isEmpty() ? new ArrayList<>() : toReturn);
+                var userHouses = db.listUserHouses(id).stream().map(HouseDAO::toHouse).toList();
+                return sendResponse(OK, userHouses.isEmpty() ? new ArrayList<>() : userHouses);
 
             } else
                 return sendResponse(NOT_FOUND, USER_MSG, id);
@@ -247,8 +248,6 @@ public class UsersResource extends Validations implements UsersService {
                 userDAO.setPhotoId(newPhoto);
 
         return userDAO;
-
     }
-
 
 }

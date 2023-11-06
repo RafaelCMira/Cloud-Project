@@ -11,16 +11,15 @@ import scc.srv.authentication.Session;
 public interface QuestionService {
     String PATH = "/house";
 
-    
+
     String PARTITION_KEY = "/houseId";
     String CONTAINER = "questions";
     String QUESTION_PREFIX = "q:";
-    String CACHE_LIST = "list:q:";
+    String QUESTIONS_LIST_PREFIX = "list:q:";
 
     String HOUSE_ID = "id";
     String QUESTION = "/question";
     String QUESTION_ID = "questionId";
-    String REPLIER_ID = "replierId";
 
 
     @POST

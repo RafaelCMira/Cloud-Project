@@ -10,12 +10,10 @@ import scc.cache.Cache;
 import scc.data.*;
 import scc.db.CosmosDBLayer;
 import scc.srv.rentals.RentalService;
+import scc.srv.utils.Utility;
 import scc.srv.utils.Validations;
 
 import java.time.Instant;
-import java.time.LocalDate;
-import java.time.ZoneId;
-import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
@@ -36,8 +34,10 @@ public class HousesResource extends Validations implements HousesService {
             db.create(houseDAO, CONTAINER);
 
             Cache.putInCache(houseDAO, HOUSE_PREFIX);
+
+            // TOdo: fazer isto com azure function (tanto no create house como no update)
             if (houseDAO.getDiscount() > 0)
-                Cache.addToListInCache(houseDAO,RentalService.DISCOUNTED_HOUSES);
+                Cache.addToListInCache(houseDAO, RentalService.DISCOUNTED_HOUSES);
 
             return sendResponse(OK, houseDAO.toHouse());
 
@@ -86,20 +86,18 @@ public class HousesResource extends Validations implements HousesService {
             if (checkCookies.getStatus() != Response.Status.OK.getStatusCode())
                 return checkCookies;
 
-            db.delete(id, CONTAINER, id);
-
             var user = Validations.userExists(ownerId);
             if (user == null)
                 return sendResponse(NOT_FOUND, USER_MSG, ownerId);
+
+            db.delete(id, CONTAINER, id);
 
             Cache.deleteFromCache(HOUSE_PREFIX, id);
 
             return sendResponse(OK, String.format(RESOURCE_WAS_DELETED, HOUSE_MSG, id));
 
         } catch (CosmosException ex) {
-            // throw new Exception("Error " + ex.getStatusCode() + " " + ex.getMessage());
-            return processException(ex.getStatusCode(), ex.getMessage(), id/*, ownerId*/); // adicionar aqui o ownerId quando tivermos as
-            // cookies
+            return processException(ex.getStatusCode(), ex.getMessage(), id);
         }
     }
 
@@ -131,6 +129,10 @@ public class HousesResource extends Validations implements HousesService {
             db.update(updatedHouse, CONTAINER, updatedHouse.getId());
 
             Cache.putInCache(updatedHouse, HOUSE_PREFIX);
+
+            // Todo: fazer isto com azure function (tanto no create house como no update)
+            if (updatedHouse.getDiscount() > 0)
+                Cache.addToListInCache(updatedHouse, RentalService.DISCOUNTED_HOUSES);
 
             return sendResponse(OK, updatedHouse.toHouse());
 
@@ -175,15 +177,12 @@ public class HousesResource extends Validations implements HousesService {
     @Override
     public Response getHouseByLocationPeriod(String location, String initialDate, String endDate) {
         try {
-            DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd");
-            Instant start = LocalDate.parse(initialDate, formatter).atStartOfDay(ZoneId.systemDefault()).toInstant();
-            Instant end = LocalDate.parse(endDate, formatter).atStartOfDay(ZoneId.systemDefault()).toInstant();
 
             var houses = db.getHousesByLocation(location);
             var availableHouses = new ArrayList<>();
 
             for (HouseDAO house : houses) {
-                if (Validations.isAvailable(house.getId(), Date.from(start), Date.from(end)))
+                if (Validations.isAvailable(house.getId(), Utility.formatDat(initialDate), Utility.formatDat(endDate)))
                     availableHouses.add(house.toHouse());
             }
 
@@ -267,16 +266,21 @@ public class HousesResource extends Validations implements HousesService {
             throw new WebApplicationException(USER_MSG, Response.Status.NOT_FOUND);
     }
 
+
     @Override
-    public Response getNewHouses() throws Exception {
+    public Response getNewHouses() {
+
         try {
-            var jsonHouses = Cache.getListFromCache(HOUSE_PREFIX);
+            var cacheHouses = Cache.getListFromCache(HOUSE_PREFIX);
+
             List<HouseDAO> houses = new ArrayList<>();
-            for (String h : jsonHouses) {
-                houses.add(mapper.readValue(h, HouseDAO.class));
+            for (String house : cacheHouses) {
+                houses.add(mapper.readValue(house, HouseDAO.class));
             }
-            return sendResponse(OK,houses);
-        }catch (JsonProcessingException e) {
+
+            return sendResponse(OK, houses);
+
+        } catch (JsonProcessingException e) {
             return processException(500);
         }
     }

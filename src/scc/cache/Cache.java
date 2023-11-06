@@ -73,7 +73,7 @@ public class Cache {
     public static List<String> getListFromCache(String key) {
         if (AzureManagement.CREATE_REDIS)
             try (Jedis jedis = Cache.getCachePool().getResource()) {
-                return jedis.lrange(key,0,-1);
+                return jedis.lrange(key, 0, -1);
             }
         return new ArrayList<>();
     }
@@ -81,17 +81,17 @@ public class Cache {
     public static <T extends HasId> void uploadListToCache(List<T> data, String prefix) throws JsonProcessingException {
         if (AzureManagement.CREATE_REDIS)
             try (Jedis jedis = Cache.getCachePool().getResource()) {
-                for(T obj: data) {
-                    jedis.lpush(prefix,mapper.writeValueAsString(obj));
+                for (T obj : data) {
+                    jedis.lpush(prefix, mapper.writeValueAsString(obj));
                 }
-                jedis.expire(prefix,CACHE_EXPIRE_TIME);
+                jedis.expire(prefix, CACHE_EXPIRE_TIME);
             }
     }
 
     public static <T> void addToListInCache(T obj, String prefix) throws JsonProcessingException {
         if (AzureManagement.CREATE_REDIS)
             try (Jedis jedis = Cache.getCachePool().getResource()) {
-                jedis.lpush(prefix,mapper.writeValueAsString(obj));
+                jedis.lpush(prefix, mapper.writeValueAsString(obj));
             }
     }
 }
