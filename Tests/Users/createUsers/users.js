@@ -11,11 +11,20 @@ module.exports = {
 
 const faker = require("faker");
 const fs = require("fs");
+const path = require("path");
 
 var imagesIds = [];
 var images = [];
 var users = [];
 var usersIds = [];
+
+// Directory path for data storage
+const dataDirectory = path.join(__dirname, "../../Data");
+
+// Ensure the 'Data' folder exists, create it if it doesn't
+if (!fs.existsSync(dataDirectory)) {
+	fs.mkdirSync(dataDirectory);
+}
 
 // All endpoints starting with the following prefixes will be aggregated in the same for the statistics
 var statsPrefix = [
@@ -55,8 +64,8 @@ function loadData() {
 		images.push(img);
 	}
 	var str;
-	if (fs.existsSync("users.data")) {
-		str = fs.readFileSync("users.data", "utf8");
+	if (fs.existsSync("../../Data/users.data")) {
+		str = fs.readFileSync("../../Data/users.data", "utf8");
 		users = JSON.parse(str);
 	}
 }
@@ -95,11 +104,11 @@ function selectImageToDownload(context, events, done) {
 }
 
 /**
- * Select an user
+ * Select a user
  */
 function selectUser(context, events, done) {
-	if (userIDs.length > 0) {
-		context.vars.id = userIDs.sample();
+	if (usersIds.length > 0) {
+		context.vars.id = usersIds.sample();
 	} else {
 		delete context.vars.id;
 	}
@@ -111,23 +120,19 @@ function genNewUser(context, events, done) {
 	const last = `${faker.name.lastName()}`;
 	context.vars.id = first + "." + last;
 	context.vars.name = first + " " + last;
-	context.vars.pwd = first + "." + last;//`${faker.internet.password()}`;
+	context.vars.pwd = first + "." + last; // `${faker.internet.password()}`;
 	return done();
 }
 
 /**
- * Process reply for of new users to store the id on file
+ * Process reply for new users to store the id on file
  */
 function genNewUserReply(requestParams, response, context, ee, next) {
 	if (response.statusCode >= 200 && response.statusCode < 300 && response.body.length > 0) {
-		let u = response.body;
-		users.push(u);
-		fs.writeFileSync("../../Data/users.data", JSON.stringify(users));
-	} else
-	    console.log(response.body)
+		let user = JSON.parse(response.body);
+		fs.appendFileSync(path.join(dataDirectory, "users.data"), JSON.stringify(user) + "\n");
+	} else {
+		console.log(response.body);
+	}
 	return next();
 }
-
-
-
-
