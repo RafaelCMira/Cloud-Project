@@ -21,6 +21,8 @@ var usersIds = [];
 // Directory path for data storage
 const dataDirectory = path.join(__dirname, "../../Data");
 
+const imagesPath = "../../images/house.";
+
 // Ensure the 'Data' folder exists, create it if it doesn't
 if (!fs.existsSync(dataDirectory)) {
 	fs.mkdirSync(dataDirectory);
@@ -62,11 +64,6 @@ function loadData() {
 	for (i = 1; i <= 40; i++) {
 		var img = fs.readFileSync(basefile + i + ".jpg");
 		images.push(img);
-	}
-	var str;
-	if (fs.existsSync("../../Data/users.data")) {
-		str = fs.readFileSync("../../Data/users.data", "utf8");
-		users = JSON.parse(str);
 	}
 }
 
@@ -131,8 +128,8 @@ function genNewUserReply(requestParams, response, context, ee, next) {
 	if (response.statusCode >= 200 && response.statusCode < 300 && response.body.length > 0) {
 		let user = JSON.parse(response.body);
 		fs.appendFileSync(path.join(dataDirectory, "users.data"), JSON.stringify(user) + "\n");
-	} else {
+	} else
 		console.log(response.body);
-	}
+
 	return next();
 }
