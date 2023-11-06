@@ -1,8 +1,7 @@
 "use strict";
 
-/**
- * Exported functions to be used in the testing scripts.
- */
+
+// Exported functions to be used in the testing scripts.
 module.exports = {
     uploadImageBody,
     genNewHouse,
@@ -19,11 +18,11 @@ function extractUserIdsFromFile(filename) {
     try {
         const fileContents = fs.readFileSync(filename, "utf-8");
         const lines = fileContents.split('\n').filter(Boolean); // Split into lines and remove empty lines
-        const userIds = lines.map(line => {
-            const userData = JSON.parse(line);
-            return userData.id;
+        const ids = lines.map(line => {
+            const data = JSON.parse(line);
+            return data.id;
         });
-        return userIds;
+        return ids;
     } catch (error) {
         console.error("Error reading the file:", error);
         return [];
@@ -37,7 +36,6 @@ var houses = [];
 // All endpoints starting with the following prefixes will be aggregated in the same for the statistics
 var statsPrefix = [
     ["/rest/media", "POST"],
-    ["/rest/house/", "GET"],
     ["/rest/house/", "POST"],
 ];
 
@@ -69,11 +67,6 @@ function loadData() {
     for (i = 1; i <= 40; i++) {
         var img = fs.readFileSync(basefile + i + ".jpg");
         images.push(img);
-    }
-    var str;
-    if (fs.existsSync(HOUSES_PATH)) {
-        str = fs.readFileSync(HOUSES_PATH, "utf8");
-        houses = JSON.parse(str);
     }
 }
 
@@ -110,17 +103,6 @@ function selectImageToDownload(context, events, done) {
     return done();
 }
 
-/**
- * Select a user
- */
-function selectUser(context, events, done) {
-    if (usersIds.length > 0) {
-        context.vars.id = usersIds.sample();
-    } else {
-        delete context.vars.id;
-    }
-    return done();
-}
 
 function genNewHouse(context, events, done) {
     const houseName = `${faker.address.streetName()}`;
@@ -128,7 +110,7 @@ function genNewHouse(context, events, done) {
     context.vars.name = houseName;
     context.vars.location = faker.address.city();
     context.vars.description = faker.lorem.sentence();
-    context.vars.ownerId = usersIds[random(usersIds.length)];
+    context.vars.ownerId = usersIds.sample();
     console.log("onwerId = " + context.vars.ownerId);
     context.vars.price = random(300);
     return done();
@@ -140,10 +122,9 @@ function genNewHouse(context, events, done) {
 function genNewHouseReply(requestParams, response, context, ee, next) {
     if (response.statusCode >= 200 && response.statusCode < 300 && response.body.length > 0) {
         let house = JSON.parse(response.body);
-        houses.push(house);
-        fs.appendFileSync(HOUSES_PATH, JSON.stringify(houses) + "\n");
-    } else {
+        fs.appendFileSync(HOUSES_PATH, JSON.stringify(house) + "\n"); // Write the entire 'houses' array to the file
+    } else
         console.log(response.body);
-    }
+
     return next();
 }

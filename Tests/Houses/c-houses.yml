@@ -4,9 +4,9 @@ config:
     metrics-by-endpoint: { }
   processor: "./houses.js"
   variables:
-    metricsProcessEndpoint: "myProcessEndpoint"  # function used to aggregate endpoints for statistics
+    metricsProcessEndpoint: "myProcessEndpoint"
   phases:
-    - name: "Create Houses"    # Create houses
+    - name: "Create Houses"
       duration: 1
       arrivalCount: 1
 
@@ -15,7 +15,7 @@ scenarios:
     weight: 1
     flow:
       - loop:
-          - post: # First: post image for the house
+          - post:
               url: "/media"
               headers:
                 Content-Type: application/octet-stream
@@ -23,8 +23,8 @@ scenarios:
               beforeRequest: "uploadImageBody"
               capture:
                 regexp: "(.+)"
-                as: "imageId"              # capture the reply as image id to be used in user creation
-          - function: "genNewHouse"         # Generate the needed information for the house
+                as: "imageId"
+          - function: "genNewHouse"
           - post:
               url: "/house"
               cookie:
@@ -42,4 +42,4 @@ scenarios:
                 price: "{{ price }}"
                 discount: "0"
               afterResponse: "genNewHouseReply"
-        count: 1
+        count: 4
