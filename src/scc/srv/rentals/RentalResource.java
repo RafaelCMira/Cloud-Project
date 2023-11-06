@@ -150,8 +150,12 @@ public class RentalResource extends Validations implements RentalService {
                 toReturn.add(mapper.readValue(s,Rental.class));
             }
 
-            if (toReturn.isEmpty())
+            if (toReturn.isEmpty()) {
                 toReturn = db.getHouseRentals(houseId).stream().map(RentalDAO::toRental).toList();
+                for (Rental r: toReturn) {
+                    Cache.addToListInCache(mapper.writeValueAsString(r),HOUSE_RENTALS);
+                }
+            }
 
             return sendResponse(OK, toReturn.isEmpty() ? new ArrayList<>() : toReturn);
 
