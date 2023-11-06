@@ -12,28 +12,24 @@ const HOUSES_PATH = "../Data/houses.data";
 const USERS_PATH = "../Data/users.data";
 const QUESTIONS_PATH = "../Data/questions.data";
 
-function extractIDsFromFile(filename) {
+function extractUserIdsFromFile(filename) {
     try {
-    const fileContents = fs.readFileSync(filename, "utf-8");
-    const id = extractIDs(fileContents);
-    return id;
+        const fileContents = fs.readFileSync(filename, "utf-8");
+        const lines = fileContents.split('\n').filter(Boolean); // Split into lines and remove empty lines
+        const ids = lines.map(line => {
+            const data = JSON.parse(line);
+            return data.id;
+        });
+        return ids;
     } catch (error) {
-    console.error("Erro ao ler o ficheiro:", error);
-    return [];
+        console.error("Error reading the file:", error);
+        return [];
     }
 }
 
-function extractIDs(line) {
-    const matches = line.match(/id='([^']+)'/g); // Encontra todas as ocorrências do atributo 'id'
-    if (matches) {
-        const ids = matches.map(match => match.match(/'([^']+)'/)[1]); // Extrai os valores do atributo 'id'
-        return ids;
-    } else
-        return [];
-}
+const usersIds = extractUserIdsFromFile(USERS_PATH);
+const housesIds = extractUserIdsFromFile(HOUSES_PATH)
 
-const usersIds = extractIDsFromFile(USERS_PATH)
-const housesIds = extractIDsFromFile(HOUSES_PATH)
 var questions = [];
 
 // All endpoints starting with the following prefixes will be aggregated in the same for the statistics
@@ -60,19 +56,10 @@ function random(val) {
 	return Math.floor(Math.random() * val);
 }
 
-function loadData() {
-	var str;
-	if (fs.existsSync(QUESTIONS_PATH)) {
-		str = fs.readFileSync(HOUSES_PATH, "utf8");
-		questions = JSON.parse(str);
-	}
-}
-
-loadData();
-
 function genNewQuestion(context, events, done) {
-    context.vars.houseId = housesIds[random(housesIds.length)];
-    context.vars.askerId = usersIds[random(usersIds.length)];
+    context.vars.houseId = housesIds.sample();
+    console.log("houseId = " + context.vars.houseId);
+    context.vars.askerId = usersIds.sample();
     context.vars.text = generateRandomQuestion();
 	return done();
 }
@@ -93,11 +80,11 @@ function generateRandomQuestion() {
  */
 function genNewQuestionReply(requestParams, response, context, ee, next) {
 	if (response.statusCode >= 200 && response.statusCode < 300 && response.body.length > 0) {
-		let u = response.body;
-		questions.push(u);
-		fs.writeFileSync(QUESTIONS_PATH, JSON.stringify(questions));
+		let question = JSON.parse(response.body);
+		fs.writeFileSync(QUESTIONS_PATH, JSON.stringify(question) + "\n");
 	} else
 	    console.log(response.body)
+
 	return next();
 }
 
