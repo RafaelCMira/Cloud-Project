@@ -27,6 +27,8 @@ scenarios:
           - function: "genNewHouse"         # Generate the needed information for the house
           - post:
               url: "/house"
+              cookie:
+                scc:session: "{{ ownerId }}"
               headers:
                 Content-Type: application/json
                 Accept: application/json
@@ -37,7 +39,6 @@ scenarios:
                 description: "{{ description }}"
                 photosIds: [ "{{ imageId }}" ]
                 ownerId: "{{ ownerId }}"
-                rentalsIds: [ ]
                 price: "{{ price }}"
                 discount: "0"
               afterResponse: "genNewHouseReply"

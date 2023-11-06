@@ -90,7 +90,8 @@ public class Utility {
             session = mapper.readValue(cacheRes, Session.class);
 
         if (session == null)
-            return sendResponse(UNAUTHORIZED, "No valid session initialized - " + "SESSION null");
+            return sendResponse(UNAUTHORIZED, "No valid session initialized - " + "SESSION null" + "\n" +
+                    Session.SESSION_PREFIX + cookie.getValue());
 
         if (session.getId() == null)
             return sendResponse(UNAUTHORIZED, "No valid session initialized - " + "id null");
