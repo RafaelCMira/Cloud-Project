@@ -14,39 +14,21 @@ const fs = require("fs");
 const HOUSES_PATH = "../Data/houses.data";
 const USERS_PATH = "../Data/users.data";
 const RENTALS_PATH = "../Data/rentals.data";
-const DATES_PATH = "../Data/dates.data"
 
-function extractIDsFromFile(filename) {
+function extractIdsFromFile(filename) {
     try {
-    const fileContents = fs.readFileSync(filename, "utf-8");
-    const id = extractIDs(fileContents);
-    return id;
+        const fileContents = fs.readFileSync(filename, "utf-8");
+        const lines = fileContents.split('\n').filter(Boolean); // Split into lines and remove empty lines
+        const ids = lines.map(line => {
+            const data = JSON.parse(line);
+            return data.id;
+        });
+        return ids;
     } catch (error) {
-    console.error("Erro ao ler o ficheiro:", error);
-    return [];
+        console.error("Error reading the file:", error);
+        return [];
     }
 }
-
-function extractIDs(line) {
-    const matches = line.match(/id='([^']+)'/g); // Encontra todas as ocorrências do atributo 'id'
-    if (matches) {
-        const ids = matches.map(match => match.match(/'([^']+)'/)[1]); // Extrai os valores do atributo 'id'
-        return ids;
-    } else
-        return [];
-}
-
-const usersIds = extractIDsFromFile(USERS_PATH)
-const housesIds = extractIDsFromFile(HOUSES_PATH)
-const rentalsIds = extractIDsFromFile(RENTALS_PATH)
-const datesIds = extractIDsFromFile(DATES_PATH)
-var rentals = []
-
-// All endpoints starting with the following prefixes will be aggregated in the same for the statistics
-var statsPrefix = [
-	["/rest/house/rental/", "POST"],
-	["rest/house/rental/", "GET"]
-];
 
 // Function used to compress statistics
 global.myProcessEndpoint = function (str, method) {
@@ -67,26 +49,34 @@ function random(val) {
 	return Math.floor(Math.random() * val);
 }
 
-function loadData() {
-	var str;
-	if (fs.existsSync(RENTALS_PATH)) {
-		str = fs.readFileSync(RENTALS_PATH, "utf8");
-		rentals = JSON.parse(str);
-	}
+const usersIds = extractIdsFromFile(USERS_PATH)
+const housesIds = extractIdsFromFile(HOUSES_PATH)
+var rentals = []
+
+var houseSelected = housesIds.sample();
+
+// All endpoints starting with the following prefixes will be aggregated in the same for the statistics
+var statsPrefix = [
+	["/rest/house/" + houseSelected + "/rental/", "POST"],
+];
+
+function formatDate(date) {
+  return `${date.getFullYear()}-${(date.getMonth() + 1).toString().padStart(2, '0')}-${date.getDate().toString().padStart(2, '0')}`;
 }
 
-loadData();
+// Generate a random initial date and end date
+
 
 function genNewRental(context, events, done) {
-/*    const rentalHouse = housesIds[random(housesIds.length)];
-    context.vars.id = rentalHouse + " Rental";
-    context.vars.houseId = rentalHouse;
-    context.vars.askerId = usersIds[random(usersIds.length)];
-    context.vars.price = random(2000);
-    const date = datesIds[random(datesIds.length)];
-    context.vars.initialDate = date[0]
-    context.vars.endDate = date[1]
-    context.vars.discount = random(50) */
+    const initialDate = faker.date.past();
+    const endDate = faker.date.between(initialDate, new Date());
+    const formattedInitialDate = formatDate(initialDate);
+    const formattedEndDate = formatDate(endDate);
+
+    context.vars.houseId = houseSelected;
+    context.vars.userId = usersIds.sample();
+    context.vars.initialDate = formattedInitialDate
+    context.vars.endDate = formattedEndDate
     return done();
 }
 
@@ -96,11 +86,11 @@ function genNewRental(context, events, done) {
 function genNewRentalReply(requestParams, response, context, ee, next) {
 
 	if (response.statusCode >= 200 && response.statusCode < 300 && response.body.length > 0) {
-		let u = response.body;
-		rentals.push(u);
-		fs.writeFileSync(RENTALS_PATH, JSON.stringify(rentals));
+		let rental = JSON.parse(response.body);
+		fs.appendFileSync(RENTALS_PATH, JSON.stringify(rental));
 	} else
 	    console.log(response.body)
+
 	return next();
 }
 

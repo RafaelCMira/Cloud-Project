@@ -1,5 +1,5 @@
 config:
-  target: 'https://scc24app-westeurope-60602.azurewebsites.net/rest'
+  target: 'https://scc24app-westeurope-59243.azurewebsites.net/rest'
   plugins:
     metrics-by-endpoint: { }
   processor: "./rentals.js"
@@ -18,16 +18,17 @@ scenarios:
           - function: "genNewRental"
           - post:
               url: "/house/{{ houseId }}/rental"
+              cookie:
+                scc:session: "{{ userId }}"
               headers:
                 Content-Type: application/json
                 Accept: application/json
               json:
-                id: "{{ id }}"
-                houseId: "{{ houseId }}"
-                userId: "{{ askerId }}"
-                price: "{{ price }}"
+                id: ""
+                houseId: ""
+                userId: "{{ userId }}"
+                price: ""
                 initialDate: "{{ initialDate }}"
                 endDate: "{{ endDate }}"
-                discount: "{{ discount }}"
               afterResponse: "genNewRentalReply"
         count: 1
