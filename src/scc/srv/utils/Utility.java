@@ -33,7 +33,7 @@ public class Utility {
     public static final String QUESTION_MSG = "Question";
 
     public static final String QUESTION_ALREADY_ANSWERED = "Question %s already answered";
-    
+
     public static final String INCORRECT_LOGIN = "Incorrect login.";
 
 
@@ -88,7 +88,7 @@ public class Utility {
 
         Session session = null;
 
-        String cacheRes = Cache.getFromCache(Session.SESSION_PREFIX, cookie.getValue());
+        String cacheRes = Cache.getCookieFromCache(Session.SESSION_PREFIX, cookie.getValue());
 
         if (cacheRes != null)
             session = mapper.readValue(cacheRes, Session.class);
