@@ -271,7 +271,7 @@ public class HousesResource extends Validations implements HousesService {
     public Response getNewHouses() {
 
         try {
-            var cacheHouses = Cache.getListFromCache(HOUSE_PREFIX);
+            var cacheHouses = Cache.getListFromCache(NEW_HOUSES_PREFIX);
 
             List<HouseDAO> houses = new ArrayList<>();
             for (String house : cacheHouses) {

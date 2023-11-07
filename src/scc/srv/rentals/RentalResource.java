@@ -116,6 +116,7 @@ public class RentalResource extends Validations implements RentalService {
             db.delete(id, CONTAINER, houseId);
 
             Cache.deleteFromCache(RENTAL_PREFIX, id);
+            Cache.removeListIncCache(HOUSE_RENTALS);
 
             return sendResponse(OK, String.format(RESOURCE_WAS_DELETED, RENTAL_MSG, id));
 

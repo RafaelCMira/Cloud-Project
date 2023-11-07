@@ -14,7 +14,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 public class Cache {
-    private static final long CACHE_EXPIRE_TIME = 300; // 5 minutes
+    private static final long CACHE_EXPIRE_TIME = 60; // 5 minutes
     private static final String RedisHostname = System.getenv(AzureProperties.REDIS_URL);
     private static final String RedisKey = System.getenv(AzureProperties.REDIS_KEY);
 
@@ -92,6 +92,13 @@ public class Cache {
         if (AzureManagement.CREATE_REDIS)
             try (Jedis jedis = Cache.getCachePool().getResource()) {
                 jedis.lpush(prefix, mapper.writeValueAsString(obj));
+            }
+    }
+
+    public static void removeListIncCache(String prefix) {
+        if (AzureManagement.CREATE_REDIS)
+            try (Jedis jedis = Cache.getCachePool().getResource()){
+                jedis.ltrim(prefix,0,0);
             }
     }
 }

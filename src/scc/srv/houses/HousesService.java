@@ -17,6 +17,7 @@ public interface HousesService {
     String CONTAINER = "houses";
     String HOUSE_PREFIX = "h:";
 
+    String NEW_HOUSES_PREFIX = "newH:";
 
     String ID = "id";
     String LOCATION = "location";
