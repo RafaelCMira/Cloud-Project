@@ -17,6 +17,7 @@ public class Cache {
     private static final long CACHE_EXPIRE_TIME = 300; // 5 minutes
     private static final String RedisHostname = System.getenv(AzureProperties.REDIS_URL);
     private static final String RedisKey = System.getenv(AzureProperties.REDIS_KEY);
+    private static final boolean cacheOn = false;
 
     private static JedisPool instance;
 
@@ -42,21 +43,21 @@ public class Cache {
     }
 
     public static <T extends HasId> void putInCache(T obj, String prefix) throws JsonProcessingException {
-        if (AzureManagement.CREATE_REDIS)
+        if (AzureManagement.CREATE_REDIS && cacheOn)
             try (Jedis jedis = Cache.getCachePool().getResource()) {
                 jedis.set(prefix + obj.getId(), mapper.writeValueAsString(obj));
             }
     }
 
     public static void putInCache(BinaryData data, String prefix) throws JsonProcessingException {
-        if (AzureManagement.CREATE_REDIS)
+        if (AzureManagement.CREATE_REDIS && cacheOn)
             try (Jedis jedis = Cache.getCachePool().getResource()) {
                 jedis.set(prefix + data, mapper.writeValueAsString(data));
             }
     }
 
     public static String getFromCache(String prefix, String key) {
-        if (AzureManagement.CREATE_REDIS)
+        if (AzureManagement.CREATE_REDIS && cacheOn)
             try (Jedis jedis = Cache.getCachePool().getResource()) {
                 return jedis.get(prefix + key);
             }
@@ -64,14 +65,14 @@ public class Cache {
     }
 
     public static void deleteFromCache(String prefix, String id) {
-        if (AzureManagement.CREATE_REDIS)
+        if (AzureManagement.CREATE_REDIS && cacheOn)
             try (Jedis jedis = Cache.getCachePool().getResource()) {
                 jedis.del(prefix + id);
             }
     }
 
     public static List<String> getListFromCache(String key) {
-        if (AzureManagement.CREATE_REDIS)
+        if (AzureManagement.CREATE_REDIS && cacheOn)
             try (Jedis jedis = Cache.getCachePool().getResource()) {
                 return jedis.lrange(key, 0, -1);
             }
@@ -79,7 +80,7 @@ public class Cache {
     }
 
     public static <T extends HasId> void uploadListToCache(List<T> data, String prefix) throws JsonProcessingException {
-        if (AzureManagement.CREATE_REDIS)
+        if (AzureManagement.CREATE_REDIS && cacheOn)
             try (Jedis jedis = Cache.getCachePool().getResource()) {
                 for (T obj : data) {
                     jedis.lpush(prefix, mapper.writeValueAsString(obj));
@@ -89,9 +90,25 @@ public class Cache {
     }
 
     public static <T> void addToListInCache(T obj, String prefix) throws JsonProcessingException {
-        if (AzureManagement.CREATE_REDIS)
+        if (AzureManagement.CREATE_REDIS && cacheOn)
             try (Jedis jedis = Cache.getCachePool().getResource()) {
                 jedis.lpush(prefix, mapper.writeValueAsString(obj));
             }
+    }
+
+
+    public static <T extends HasId> void putCookieInCache(T obj, String prefix) throws JsonProcessingException {
+        if (AzureManagement.CREATE_REDIS)
+            try (Jedis jedis = Cache.getCachePool().getResource()) {
+                jedis.set(prefix + obj.getId(), mapper.writeValueAsString(obj));
+            }
+    }
+
+    public static String getCookieFromCache(String prefix, String key) {
+        if (AzureManagement.CREATE_REDIS)
+            try (Jedis jedis = Cache.getCachePool().getResource()) {
+                return jedis.get(prefix + key);
+            }
+        return null;
     }
 }

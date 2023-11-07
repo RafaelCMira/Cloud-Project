@@ -58,7 +58,7 @@ public class UsersResource extends Validations implements UsersService {
                 .httpOnly(true)
                 .build();
 
-        Cache.putInCache(new Session(uid, id), Session.SESSION_PREFIX);
+        Cache.putCookieInCache(new Session(uid, id), Session.SESSION_PREFIX);
 
         return Response.ok(user).cookie(cookie).build();
     }
