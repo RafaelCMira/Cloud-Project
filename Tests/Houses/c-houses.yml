@@ -40,6 +40,6 @@ scenarios:
                 photosIds: [ "{{ imageId }}" ]
                 ownerId: "{{ ownerId }}"
                 price: "{{ price }}"
-                discount: "0"
+                discount: "{{ discount }}"
               afterResponse: "genNewHouseReply"
-        count: 1
+        count: 20

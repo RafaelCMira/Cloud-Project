@@ -17,7 +17,7 @@ public class Cache {
     private static final long CACHE_EXPIRE_TIME = 300; // 5 minutes
     private static final String RedisHostname = System.getenv(AzureProperties.REDIS_URL);
     private static final String RedisKey = System.getenv(AzureProperties.REDIS_KEY);
-    private static final boolean cacheOn = false;
+    private static final boolean cacheOn = true;
 
     private static JedisPool instance;
 
@@ -99,8 +99,8 @@ public class Cache {
 
     public static void removeListIncCache(String prefix) {
         if (AzureManagement.CREATE_REDIS)
-            try (Jedis jedis = Cache.getCachePool().getResource()){
-                jedis.ltrim(prefix,0,0);
+            try (Jedis jedis = Cache.getCachePool().getResource()) {
+                jedis.ltrim(prefix, 0, 0);
             }
     }
 

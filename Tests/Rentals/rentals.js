@@ -53,7 +53,7 @@ const usersIds = extractIdsFromFile(USERS_PATH)
 const housesIds = extractIdsFromFile(HOUSES_PATH)
 var rentals = []
 
-var houseSelected = housesIds.sample();
+var houseSelected;
 
 // All endpoints starting with the following prefixes will be aggregated in the same for the statistics
 var statsPrefix = [
@@ -68,6 +68,8 @@ function formatDate(date) {
 
 
 function genNewRental(context, events, done) {
+    houseSelected = housesIds.sample();
+
     const initialDate = faker.date.past();
     const endDate = faker.date.between(initialDate, new Date());
     const formattedInitialDate = formatDate(initialDate);

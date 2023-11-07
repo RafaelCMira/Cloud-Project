@@ -17,6 +17,14 @@ scenarios:
       - loop:
           - function: "genNewRental"
           - post:
+              url: "/user/auth"
+              headers:
+                Content-Type: application/json
+                Accept: application/json
+              json:
+                id: "{{ userId }}"
+                pwd: "{{ userId }}"
+          - post:
               url: "/house/{{ houseId }}/rental"
               cookie:
                 scc:session: "{{ userId }}"

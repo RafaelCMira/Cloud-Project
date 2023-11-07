@@ -58,6 +58,15 @@ function random(val) {
     return Math.floor(Math.random() * val);
 }
 
+// Returns a random value, from 0 to val
+function randomInBetween(min, max) {
+    let i = Math.random();
+    if (i > 0.85) {
+        return min + Math.floor(Math.random() * max);
+    }
+    return 0;
+}
+
 // Loads data about images from disk
 function loadData() {
     var i;
@@ -103,16 +112,20 @@ function selectImageToDownload(context, events, done) {
     return done();
 }
 
+const europeanCities = ["Amsterdam", "Barcelona", "Berlin", "Budapest", "Copenhagen", "Dublin", "Edinburgh", "Florence", "Geneva", "Helsinki", "Istanbul", "Krakow", "Lisbon", "London", "Madrid", "Milan", "Munich", "Oslo", "Paris", "Prague", "Rome",  "Marseille", "Belfast"];
+const americanCities = ["New York", "Los Angeles", "Chicago", "Houston", "Miami", "Toronto", "Vancouver", "Mexico City", "Rio de Janeiro", "Buenos Aires", "São Paulo", "Nassau", "Havana"];
+
 
 function genNewHouse(context, events, done) {
     const houseName = `${faker.address.streetName()}`;
     context.vars.id = houseName;
     context.vars.name = houseName;
-    context.vars.location = faker.address.city();
+    context.vars.location = americanCities.sample();
     context.vars.description = faker.lorem.sentence();
     context.vars.ownerId = usersIds.sample();
     console.log("onwerId = " + context.vars.ownerId);
     context.vars.price = random(300);
+    context.vars.discount = randomInBetween(context.vars.price * 0.05, context.vars.price / 2);
     return done();
 }
 

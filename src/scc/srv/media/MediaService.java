@@ -13,7 +13,7 @@ import java.util.List;
 public interface MediaService {
     String PATH = "/media";
 
-    
+
     String CONTAINER_NAME = "media";
     String MEDIA_PREFIX = "media:";
 
@@ -32,7 +32,7 @@ public interface MediaService {
     @POST
     @Consumes(MediaType.APPLICATION_OCTET_STREAM)
     @Produces(MediaType.APPLICATION_JSON)
-    String upload(@CookieParam(Session.SESSION) Cookie session, byte[] contents);
+    String upload(byte[] contents);
 
 
     /**

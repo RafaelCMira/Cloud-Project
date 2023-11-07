@@ -23,12 +23,8 @@ import static scc.srv.utils.Utility.*;
 public class MediaResource implements MediaService {
     private final ObjectMapper mapper = new ObjectMapper();
 
-    public String upload(Cookie session, byte[] contents) {
-        //todo: tratar das cookies aqui, como posso saber qual o id de que user quero comparar?
-        /*var checkCookies = checkUserSession(session, rental.getUserId());
-        if (checkCookies.getStatus() != Response.Status.OK.getStatusCode())
-            throw new WebApplicationException(checkCookies.getEntity().toString(), Response.Status.UNAUTHORIZED);*/
-
+    public String upload(byte[] contents) {
+        
         String id = Hash.of(contents);
         try {
             BinaryData data = BinaryData.fromBytes(contents);
