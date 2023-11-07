@@ -93,6 +93,7 @@ public class Cache {
         if (AzureManagement.CREATE_REDIS && cacheOn)
             try (Jedis jedis = Cache.getCachePool().getResource()) {
                 jedis.lpush(prefix, mapper.writeValueAsString(obj));
+                jedis.expire(prefix, CACHE_EXPIRE_TIME);
             }
     }
 
