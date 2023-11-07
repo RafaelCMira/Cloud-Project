@@ -9,7 +9,6 @@ import jakarta.ws.rs.core.Response;
 import scc.cache.Cache;
 import scc.data.*;
 import scc.db.CosmosDBLayer;
-import scc.srv.rentals.RentalService;
 import scc.srv.utils.Utility;
 import scc.srv.utils.Validations;
 
@@ -35,9 +34,10 @@ public class HousesResource extends Validations implements HousesService {
 
             Cache.putInCache(houseDAO, HOUSE_PREFIX);
 
-            // TOdo: fazer isto com azure function (tanto no create house como no update)
-            if (houseDAO.getDiscount() > 0)
+            // Todo: fazer isto com azure function (tanto no create house como no update)
+            /* if (houseDAO.getDiscount() > 0)
                 Cache.addToListInCache(houseDAO, RentalService.DISCOUNTED_HOUSES);
+            */
 
             return sendResponse(OK, houseDAO.toHouse());
 
@@ -129,10 +129,6 @@ public class HousesResource extends Validations implements HousesService {
             db.update(updatedHouse, CONTAINER, updatedHouse.getId());
 
             Cache.putInCache(updatedHouse, HOUSE_PREFIX);
-
-            // Todo: fazer isto com azure function (tanto no create house como no update)
-            if (updatedHouse.getDiscount() > 0)
-                Cache.addToListInCache(updatedHouse, RentalService.DISCOUNTED_HOUSES);
 
             return sendResponse(OK, updatedHouse.toHouse());
 

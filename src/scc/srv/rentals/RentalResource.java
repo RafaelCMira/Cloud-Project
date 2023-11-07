@@ -106,7 +106,6 @@ public class RentalResource extends Validations implements RentalService {
         if (Validations.badParams(id))
             return sendResponse(BAD_REQUEST, BAD_REQUEST_MSG);
 
-        // TODO - update cache
         // todo: quando fazemos delete de um rental que não é desta casa vai dar erro que não tratamos ainda
         try {
             var house = Validations.houseExists(houseId);
