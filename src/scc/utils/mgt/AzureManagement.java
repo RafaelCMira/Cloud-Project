@@ -188,7 +188,6 @@ public class AzureManagement {
     ////////////////////////////// COSMOS DB CODE
     ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
-    // TODO: Verificar se pode ser SESSION a consistencia
     public static CosmosDBAccount createCosmosDBAccount(AzureResourceManager azure, String rgName, String name, Region[] regions) {
         WithConsistencyPolicy step = azure.cosmosDBAccounts().define(name).withRegion(regions[0])
                 .withExistingResourceGroup(rgName).withDataModelSql();
@@ -265,7 +264,6 @@ public class AzureManagement {
         }
     }
 
-    // TODO: Verificar se pode ser SESSION a consistencia
     public static CosmosClient getCosmosClient(CosmosDBAccount account) {
         CosmosClient client = new CosmosClientBuilder().endpoint(account.documentEndpoint())
                 .key(account.listKeys().primaryMasterKey()).directMode() // comment this is not to use direct mode
@@ -391,10 +389,7 @@ public class AzureManagement {
 
             String line;
             while ((line = reader.readLine()) != null) {
-                writer.write("@echo off");
-                writer.newLine();
-                writer.write(line);
-                writer.newLine();
+                writer.write("call " + line);
                 writer.newLine();
             }
         } catch (IOException e) {
@@ -475,7 +470,6 @@ public class AzureManagement {
                             CosmosClient cosmosClient = getCosmosClient(accountCosmosDB);
                             createCosmosDatabase(cosmosClient, AZURE_COSMOSDB_DATABASE);
 
-                            //TODO: create the collections you have in your application
                             createCosmosCollection(cosmosClient, AZURE_COSMOSDB_DATABASE, UsersService.CONTAINER, UsersService.PARTITION_KEY, null);
                             createCosmosCollection(cosmosClient, AZURE_COSMOSDB_DATABASE, HousesService.CONTAINER, HousesService.PARTITION_KEY, null);
                             createCosmosCollection(cosmosClient, AZURE_COSMOSDB_DATABASE, RentalService.CONTAINER, RentalService.PARTITION_KEY, null);
@@ -511,15 +505,23 @@ public class AzureManagement {
                     th.start();
                     threads.add(th);
                 }
-                modifyBatchFile("azureprops-westeurope.bat");
+
             }
             for (Thread th : threads) {
                 th.join();
             }
+
+
         } catch (Exception e) {
             System.err.println("Error while creating resources");
             e.printStackTrace();
         }
+
+        for (int i = 0; i < AzureManagement.REGIONS.length; i++) {
+            String filename = "azureprops-" + REGIONS[i].name() + ".bat";
+            modifyBatchFile(filename);
+        }
+
         System.exit(0);
     }
 }
