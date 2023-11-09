@@ -19,7 +19,7 @@ public class HouseDAO implements HasId {
     private String description;
 
     private List<String> photosIds;
-
+    private Integer rentalsCounter;
     private String ownerId;
 
     private Integer price;
@@ -130,6 +130,14 @@ public class HouseDAO implements HasId {
 
     public House toHouse() {
         return new House(id, name, location, description, photosIds, ownerId, price, discount);
+    }
+
+    public Integer getRentalsCounter() {
+        return rentalsCounter;
+    }
+
+    public void setRentalsCounter(Integer rentalsCounter) {
+        this.rentalsCounter = rentalsCounter;
     }
 
     @Override

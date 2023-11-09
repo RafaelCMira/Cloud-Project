@@ -13,15 +13,16 @@ import scc.data.HouseDAO;
  * Azure Functions with Timer Trigger.
  */
 public class CosmosDBFunction {
-	private static final String NEW_HOUSES_PREFIX = "newH:";
-	private static final String DISCOUNT_HOUSES = "houses:disc:";
-	private static final String DB_NAME = "scc24db60700";
+	 static final String NEW_HOUSES_PREFIX = "newH:";
+	 static final String DISCOUNT_HOUSES = "houses:disc:";
+	 static final String DB_NAME = "scc24db60700";
+	 static final String HOUSES_COLLECTION = "houses";
 
 	private static final ObjectMapper mapper = new ObjectMapper();
     @FunctionName("cosmosDBNewHouses")
     public void updateMostRecentHouses(@CosmosDBTrigger(name = "cosmosNewHouses",
     										databaseName = DB_NAME,
-    										collectionName = "houses",
+    										collectionName = HOUSES_COLLECTION,
     										preferredLocations="West Europe",
 											createLeaseCollectionIfNotExists = true,
     										connectionStringSetting = "AzureCosmosDBConnection")
@@ -41,7 +42,7 @@ public class CosmosDBFunction {
 	@FunctionName("cosmosDBDiscountHouses")
 	public void updateDiscountHouses(@CosmosDBTrigger(name = "cosmosDiscHouses",
 			databaseName = DB_NAME,
-			collectionName = "houses",
+			collectionName = HOUSES_COLLECTION,
 			preferredLocations="West Europe",
 			createLeaseCollectionIfNotExists = true,
 			connectionStringSetting = "AzureCosmosDBConnection")

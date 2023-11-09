@@ -54,6 +54,9 @@ public class RentalResource extends Validations implements RentalService {
             Cache.putInCache(rentalDAO, RENTAL_PREFIX);
             Cache.addToListInCache(rentalDAO.toRental(), HOUSE_RENTALS);
 
+            house.setRentalsCounter(house.getRentalsCounter() + 1);
+            db.update(house,HousesService.CONTAINER,houseId);
+
             return sendResponse(OK, rentalDAO.toRental());
 
         } catch (CosmosException ex) {

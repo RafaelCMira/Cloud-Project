@@ -3,7 +3,6 @@ package scc.serverless;
 import com.microsoft.azure.functions.annotation.*;
 
 import com.microsoft.azure.functions.*;
-import scc.utils.Hash;
 import scc.utils.MediaResource;
 
 
@@ -13,12 +12,13 @@ import scc.utils.MediaResource;
 public class BlobStorageFunction {
 
     private final MediaResource media = new MediaResource();
+    private static final String PATH = "media/{name}";
 
     @FunctionName("replicateBlob")
     public void replicateBlob(
             @BlobTrigger(name = "replicateBlob",
                     dataType = "binary",
-                    path = "media/{name}",
+                    path = PATH,
                     connection = "BlobStoreConnection") byte[] content,
             @BindingName("name") String blobname,
             final ExecutionContext context)
