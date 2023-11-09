@@ -49,13 +49,6 @@ public class Cache {
             }
     }
 
-    public static void putInCache(BinaryData data, String prefix) throws JsonProcessingException {
-        if (AzureManagement.CREATE_REDIS && cacheOn)
-            try (Jedis jedis = Cache.getCachePool().getResource()) {
-                jedis.set(prefix + data, mapper.writeValueAsString(data));
-            }
-    }
-
     public static String getFromCache(String prefix, String key) {
         if (AzureManagement.CREATE_REDIS)
             try (Jedis jedis = Cache.getCachePool().getResource()) {
