@@ -7,8 +7,9 @@
     <version>1.0</version>
     <packaging>war</packaging>
     <properties>
+        <region>centralus</region>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-        <authors>59243</authors>
+        <authors>60700</authors>
     </properties>
     <dependencies>
         <dependency>
@@ -163,7 +164,7 @@
                 <configuration>
                     <schemaVersion>V2</schemaVersion>
                     <pricingTier>F1</pricingTier>
-                    <region>westeurope</region>
+                    <region>${region}</region>
                     <runtime>
                         <os>linux</os>
                         <javaVersion>Java 17</javaVersion>
@@ -179,8 +180,8 @@
                             </resource>
                         </resources>
                     </deployment>
-                    <resourceGroup>scc24-rg-westeurope-${authors}</resourceGroup>
-                    <appName>scc24app-westeurope-${authors}</appName>
+                    <resourceGroup>scc24-rg-${region}-${authors}</resourceGroup>
+                    <appName>scc24app-${region}-${authors}</appName>
                 </configuration>
             </plugin>
         </plugins>

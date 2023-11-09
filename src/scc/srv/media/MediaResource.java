@@ -38,7 +38,7 @@ public class MediaResource implements MediaService {
             // Upload contents from BinaryData (check documentation for other alternatives)
             blob.upload(data);
 
-            Cache.putInCache(data, MEDIA_PREFIX);
+            //Cache.putInCache(data, MEDIA_PREFIX);
 
         } catch (Exception e) {
             e.printStackTrace();
@@ -51,9 +51,9 @@ public class MediaResource implements MediaService {
 
         try {
 
-            var res = Cache.getFromCache(MEDIA_PREFIX, id);
-            if (res != null)
-                return Response.ok(mapper.readValue(res, BinaryData.class).toBytes()).build();
+            //var res = Cache.getFromCache(MEDIA_PREFIX, id);
+            //if (res != null)
+            //    return Response.ok(mapper.readValue(res, BinaryData.class).toBytes()).build();
 
             // Get container client
             BlobContainerClient containerClient = getContainerClient(MediaService.CONTAINER_NAME);
