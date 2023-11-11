@@ -27,10 +27,10 @@ public class RentalResource extends Validations implements RentalService {
 
     @Override
     public Response createRental(Cookie session, String houseId, RentalDAO rentalDAO) throws Exception {
-
         try {
             rentalDAO.setId(UUID.randomUUID().toString());
             rentalDAO.setHouseId(houseId);
+
             var house = checkRentalCreation(session, houseId, rentalDAO);
 
             long daysBetween = ChronoUnit.DAYS.between(
@@ -42,7 +42,7 @@ public class RentalResource extends Validations implements RentalService {
 
             db.create(rentalDAO, CONTAINER);
 
-            // check se realmente foi o meu rental a ir para a DB
+            // Check if the rental was successfull or some concurrent one got there first
             var rentalInDB = Validations.rentalExists(rentalDAO.getId());
 
             if (rentalInDB == null)
@@ -55,7 +55,7 @@ public class RentalResource extends Validations implements RentalService {
             Cache.addToListInCache(rentalDAO.toRental(), HOUSE_RENTALS);
 
             house.setRentalsCounter(house.getRentalsCounter() + 1);
-            db.update(house,HousesService.CONTAINER,houseId);
+            db.update(house, HousesService.CONTAINER, houseId);
 
             return sendResponse(OK, rentalDAO.toRental());
 
@@ -64,25 +64,6 @@ public class RentalResource extends Validations implements RentalService {
         } catch (WebApplicationException ex) {
             return handleCreateException(ex.getResponse().getStatus(), ex.getMessage(), rentalDAO);
         }
-    }
-
-    private Response handleCreateException(int statusCode, String msg, RentalDAO rental) {
-        if (statusCode == 409)
-            return Response.status(Response.Status.CONFLICT)
-                    .entity(String.format("House %s already rented for this period", rental.getHouseId()))
-                    .build();
-        if (statusCode == 403)
-            return Response.status(Response.Status.FORBIDDEN)
-                    .entity("Can't rent this house. Owner is no longer in the system.")
-                    .build();
-        if (msg.contains(HOUSE_MSG))
-            return processException(statusCode, HOUSE_MSG, rental.getHouseId());
-        else if (msg.contains(USER_MSG))
-            return processException(statusCode, USER_MSG, rental.getUserId());
-        else if (msg.contains(RENTAL_MSG))
-            return processException(statusCode, RENTAL_MSG, rental.getId());
-        else
-            return processException(statusCode, msg);
     }
 
     @Override
@@ -109,7 +90,8 @@ public class RentalResource extends Validations implements RentalService {
         if (Validations.badParams(id))
             return sendResponse(BAD_REQUEST, BAD_REQUEST_MSG);
 
-        // todo: quando fazemos delete de um rental que não é desta casa vai dar erro que não tratamos ainda
+        //todo: quando fazemos delete de um rental que não é desta casa vai dar erro que não tratamos ainda
+        // solução -> fazer get do rental e ver se a casa é a mesma do request
         try {
             var house = Validations.houseExists(houseId);
             if (house == null)
@@ -118,7 +100,7 @@ public class RentalResource extends Validations implements RentalService {
             db.delete(id, CONTAINER, houseId);
 
             Cache.deleteFromCache(RENTAL_PREFIX, id);
-            Cache.removeListIncCache(HOUSE_RENTALS);
+            Cache.removeListInCache(HOUSE_RENTALS);
 
             return sendResponse(OK, String.format(RESOURCE_WAS_DELETED, RENTAL_MSG, id));
 
@@ -129,7 +111,6 @@ public class RentalResource extends Validations implements RentalService {
 
     @Override
     public Response updateRental(Cookie session, String houseId, String id, RentalDAO rentalDAO) throws Exception {
-
         try {
             var updatedRental = genUpdatedRental(session, houseId, id, rentalDAO);
 
@@ -146,23 +127,23 @@ public class RentalResource extends Validations implements RentalService {
 
     @Override
     public Response listHouseRentals(String houseId) {
-        //TODO: rafactor this method
+        //TODO: refactor this method (não precisa de refactor, só não sei se está a funcionar direito)
         try {
-            var houseRentals = Cache.getListFromCache(HOUSE_RENTALS);
+            var cacheHouseRentals = Cache.getListFromCache(HOUSE_RENTALS);
 
-            List<Rental> toReturn = new ArrayList<>();
-            for (String rental : houseRentals) {
-                toReturn.add(mapper.readValue(rental, RentalDAO.class).toRental());
+            List<Rental> houseRentals = new ArrayList<>();
+            for (String rental : cacheHouseRentals) {
+                houseRentals.add(mapper.readValue(rental, RentalDAO.class).toRental());
             }
 
-            if (toReturn.isEmpty()) {
-                toReturn = db.getHouseRentals(houseId).stream().map(RentalDAO::toRental).toList();
-                for (Rental rental : toReturn) {
+            if (houseRentals.isEmpty()) {
+                houseRentals = db.getHouseRentals(houseId).stream().map(RentalDAO::toRental).toList();
+                for (Rental rental : houseRentals) {
                     Cache.addToListInCache(mapper.writeValueAsString(rental), HOUSE_RENTALS);
                 }
             }
 
-            return sendResponse(OK, toReturn.isEmpty() ? new ArrayList<>() : toReturn);
+            return sendResponse(OK, houseRentals.isEmpty() ? new ArrayList<>() : houseRentals);
 
         } catch (CosmosException ex) {
             return processException(ex.getStatusCode());
@@ -170,7 +151,6 @@ public class RentalResource extends Validations implements RentalService {
             return processException(500);
         }
     }
-
 
     @Override
     public Response getHousesInDiscount() {
@@ -191,11 +171,13 @@ public class RentalResource extends Validations implements RentalService {
 
             var result = new ArrayList<House>();
 
+
             for (HouseDAO house : houses) {
+
                 if (!house.getOwnerId().equals(UsersService.DELETED_USER)) {
                     var currentDate = Date.from(Instant.now());
                     var oneMonthFromNow = Date.from(Instant.now().plus(30, ChronoUnit.DAYS));
-
+                    //TODO: rever se azure function faz esta validação do isAvailable, não queremos por casas não disponiveis nessa lista
                     if (house.getDiscount() > 0 && Validations.isAvailable(house.getId(), currentDate, oneMonthFromNow)) {
                         result.add(house.toHouse());
                         if (updateCache)
@@ -232,18 +214,11 @@ public class RentalResource extends Validations implements RentalService {
             if (newPrice > 0)
                 rentalDAO.setPrice(newPrice);
             else
-                throw new WebApplicationException("Error: Invalid price", Response.Status.BAD_REQUEST);
+                throw new WebApplicationException(INVALID_PRICE, Response.Status.BAD_REQUEST);
 
         return rentalDAO;
     }
 
-    /**
-     * Checks if the Rental can be created
-     *
-     * @param houseId - id of the house
-     * @param rental  - the rental
-     * @throws Exception - WebApplicationException depending on the result of the checks
-     */
     private HouseDAO checkRentalCreation(Cookie session, String houseId, RentalDAO rental) throws Exception {
         if (Validations.userExists(rental.getUserId()) == null)
             throw new WebApplicationException(USER_MSG, Response.Status.NOT_FOUND);
@@ -267,6 +242,25 @@ public class RentalResource extends Validations implements RentalService {
             throw new WebApplicationException(RENTAL_MSG, Response.Status.CONFLICT);
 
         return house;
+    }
+
+    private Response handleCreateException(int statusCode, String msg, RentalDAO rental) {
+        if (statusCode == 409)
+            return Response.status(Response.Status.CONFLICT)
+                    .entity(String.format("House %s already rented for this period", rental.getHouseId()))
+                    .build();
+        if (statusCode == 403)
+            return Response.status(Response.Status.FORBIDDEN)
+                    .entity("Can't rent this house. Owner is no longer in the system.")
+                    .build();
+        if (msg.contains(HOUSE_MSG))
+            return processException(statusCode, HOUSE_MSG, rental.getHouseId());
+        else if (msg.contains(USER_MSG))
+            return processException(statusCode, USER_MSG, rental.getUserId());
+        else if (msg.contains(RENTAL_MSG))
+            return processException(statusCode, RENTAL_MSG, rental.getId());
+        else
+            return processException(statusCode, msg);
     }
 
 }

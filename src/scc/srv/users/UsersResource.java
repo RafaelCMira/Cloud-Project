@@ -7,14 +7,12 @@ import jakarta.ws.rs.core.Cookie;
 import jakarta.ws.rs.core.NewCookie;
 import jakarta.ws.rs.core.Response;
 import scc.cache.Cache;
-import scc.data.House;
 import scc.data.HouseDAO;
 import scc.data.User;
 import scc.data.UserDAO;
 import scc.db.CosmosDBLayer;
 import scc.srv.authentication.Login;
 import scc.srv.authentication.Session;
-import scc.srv.houses.HousesResource;
 import scc.srv.houses.HousesService;
 import scc.srv.rentals.RentalService;
 import scc.srv.utils.Validations;
@@ -95,27 +93,7 @@ public class UsersResource extends Validations implements UsersService {
             return checkCookies;
 
         try {
-            var userHouses = db.getUserHouses(id);
-            var userRentals = db.getUserRentals(id);
-
-            var updateHouses = CompletableFuture.runAsync(() -> {
-                for (var house : userHouses) {
-                    house.setOwnerId(DELETED_USER);
-                    db.update(house, HousesService.CONTAINER, house.getId());
-                    Cache.deleteFromCache(HousesService.HOUSE_PREFIX, house.getId());
-                }
-            });
-
-            var updateRentals = CompletableFuture.runAsync(() -> {
-                for (var rental : userRentals) {
-                    rental.setUserId(DELETED_USER);
-                    db.update(rental, RentalService.CONTAINER, rental.getHouseId());
-                    Cache.deleteFromCache(RentalService.RENTAL_PREFIX, rental.getId());
-                }
-            });
-
-            var allUpdates = CompletableFuture.allOf(updateHouses, updateRentals);
-            allUpdates.join();
+            updateUserHousesAndRentals(id);
 
             db.delete(id, CONTAINER, id);
 
@@ -126,6 +104,29 @@ public class UsersResource extends Validations implements UsersService {
         } catch (CosmosException ex) {
             return processException(ex.getStatusCode(), USER_MSG, id);
         }
+    }
+
+    private void updateUserHousesAndRentals(String id) {
+        var updateHouses = CompletableFuture.runAsync(() -> {
+            var userHouses = db.getUserHouses(id);
+            for (var house : userHouses) {
+                house.setOwnerId(DELETED_USER);
+                db.update(house, HousesService.CONTAINER, house.getId());
+                Cache.deleteFromCache(HousesService.HOUSE_PREFIX, house.getId());
+            }
+        });
+
+        var updateRentals = CompletableFuture.runAsync(() -> {
+            var userRentals = db.getUserRentals(id);
+            for (var rental : userRentals) {
+                rental.setUserId(DELETED_USER);
+                db.update(rental, RentalService.CONTAINER, rental.getHouseId());
+                Cache.deleteFromCache(RentalService.RENTAL_PREFIX, rental.getId());
+            }
+        });
+
+        var allUpdates = CompletableFuture.allOf(updateHouses, updateRentals);
+        allUpdates.join();
     }
 
     @Override
@@ -151,8 +152,8 @@ public class UsersResource extends Validations implements UsersService {
 
     @Override
     public Response updateUser(Cookie session, String id, User user) throws Exception {
-
         try {
+
             var checkCookies = checkUserSession(session, id);
             if (checkCookies.getStatus() != Response.Status.OK.getStatusCode())
                 return checkCookies;
@@ -184,9 +185,9 @@ public class UsersResource extends Validations implements UsersService {
     @Override
     public Response listUsers() {
         try {
-            List<User> toReturn = db.getAll(CONTAINER, UserDAO.class).stream().map(UserDAO::toUser).toList();
+            List<User> users = db.getAll(CONTAINER, UserDAO.class).stream().map(UserDAO::toUser).toList();
 
-            return sendResponse(OK, toReturn.isEmpty() ? new ArrayList<>() : toReturn);
+            return sendResponse(OK, users.isEmpty() ? new ArrayList<>() : users);
 
         } catch (CosmosException ex) {
             return processException(ex.getStatusCode());
@@ -214,16 +215,7 @@ public class UsersResource extends Validations implements UsersService {
             return processException(ex.getStatusCode(), USER_MSG, id);
         }
     }
-
-
-    /**
-     * Returns updated userDAO to the method who's making the request to the database
-     *
-     * @param id   of the user being accessed
-     * @param user new user attributes
-     * @return updated userDAO to the method who's making the request to the database
-     * @throws WebApplicationException If user doesn't exist or if id is empty
-     */
+    
     private UserDAO genUpdatedUserDAO(String id, User user) throws WebApplicationException {
         if (Validations.badParams(id))
             throw new WebApplicationException(BAD_REQUEST_MSG, Response.Status.BAD_REQUEST);

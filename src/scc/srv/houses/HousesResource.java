@@ -1,6 +1,7 @@
 package scc.srv.houses;
 
 import com.azure.cosmos.CosmosException;
+import com.azure.resourcemanager.containerregistry.models.RegistrySourceTrigger;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import jakarta.ws.rs.WebApplicationException;
@@ -9,6 +10,7 @@ import jakarta.ws.rs.core.Response;
 import scc.cache.Cache;
 import scc.data.*;
 import scc.db.CosmosDBLayer;
+import scc.srv.question.QuestionService;
 import scc.srv.utils.Utility;
 import scc.srv.utils.Validations;
 
@@ -16,6 +18,7 @@ import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
+import java.util.concurrent.CompletableFuture;
 
 import static scc.srv.utils.Utility.*;
 
@@ -26,18 +29,12 @@ public class HousesResource extends Validations implements HousesService {
 
     @Override
     public Response createHouse(Cookie session, HouseDAO houseDAO) throws Exception {
-
         try {
             checkHouseCreation(session, houseDAO);
 
             db.create(houseDAO, CONTAINER);
 
             Cache.putInCache(houseDAO, HOUSE_PREFIX);
-
-            // Todo: fazer isto com azure function (tanto no create house como no update)
-            /* if (houseDAO.getDiscount() > 0)
-                Cache.addToListInCache(houseDAO, RentalService.DISCOUNTED_HOUSES);
-            */
 
             return sendResponse(OK, houseDAO.toHouse());
 
@@ -48,47 +45,28 @@ public class HousesResource extends Validations implements HousesService {
         }
     }
 
-    private Response handleCreateException(int statusCode, String msg, HouseDAO houseDAO) {
-        if (statusCode == 409)
-            return sendResponse(CONFLICT, HOUSE_MSG, houseDAO.getId());
-        if (msg.contains(MEDIA_MSG))
-            return processException(statusCode, MEDIA_MSG, "(some id)");
-        else if (msg.contains(USER_MSG))
-            return processException(statusCode, USER_MSG, houseDAO.getOwnerId());
-        else if (msg.contains(HOUSE_MSG))
-            return processException(statusCode, HOUSE_MSG, houseDAO.getId());
-        else
-            return processException(statusCode, msg);
-    }
+    private void checkHouseCreation(Cookie session, HouseDAO houseDAO) throws Exception {
+        var checkCookies = checkUserSession(session, houseDAO.getOwnerId());
+        if (checkCookies.getStatus() != Response.Status.OK.getStatusCode())
+            throw new WebApplicationException(checkCookies.getEntity().toString(), Response.Status.UNAUTHORIZED);
 
-    private Response handleUpdateException(int statusCode, String msg, String id) {
-        if (msg.contains(MEDIA_MSG))
-            return processException(statusCode, MEDIA_MSG, "(some id)");
-        else if (msg.contains(HOUSE_MSG))
-            return processException(statusCode, HOUSE_MSG, id);
-        else
-            return processException(statusCode, msg, id);
+        if (Validations.badParams(houseDAO.getId(), houseDAO.getName(), houseDAO.getLocation(), houseDAO.getPrice().toString(),
+                houseDAO.getDiscount().toString()) || houseDAO.getPrice() <= 0 || houseDAO.getDiscount() < 0)
+            throw new WebApplicationException(BAD_REQUEST_MSG, Response.Status.BAD_REQUEST);
+
+        if (!Validations.mediaExists(houseDAO.getPhotosIds()))
+            throw new WebApplicationException(MEDIA_MSG, Response.Status.NOT_FOUND);
+
+        if (Validations.userExists(houseDAO.getOwnerId()) == null)
+            throw new WebApplicationException(USER_MSG, Response.Status.NOT_FOUND);
     }
 
     @Override
     public Response deleteHouse(Cookie session, String id) throws Exception {
-        if (Validations.badParams(id))
-            return sendResponse(BAD_REQUEST, BAD_REQUEST_MSG);
-
         try {
-            var house = Validations.houseExists(id);
-            if (house == null)
-                return sendResponse(NOT_FOUND, HOUSE_MSG, id);
-
-            String ownerId = house.getOwnerId();
-
-            var checkCookies = checkUserSession(session, ownerId);
-            if (checkCookies.getStatus() != Response.Status.OK.getStatusCode())
-                return checkCookies;
-
-            var user = Validations.userExists(ownerId);
-            if (user == null)
-                return sendResponse(NOT_FOUND, USER_MSG, ownerId);
+            var checks = checkHouseDeletion(session, id);
+            if (checks.getStatus() != Response.Status.OK.getStatusCode())
+                return checks;
 
             db.delete(id, CONTAINER, id);
 
@@ -99,6 +77,27 @@ public class HousesResource extends Validations implements HousesService {
         } catch (CosmosException ex) {
             return processException(ex.getStatusCode(), ex.getMessage(), id);
         }
+    }
+
+    private Response checkHouseDeletion(Cookie session, String id) throws Exception {
+        if (Validations.badParams(id))
+            return sendResponse(BAD_REQUEST, BAD_REQUEST_MSG);
+
+        var house = Validations.houseExists(id);
+        if (house == null)
+            return sendResponse(NOT_FOUND, HOUSE_MSG, id);
+
+        String ownerId = house.getOwnerId();
+
+        var checkCookies = checkUserSession(session, ownerId);
+        if (checkCookies.getStatus() != Response.Status.OK.getStatusCode())
+            return checkCookies;
+
+        var user = Validations.userExists(ownerId);
+        if (user == null)
+            return sendResponse(NOT_FOUND, USER_MSG, ownerId);
+
+        return Response.status(Response.Status.OK).build();
     }
 
     @Override
@@ -113,6 +112,17 @@ public class HousesResource extends Validations implements HousesService {
 
             Cache.putInCache(house, HOUSE_PREFIX);
 
+            //Todo (já feito) : quando fazemos get de uma casa, colocar na cache a lista de questoes
+            // para estarem prontas para serem vistas (pre-load dos recursos)
+            CompletableFuture.runAsync(() -> {
+                var questions = db.listHouseQuestions(id).stream().map(QuestionDAO::toQuestion).toList();
+                try {
+                    Cache.uploadListToCache(questions, QuestionService.QUESTIONS_LIST_PREFIX + id);
+                } catch (JsonProcessingException e) {
+                    throw new RuntimeException(e);
+                }
+            });
+
             return sendResponse(OK, house.toHouse());
 
         } catch (CosmosException ex) {
@@ -122,7 +132,6 @@ public class HousesResource extends Validations implements HousesService {
 
     @Override
     public Response updateHouse(Cookie session, String id, House house) throws Exception {
-
         try {
             var updatedHouse = genUpdatedHouse(session, id, house);
 
@@ -142,9 +151,9 @@ public class HousesResource extends Validations implements HousesService {
     @Override
     public Response listAllHouses() {
         try {
-            List<House> toReturn = db.getAll(CONTAINER, HouseDAO.class).stream().map(HouseDAO::toHouse).toList();
+            List<House> houses = db.getAll(CONTAINER, HouseDAO.class).stream().map(HouseDAO::toHouse).toList();
 
-            return sendResponse(OK, toReturn.isEmpty() ? new ArrayList<>() : toReturn);
+            return sendResponse(OK, houses.isEmpty() ? new ArrayList<>() : houses);
 
         } catch (CosmosException ex) {
             return processException(ex.getStatusCode());
@@ -173,12 +182,11 @@ public class HousesResource extends Validations implements HousesService {
     @Override
     public Response getHouseByLocationPeriod(String location, String initialDate, String endDate) {
         try {
-
             var houses = db.getHousesByLocation(location);
             var availableHouses = new ArrayList<>();
 
             for (HouseDAO house : houses) {
-                if (Validations.isAvailable(house.getId(), Utility.formatDat(initialDate), Utility.formatDat(endDate)))
+                if (Validations.isAvailable(house.getId(), Utility.formatDate(initialDate), Utility.formatDate(endDate)))
                     availableHouses.add(house.toHouse());
             }
 
@@ -189,14 +197,6 @@ public class HousesResource extends Validations implements HousesService {
         }
     }
 
-    /**
-     * Returns updated houseDAO to the method who's making the request to the database
-     *
-     * @param id    of the house being accessed
-     * @param house new house attributes
-     * @return updated userDAO to the method who's making the request to the database
-     * @throws WebApplicationException If id is null or if the user does not exist
-     */
     private HouseDAO genUpdatedHouse(Cookie session, String id, House house) throws Exception {
         if (Validations.badParams(id))
             throw new WebApplicationException(BAD_REQUEST_MSG, Response.Status.BAD_REQUEST);
@@ -233,39 +233,25 @@ public class HousesResource extends Validations implements HousesService {
             if (newPrice > 0)
                 houseDAO.setPrice(newPrice);
             else
-                throw new WebApplicationException("Error: Invalid price", Response.Status.BAD_REQUEST);
+                throw new WebApplicationException(INVALID_PRICE, Response.Status.BAD_REQUEST);
+
+
+        //Todo: Alterar a az function do desconto.
+        // Se a casa estiver na lista das casas com desconto e o novo desconto for zero, retirá-la
 
         var newDiscount = house.getDiscount();
         if (newDiscount != null)
             if (newDiscount >= 0)
                 houseDAO.setDiscount(newDiscount);
             else
-                throw new WebApplicationException("Error: Invalid discount", Response.Status.BAD_REQUEST);
+                throw new WebApplicationException(INVALID_DISCOUNT, Response.Status.BAD_REQUEST);
 
         return houseDAO;
 
     }
 
-    private void checkHouseCreation(Cookie session, HouseDAO houseDAO) throws Exception {
-        var checkCookies = checkUserSession(session, houseDAO.getOwnerId());
-        if (checkCookies.getStatus() != Response.Status.OK.getStatusCode())
-            throw new WebApplicationException(checkCookies.getEntity().toString(), Response.Status.UNAUTHORIZED);
-
-        if (Validations.badParams(houseDAO.getId(), houseDAO.getName(), houseDAO.getLocation(), houseDAO.getPrice().toString(),
-                houseDAO.getDiscount().toString()) || houseDAO.getPrice() <= 0 || houseDAO.getDiscount() < 0)
-            throw new WebApplicationException(BAD_REQUEST_MSG, Response.Status.BAD_REQUEST);
-
-        if (!Validations.mediaExists(houseDAO.getPhotosIds()))
-            throw new WebApplicationException(MEDIA_MSG, Response.Status.NOT_FOUND);
-
-        if (Validations.userExists(houseDAO.getOwnerId()) == null)
-            throw new WebApplicationException(USER_MSG, Response.Status.NOT_FOUND);
-    }
-
-
     @Override
     public Response getNewHouses() {
-
         try {
             var cacheHouses = Cache.getListFromCache(NEW_HOUSES_PREFIX);
 
@@ -280,4 +266,27 @@ public class HousesResource extends Validations implements HousesService {
             return processException(500);
         }
     }
+    
+    private Response handleCreateException(int statusCode, String msg, HouseDAO houseDAO) {
+        if (statusCode == 409)
+            return sendResponse(CONFLICT, HOUSE_MSG, houseDAO.getId());
+        if (msg.contains(MEDIA_MSG))
+            return processException(statusCode, MEDIA_MSG, "(some id)");
+        else if (msg.contains(USER_MSG))
+            return processException(statusCode, USER_MSG, houseDAO.getOwnerId());
+        else if (msg.contains(HOUSE_MSG))
+            return processException(statusCode, HOUSE_MSG, houseDAO.getId());
+        else
+            return processException(statusCode, msg);
+    }
+
+    private Response handleUpdateException(int statusCode, String msg, String id) {
+        if (msg.contains(MEDIA_MSG))
+            return processException(statusCode, MEDIA_MSG, "(some id)");
+        else if (msg.contains(HOUSE_MSG))
+            return processException(statusCode, HOUSE_MSG, id);
+        else
+            return processException(statusCode, msg, id);
+    }
+
 }

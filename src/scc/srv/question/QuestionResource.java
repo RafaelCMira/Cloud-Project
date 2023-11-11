@@ -35,8 +35,11 @@ public class QuestionResource extends Validations implements QuestionService {
 
             Cache.putInCache(questionDAO, QUESTION_PREFIX);
 
-            // Put the new question in the list of question of the house
-            Cache.addToListInCache(questionDAO.toQuestion(), QUESTIONS_LIST_PREFIX + houseId);
+            //TODO (remover a linha comentada): acho que não é necesário fazer isto
+            // porque num site real, nunca vamos ver questoes (clicamos sempre 1º na casa e depois é que vemos as questoes associadas)
+            // em vez de termos este addToList, o que fiz foi: cada vez que fazemos um get da casa, colocamos a lista assincronamente no cache
+
+            // Cache.addToListInCache(questionDAO.toQuestion(), QUESTIONS_LIST_PREFIX + houseId);
 
             return sendResponse(OK, questionDAO.toQuestion());
 
@@ -47,26 +50,19 @@ public class QuestionResource extends Validations implements QuestionService {
         }
     }
 
-    private Response handleCreateException(int statusCode, String msg, QuestionDAO questionDAO) {
-        if (msg.contains(HOUSE_MSG))
-            return processException(statusCode, HOUSE_MSG, questionDAO.getHouseId());
-        else if (msg.contains(USER_MSG))
-            return processException(statusCode, USER_MSG, questionDAO.getAskerId());
-        else
-            return processException(statusCode, msg);
-    }
-
     @Override
     public Response replyToQuestion(Cookie session, String houseId, String questionId, QuestionDAO questionDAO) throws Exception {
-
         try {
             var updatedQuestion = genUpdatedQuestion(session, houseId, questionId, questionDAO);
             db.update(updatedQuestion, CONTAINER, updatedQuestion.getHouseId());
 
             Cache.putInCache(updatedQuestion, QUESTION_PREFIX);
 
-            // Put the updated question in the list of question of the house
-            Cache.addToListInCache(questionDAO.toQuestion(), QUESTIONS_LIST_PREFIX + houseId);
+            //TODO (remover a linha comentada): acho que não é necesário fazer isto
+            // porque num site real, nunca vamos ver questoes (clicamos sempre 1º na casa e depois é que vemos as questoes associadas)
+            // em vez de termos este addToList, o que fiz foi: cada vez que fazemos um get da casa, colocamos a lista assincronamente no cache
+
+            // Cache.addToListInCache(questionDAO.toQuestion(), QUESTIONS_LIST_PREFIX + houseId);
 
             return sendResponse(OK, updatedQuestion.toQuestion());
 
@@ -77,24 +73,19 @@ public class QuestionResource extends Validations implements QuestionService {
         }
     }
 
-    private Response handleUpdateException(int statusCode, String msg, String id, String houseId) {
-        if (statusCode == 409)
-            return Response.status(Response.Status.CONFLICT).entity(String.format(QUESTION_ALREADY_ANSWERED, id)).build();
-        if (msg.contains(QUESTION_MSG))
-            return processException(statusCode, QUESTION_MSG, id);
-        else if (msg.contains(HOUSE_MSG))
-            return processException(statusCode, HOUSE_MSG, houseId);
-        else
-            return processException(statusCode, msg, id);
-    }
-
     @Override
     public Response listQuestions(String houseId) {
 
+        if (Validations.houseExists(houseId) == null)
+            return sendResponse(NOT_FOUND, HOUSE_MSG, houseId);
+
         try {
-            //TODO: acho que não podemos ter isto assim porque pode não estar atualizado
+            //TODO (antes do pre-load das questoes): acho que não podemos ter isto assim porque pode não estar atualizado
             // Se apenas enviamos o que está na cache podemos apenas enviar a última question feita
             // e as outras que são mais antigas já sairam da cache e não vao aparecer na lista
+
+            //TODO (depois do pre-load): assim acho que faz sentido termos isto. Caaa vez que fazemos get da casa,
+            // e consequentemente fazemos um get das questoes da casa, elas vão estar na cache, logo vê sempre o mais atual
             var cacheQuestions = Cache.getListFromCache(QUESTIONS_LIST_PREFIX + houseId);
 
             if (!cacheQuestions.isEmpty()) {
@@ -104,9 +95,6 @@ public class QuestionResource extends Validations implements QuestionService {
                 }
                 return sendResponse(OK, questions);
             }
-
-            if (Validations.houseExists(houseId) == null)
-                return sendResponse(NOT_FOUND, HOUSE_MSG, houseId);
 
             var questions = db.listHouseQuestions(houseId).stream().map(QuestionDAO::toQuestion).toList();
 
@@ -158,5 +146,25 @@ public class QuestionResource extends Validations implements QuestionService {
         return question;
 
     }
-    
+
+    private Response handleCreateException(int statusCode, String msg, QuestionDAO questionDAO) {
+        if (msg.contains(HOUSE_MSG))
+            return processException(statusCode, HOUSE_MSG, questionDAO.getHouseId());
+        else if (msg.contains(USER_MSG))
+            return processException(statusCode, USER_MSG, questionDAO.getAskerId());
+        else
+            return processException(statusCode, msg);
+    }
+
+    private Response handleUpdateException(int statusCode, String msg, String id, String houseId) {
+        if (statusCode == 409)
+            return Response.status(Response.Status.CONFLICT).entity(String.format(QUESTION_ALREADY_ANSWERED, id)).build();
+        if (msg.contains(QUESTION_MSG))
+            return processException(statusCode, QUESTION_MSG, id);
+        else if (msg.contains(HOUSE_MSG))
+            return processException(statusCode, HOUSE_MSG, houseId);
+        else
+            return processException(statusCode, msg, id);
+    }
+
 }

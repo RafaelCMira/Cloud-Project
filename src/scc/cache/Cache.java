@@ -1,6 +1,5 @@
 package scc.cache;
 
-import com.azure.core.util.BinaryData;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import redis.clients.jedis.Jedis;
@@ -50,7 +49,7 @@ public class Cache {
     }
 
     public static String getFromCache(String prefix, String key) {
-        if (AzureManagement.CREATE_REDIS)
+        if (AzureManagement.CREATE_REDIS && cacheOn)
             try (Jedis jedis = Cache.getCachePool().getResource()) {
                 return jedis.get(prefix + key);
             }
@@ -90,8 +89,8 @@ public class Cache {
             }
     }
 
-    public static void removeListIncCache(String prefix) {
-        if (AzureManagement.CREATE_REDIS)
+    public static void removeListInCache(String prefix) {
+        if (AzureManagement.CREATE_REDIS && cacheOn)
             try (Jedis jedis = Cache.getCachePool().getResource()) {
                 jedis.ltrim(prefix, 0, 0);
             }

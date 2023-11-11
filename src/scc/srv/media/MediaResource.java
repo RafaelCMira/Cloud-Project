@@ -21,7 +21,6 @@ import static scc.srv.utils.Utility.*;
  * Resource for managing media files, such as images.
  */
 public class MediaResource implements MediaService {
-    private final ObjectMapper mapper = new ObjectMapper();
 
     public String upload(byte[] contents) {
 
@@ -48,7 +47,6 @@ public class MediaResource implements MediaService {
         byte[] content = null;
 
         try {
-
             // Get container client
             BlobContainerClient containerClient = getContainerClient(MediaService.CONTAINER_NAME);
 

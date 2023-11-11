@@ -79,14 +79,17 @@ public class CosmosDBLayer {
 
     public <T> CosmosPagedIterable<T> getAll(String container, Class<T> c) {
         init();
+        //todo pagination
+        //  String query = String.format("SELECT * FROM %s OFFSET 1 LIMIT 5", container);
         String query = String.format("SELECT * FROM %s", container);
         return db.getContainer(container).queryItems(query, new CosmosQueryRequestOptions(), c);
     }
 
+
     ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
     ////////////////////////////// USERS
     ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-    
+
     public CosmosPagedIterable<HouseDAO> listUserHouses(String id) {
         init();
         String query = String.format("SELECT * FROM houses WHERE houses.ownerId=\"%s\"", id);

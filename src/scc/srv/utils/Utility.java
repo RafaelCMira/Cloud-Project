@@ -30,12 +30,16 @@ public class Utility {
     public static final String HOUSE_MSG = "House";
     public static final String RENTAL_MSG = "Rental";
 
+
     public static final String QUESTION_MSG = "Question";
 
     public static final String QUESTION_ALREADY_ANSWERED = "Question %s already answered";
 
     public static final String INCORRECT_LOGIN = "Incorrect login.";
 
+    public static final String INVALID_PRICE = "Error: Invalid price";
+
+    public static final String INVALID_DISCOUNT = "Error: Invalid discount";
 
     public static final String RESOURCE_WAS_DELETED = "%s %s was deleted";
 
@@ -110,7 +114,7 @@ public class Utility {
     }
 
 
-    public static Date formatDat(String date) {
+    public static Date formatDate(String date) {
         DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd");
         Instant start = LocalDate.parse(date, formatter).atStartOfDay(ZoneId.systemDefault()).toInstant();
         return Date.from(start);
