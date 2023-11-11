@@ -26,6 +26,9 @@ public interface UsersService {
     String DELETED_USER = "Deleted User";
 
 
+    String OFFSET = "offset";
+
+
     @POST
     @Path(AUTH)
     @Consumes(MediaType.APPLICATION_JSON)
@@ -60,7 +63,7 @@ public interface UsersService {
     @GET
     @Path("/{" + ID + "}" + HOUSES)
     @Produces(MediaType.APPLICATION_JSON)
-    Response getUserHouses(@PathParam(ID) String id) throws Exception;
+    Response getUserHouses(@PathParam(ID) String id, @QueryParam(OFFSET) String offset) throws Exception;
 
 }
 

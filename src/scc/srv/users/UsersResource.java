@@ -173,15 +173,6 @@ public class UsersResource extends Validations implements UsersService {
         }
     }
 
-    private Response handleUpdateException(int statusCode, String msg, String id) {
-        if (msg.contains(MEDIA_MSG))
-            return processException(statusCode, MEDIA_MSG, id);
-        if (msg.contains(USER_MSG))
-            return processException(statusCode, USER_MSG, id);
-        else
-            return processException(statusCode, msg, id);
-    }
-
     @Override
     public Response listUsers() {
         try {
@@ -195,7 +186,7 @@ public class UsersResource extends Validations implements UsersService {
     }
 
     @Override
-    public Response getUserHouses(String id) throws JsonProcessingException {
+    public Response getUserHouses(String id, String offset) throws JsonProcessingException {
         if (Validations.badParams(id))
             return sendResponse(BAD_REQUEST, BAD_REQUEST_MSG);
 
@@ -205,7 +196,7 @@ public class UsersResource extends Validations implements UsersService {
 
                 Cache.putInCache(user, USER_PREFIX);
 
-                var userHouses = db.listUserHouses(id).stream().map(HouseDAO::toHouse).toList();
+                var userHouses = db.listUserHouses(id, offset).stream().map(HouseDAO::toHouse).toList();
                 return sendResponse(OK, userHouses.isEmpty() ? new ArrayList<>() : userHouses);
 
             } else
@@ -215,7 +206,7 @@ public class UsersResource extends Validations implements UsersService {
             return processException(ex.getStatusCode(), USER_MSG, id);
         }
     }
-    
+
     private UserDAO genUpdatedUserDAO(String id, User user) throws WebApplicationException {
         if (Validations.badParams(id))
             throw new WebApplicationException(BAD_REQUEST_MSG, Response.Status.BAD_REQUEST);
@@ -240,6 +231,15 @@ public class UsersResource extends Validations implements UsersService {
                 userDAO.setPhotoId(newPhoto);
 
         return userDAO;
+    }
+
+    private Response handleUpdateException(int statusCode, String msg, String id) {
+        if (msg.contains(MEDIA_MSG))
+            return processException(statusCode, MEDIA_MSG, id);
+        if (msg.contains(USER_MSG))
+            return processException(statusCode, USER_MSG, id);
+        else
+            return processException(statusCode, msg, id);
     }
 
 }

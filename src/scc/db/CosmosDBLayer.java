@@ -18,6 +18,9 @@ public class CosmosDBLayer {
     private static final String DB_KEY = System.getenv(AzureProperties.COSMOSDB_KEY);
     private static final String DB_NAME = System.getenv(AzureProperties.COSMOSDB_DATABASE);
 
+
+    private static final String USER_HOUSES_LIMIT = "25";
+
     private static CosmosDBLayer instance;
     private final CosmosClient client;
     private CosmosDatabase db;
@@ -85,14 +88,13 @@ public class CosmosDBLayer {
         return db.getContainer(container).queryItems(query, new CosmosQueryRequestOptions(), c);
     }
 
-
     ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
     ////////////////////////////// USERS
     ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
-    public CosmosPagedIterable<HouseDAO> listUserHouses(String id) {
+    public CosmosPagedIterable<HouseDAO> listUserHouses(String id, String offset) {
         init();
-        String query = String.format("SELECT * FROM houses WHERE houses.ownerId=\"%s\"", id);
+        String query = String.format("SELECT * FROM houses WHERE houses.ownerId=\"%s\" OFFSET %s LIMIT %s", id, offset, USER_HOUSES_LIMIT);
         return db.getContainer(HousesService.CONTAINER).queryItems(query, new CosmosQueryRequestOptions(), HouseDAO.class);
     }
 
