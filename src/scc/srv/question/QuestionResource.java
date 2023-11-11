@@ -96,6 +96,7 @@ public class QuestionResource extends Validations implements QuestionService {
                 return sendResponse(OK, questions);
             }
 
+            //TODO: não devemos fazer upload da lista toda se for muito grande (10 questions por casa no max)
             var questions = db.listHouseQuestions(houseId).stream().map(QuestionDAO::toQuestion).toList();
 
             Cache.uploadListToCache(questions, QUESTIONS_LIST_PREFIX + houseId);

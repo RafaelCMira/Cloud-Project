@@ -19,7 +19,11 @@ public class CosmosDBLayer {
     private static final String DB_NAME = System.getenv(AzureProperties.COSMOSDB_DATABASE);
 
 
+    private static final String GET_ALL_LIMIT = "30";
+
     private static final String USER_HOUSES_LIMIT = "25";
+
+    private static final String HOUSES_LIMIT = "25";
 
     private static CosmosDBLayer instance;
     private final CosmosClient client;
@@ -80,11 +84,9 @@ public class CosmosDBLayer {
         return db.getContainer(container).queryItems(query, new CosmosQueryRequestOptions(), c);
     }
 
-    public <T> CosmosPagedIterable<T> getAll(String container, Class<T> c) {
+    public <T> CosmosPagedIterable<T> getAll(String container, String offset, Class<T> c) {
         init();
-        //todo pagination
-        //  String query = String.format("SELECT * FROM %s OFFSET 1 LIMIT 5", container);
-        String query = String.format("SELECT * FROM %s", container);
+        String query = String.format("SELECT * FROM %s OFFSET %s LIMIT %s", container, offset, GET_ALL_LIMIT);
         return db.getContainer(container).queryItems(query, new CosmosQueryRequestOptions(), c);
     }
 
@@ -102,9 +104,9 @@ public class CosmosDBLayer {
     ////////////////////////////// HOUSES
     ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
-    public CosmosPagedIterable<HouseDAO> getHousesByLocation(String location) {
+    public CosmosPagedIterable<HouseDAO> getHousesByLocation(String location, String offset) {
         init();
-        String query = String.format("SELECT * FROM houses WHERE houses.location=\"%s\"", location);
+        String query = String.format("SELECT * FROM houses WHERE houses.location=\"%s\" OFFSET %s LIMIT %s", location, offset, HOUSES_LIMIT);
         return db.getContainer(HousesResource.CONTAINER).queryItems(query, new CosmosQueryRequestOptions(), HouseDAO.class);
     }
 
@@ -121,7 +123,7 @@ public class CosmosDBLayer {
     public CosmosPagedIterable<RentalDAO> getHouseRentals(String houseId) {
         init();
         PartitionKey key = new PartitionKey(houseId);
-        return db.getContainer(RentalResource.CONTAINER).readAllItems(key, RentalDAO.class); // (query, new CosmosQueryRequestOptions(), RentalDAO.class);
+        return db.getContainer(RentalResource.CONTAINER).readAllItems(key, RentalDAO.class);
     }
 
     public CosmosPagedIterable<RentalDAO> getUserRentals(String userId) {

@@ -87,15 +87,10 @@ public class RentalResource extends Validations implements RentalService {
 
     @Override
     public Response deleteRental(String houseId, String id) {
-        if (Validations.badParams(id))
-            return sendResponse(BAD_REQUEST, BAD_REQUEST_MSG);
-
-        //todo: quando fazemos delete de um rental que não é desta casa vai dar erro que não tratamos ainda
-        // solução -> fazer get do rental e ver se a casa é a mesma do request
         try {
-            var house = Validations.houseExists(houseId);
-            if (house == null)
-                return sendResponse(NOT_FOUND, HOUSE_MSG, houseId);
+            var checks = checkRentalDeletion(houseId, id);
+            if (checks.getStatus() != Response.Status.OK.getStatusCode())
+                return checks;
 
             db.delete(id, CONTAINER, houseId);
 
@@ -153,7 +148,7 @@ public class RentalResource extends Validations implements RentalService {
     }
 
     @Override
-    public Response getHousesInDiscount() {
+    public Response getHousesInDiscount(String offset) {
         //TODO: make an azure function to updated the cache in x time
         try {
             List<HouseDAO> houses = new ArrayList<>();
@@ -165,7 +160,7 @@ public class RentalResource extends Validations implements RentalService {
             }
 
             if (houses.isEmpty()) {
-                houses = db.getAll(HousesService.CONTAINER, HouseDAO.class).stream().toList();
+                houses = db.getAll(HousesService.CONTAINER, offset, HouseDAO.class).stream().toList();
                 updateCache = true;
             }
 
@@ -242,6 +237,26 @@ public class RentalResource extends Validations implements RentalService {
             throw new WebApplicationException(RENTAL_MSG, Response.Status.CONFLICT);
 
         return house;
+    }
+
+    private Response checkRentalDeletion(String houseId, String id) {
+        if (Validations.badParams(id))
+            return sendResponse(BAD_REQUEST, BAD_REQUEST_MSG);
+
+        var house = Validations.houseExists(houseId);
+        if (house == null)
+            return sendResponse(NOT_FOUND, HOUSE_MSG, houseId);
+
+        //todo (já feito): quando fazemos delete de um rental que não é desta casa vai dar erro que não tratamos ainda
+        // solução -> fazer get do rental e ver se a casa é a mesma do request
+        var res = db.get(id, RentalService.CONTAINER, RentalDAO.class).stream().findFirst();
+        if (res.isPresent()) {
+            var rentalHouse = res.get().getHouseId();
+            if (!rentalHouse.equals(houseId))
+                return sendResponse(BAD_REQUEST, "Rental (" + id + ") does not belong to this house (" + houseId + ")");
+        }
+
+        return Response.ok().build();
     }
 
     private Response handleCreateException(int statusCode, String msg, RentalDAO rental) {

@@ -174,9 +174,9 @@ public class UsersResource extends Validations implements UsersService {
     }
 
     @Override
-    public Response listUsers() {
+    public Response listUsers(String offset) {
         try {
-            List<User> users = db.getAll(CONTAINER, UserDAO.class).stream().map(UserDAO::toUser).toList();
+            List<User> users = db.getAll(CONTAINER, offset, UserDAO.class).stream().map(UserDAO::toUser).toList();
 
             return sendResponse(OK, users.isEmpty() ? new ArrayList<>() : users);
 

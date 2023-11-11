@@ -27,6 +27,8 @@ public interface HousesService {
     String INITIAL_DATE = "initialDate";
     String END_DATE = "endDate";
 
+    String OFFSET = "offset";
+
 
     @POST
     @Consumes(MediaType.APPLICATION_JSON)
@@ -52,17 +54,17 @@ public interface HousesService {
     @GET
     @Path(ALL)
     @Produces(MediaType.APPLICATION_JSON)
-    Response listAllHouses();
+    Response listAllHouses(@QueryParam(OFFSET) String offset);
 
     @GET
     @Produces(MediaType.APPLICATION_JSON)
-    Response getAvailHouseByLocation(@QueryParam(LOCATION) String location);
+    Response getAvailHouseByLocation(@QueryParam(LOCATION) String location, @QueryParam(OFFSET) String offset);
 
     @GET
     @Path(AVAILABLE)
     @Produces(MediaType.APPLICATION_JSON)
     Response getHouseByLocationPeriod(@QueryParam(LOCATION) String location, @QueryParam(INITIAL_DATE) String initialDate,
-                                      @QueryParam(END_DATE) String endDate);
+                                      @QueryParam(END_DATE) String endDate, @QueryParam(OFFSET) String offset);
 
     @GET
     @Path(NEW_HOUSES)

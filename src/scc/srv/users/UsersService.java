@@ -58,7 +58,7 @@ public interface UsersService {
 
     @GET
     @Produces(MediaType.APPLICATION_JSON)
-    Response listUsers() throws Exception;
+    Response listUsers(@QueryParam(OFFSET) String offset) throws Exception;
 
     @GET
     @Path("/{" + ID + "}" + HOUSES)

@@ -149,9 +149,9 @@ public class HousesResource extends Validations implements HousesService {
     }
 
     @Override
-    public Response listAllHouses() {
+    public Response listAllHouses(String offset) {
         try {
-            List<House> houses = db.getAll(CONTAINER, HouseDAO.class).stream().map(HouseDAO::toHouse).toList();
+            List<House> houses = db.getAll(CONTAINER, offset, HouseDAO.class).stream().map(HouseDAO::toHouse).toList();
 
             return sendResponse(OK, houses.isEmpty() ? new ArrayList<>() : houses);
 
@@ -161,9 +161,9 @@ public class HousesResource extends Validations implements HousesService {
     }
 
     @Override
-    public Response getAvailHouseByLocation(String location) {
+    public Response getAvailHouseByLocation(String location, String offset) {
         try {
-            var houses = db.getHousesByLocation(location);
+            var houses = db.getHousesByLocation(location, offset);
             var availableHouses = new ArrayList<>();
             Date currentDate = Date.from(Instant.now());
 
@@ -180,9 +180,9 @@ public class HousesResource extends Validations implements HousesService {
     }
 
     @Override
-    public Response getHouseByLocationPeriod(String location, String initialDate, String endDate) {
+    public Response getHouseByLocationPeriod(String location, String initialDate, String endDate, String offset) {
         try {
-            var houses = db.getHousesByLocation(location);
+            var houses = db.getHousesByLocation(location, offset);
             var availableHouses = new ArrayList<>();
 
             for (HouseDAO house : houses) {
@@ -266,7 +266,7 @@ public class HousesResource extends Validations implements HousesService {
             return processException(500);
         }
     }
-    
+
     private Response handleCreateException(int statusCode, String msg, HouseDAO houseDAO) {
         if (statusCode == 409)
             return sendResponse(CONFLICT, HOUSE_MSG, houseDAO.getId());
