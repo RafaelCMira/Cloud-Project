@@ -73,20 +73,23 @@ public class HousesResource extends Validations implements HousesService {
 
             Cache.deleteFromCache(HOUSE_PREFIX, id);
 
-            //TODO (Feito): quando se elimina uma casa, eliminar os rentals dessa casa?
-            CompletableFuture.runAsync(() -> {
-                var houseRentals = db.getAllHouseRentals(id);
-                for (var rental : houseRentals) {
-                    db.delete(rental.getId(), RentalService.CONTAINER, rental.getHouseId());
-                }
-                Cache.deleteAllFromCache(RentalService.RENTAL_PREFIX, houseRentals.stream().map(RentalDAO::getId).toList());
-            });
+            deleteHouseRentals(id);
 
             return sendResponse(OK, String.format(RESOURCE_WAS_DELETED, HOUSE_MSG, id));
 
         } catch (CosmosException ex) {
             return processException(ex.getStatusCode(), ex.getMessage(), id);
         }
+    }
+
+    private void deleteHouseRentals(String id) {
+        CompletableFuture.runAsync(() -> {
+            var houseRentals = db.getAllHouseRentals(id);
+            for (var rental : houseRentals) {
+                db.delete(rental.getId(), RentalService.CONTAINER, rental.getHouseId());
+            }
+            Cache.deleteAllFromCache(RentalService.RENTAL_PREFIX, houseRentals.stream().map(RentalDAO::getId).toList());
+        });
     }
 
     private Response checkHouseDeletion(Cookie session, String id) throws Exception {
