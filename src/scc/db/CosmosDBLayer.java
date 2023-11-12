@@ -6,8 +6,7 @@ import com.azure.cosmos.util.CosmosPagedIterable;
 import scc.data.*;
 import scc.srv.houses.HousesResource;
 import scc.srv.houses.HousesService;
-import scc.srv.question.QuestionResource;
-import scc.srv.rentals.RentalResource;
+import scc.srv.question.QuestionService;
 import scc.srv.rentals.RentalService;
 import scc.srv.utils.HasId;
 import scc.utils.props.AzureProperties;
@@ -96,6 +95,7 @@ public class CosmosDBLayer {
     ////////////////////////////// USERS
     ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
+    //TODO geral: ver como podemos fazer cache das listas com offset
     public CosmosPagedIterable<HouseDAO> listUserHouses(String id, String offset) {
         init();
         String query = String.format("SELECT * FROM houses WHERE houses.ownerId=\"%s\" OFFSET %s LIMIT %s", id, offset, USER_HOUSES_LIMIT);
@@ -109,27 +109,35 @@ public class CosmosDBLayer {
     public CosmosPagedIterable<HouseDAO> getHousesByLocation(String location, String offset) {
         init();
         String query = String.format("SELECT * FROM houses WHERE houses.location=\"%s\" OFFSET %s LIMIT %s", location, offset, HOUSES_LIMIT);
-        return db.getContainer(HousesResource.CONTAINER).queryItems(query, new CosmosQueryRequestOptions(), HouseDAO.class);
+        return db.getContainer(HousesService.CONTAINER).queryItems(query, new CosmosQueryRequestOptions(), HouseDAO.class);
     }
 
+    // Query usada para colocar deleted user nas houses dele quando é eliminado
     public CosmosPagedIterable<HouseDAO> getUserHouses(String ownerId) {
         init();
         String query = String.format("SELECT * FROM houses WHERE houses.ownerId=\"%s\"", ownerId);
-        return db.getContainer(HousesResource.CONTAINER).queryItems(query, new CosmosQueryRequestOptions(), HouseDAO.class);
+        return db.getContainer(HousesService.CONTAINER).queryItems(query, new CosmosQueryRequestOptions(), HouseDAO.class);
     }
 
     ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
     ////////////////////////////// RENTALS
     ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
-    //TODO: pagination
-    public CosmosPagedIterable<RentalDAO> getHouseRentals(String houseId) {
+    // TODO: tentar fazer query que devolve apenas os rentals que estão entre estas datas (em vez de fazer o filtro no server, faz-se na DB)
+    public CosmosPagedIterable<RentalDAO> getAllHouseRentals(String houseId) {
         init();
-        PartitionKey key = new PartitionKey(houseId);
-        return db.getContainer(RentalResource.CONTAINER).readAllItems(key, RentalDAO.class);
+        var key = new PartitionKey(houseId);
+        return db.getContainer(RentalService.CONTAINER).readAllItems(key, RentalDAO.class);
     }
 
-    //TODO: pagination
+    //TODO: pagination (testar)
+    public CosmosPagedIterable<RentalDAO> getHouseRentals(String houseId, String offset) {
+        init();
+        String query = String.format("SELECT * FROM rentals WHERE rentals.houseId=\"%s\" OFFSET %s LIMIT %s", houseId, offset, HOUSES_LIMIT);
+        return db.getContainer(RentalService.CONTAINER).queryItems(query, new CosmosQueryRequestOptions(), RentalDAO.class);
+    }
+
+    // Query usada para colocar deleted user nos rentals dele quando é eliminado
     public CosmosPagedIterable<RentalDAO> getUserRentals(String userId) {
         init();
         String query = String.format("SELECT * FROM rentals WHERE rentals.userId=\"%s\"", userId);
@@ -144,7 +152,7 @@ public class CosmosDBLayer {
     public CosmosPagedIterable<QuestionDAO> listHouseQuestions(String houseId) {
         init();
         String query = String.format("SELECT * FROM questions WHERE questions.houseId=\"%s\"", houseId);
-        return db.getContainer(QuestionResource.CONTAINER).queryItems(query, new CosmosQueryRequestOptions(), QuestionDAO.class);
+        return db.getContainer(QuestionService.CONTAINER).queryItems(query, new CosmosQueryRequestOptions(), QuestionDAO.class);
     }
 
     // Usado para fazer pre-load das questoes quando se faz get de uma casa
@@ -152,7 +160,7 @@ public class CosmosDBLayer {
         init();
         String query = String.format("SELECT * FROM questions WHERE questions.houseId=\"%s\" ORDER BY questions._ts DESC OFFSET 0 LIMIT 5",
                 houseId);
-        return db.getContainer(QuestionResource.CONTAINER).queryItems(query, new CosmosQueryRequestOptions(), QuestionDAO.class);
+        return db.getContainer(QuestionService.CONTAINER).queryItems(query, new CosmosQueryRequestOptions(), QuestionDAO.class);
     }
 
     public void close() {

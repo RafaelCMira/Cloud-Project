@@ -10,6 +10,7 @@ import scc.cache.Cache;
 import scc.data.*;
 import scc.db.CosmosDBLayer;
 import scc.srv.question.QuestionService;
+import scc.srv.rentals.RentalService;
 import scc.srv.utils.Utility;
 import scc.srv.utils.Validations;
 
@@ -72,7 +73,14 @@ public class HousesResource extends Validations implements HousesService {
 
             Cache.deleteFromCache(HOUSE_PREFIX, id);
 
-            //TODO: quando se elimina uma casa, eliminar os rentals dessa casa?
+            //TODO (Feito): quando se elimina uma casa, eliminar os rentals dessa casa?
+            CompletableFuture.runAsync(() -> {
+                var houseRentals = db.getAllHouseRentals(id);
+                for (var rental : houseRentals) {
+                    db.delete(rental.getId(), RentalService.CONTAINER, rental.getHouseId());
+                }
+                Cache.deleteAllFromCache(RentalService.RENTAL_PREFIX, houseRentals.stream().map(RentalDAO::getId).toList());
+            });
 
             return sendResponse(OK, String.format(RESOURCE_WAS_DELETED, HOUSE_MSG, id));
 
@@ -114,20 +122,24 @@ public class HousesResource extends Validations implements HousesService {
 
             Cache.putInCache(house, HOUSE_PREFIX);
 
-            CompletableFuture.runAsync(() -> {
-                var questions = db.getHouseLast5Questions(id).stream().map(QuestionDAO::toQuestion).toList();
-                try {
-                    Cache.putListInCache(questions, QuestionService.QUESTIONS_LIST_PREFIX + id);
-                } catch (JsonProcessingException e) {
-                    throw new RuntimeException(e);
-                }
-            });
+            loadHouse5MostRecentQuestions(id);
 
             return sendResponse(OK, house.toHouse());
 
         } catch (CosmosException ex) {
             return processException(ex.getStatusCode(), ex.getMessage());
         }
+    }
+
+    private void loadHouse5MostRecentQuestions(String houseId) {
+        CompletableFuture.runAsync(() -> {
+            var questions = db.getHouseLast5Questions(houseId).stream().map(QuestionDAO::toQuestion).toList();
+            try {
+                Cache.putListInCache(questions, QuestionService.QUESTIONS_LIST_PREFIX + houseId);
+            } catch (JsonProcessingException e) {
+                throw new RuntimeException(e);
+            }
+        });
     }
 
     @Override
@@ -160,6 +172,7 @@ public class HousesResource extends Validations implements HousesService {
         }
     }
 
+    //TODO GERAL: cache + offset
     @Override
     public Response getAvailableHouseByLocation(String location, String offset) {
         try {

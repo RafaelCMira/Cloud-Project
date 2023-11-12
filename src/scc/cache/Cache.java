@@ -6,7 +6,6 @@ import redis.clients.jedis.Jedis;
 import redis.clients.jedis.JedisPool;
 import redis.clients.jedis.JedisPoolConfig;
 import scc.srv.utils.HasId;
-import scc.utils.mgt.AzureManagement;
 import scc.utils.props.AzureProperties;
 
 import java.util.ArrayList;
@@ -16,7 +15,7 @@ public class Cache {
     private static final long CACHE_EXPIRE_TIME = 300; // 5 minutes
     private static final String RedisHostname = System.getenv(AzureProperties.REDIS_URL);
     private static final String RedisKey = System.getenv(AzureProperties.REDIS_KEY);
-    private static final boolean cacheOn = true;
+    private static final boolean CACHE_ON = true;
 
     private static JedisPool instance;
 
@@ -41,15 +40,29 @@ public class Cache {
     public Cache() {
     }
 
+    public static <T extends HasId> void putCookieInCache(T obj, String prefix) throws JsonProcessingException {
+        try (Jedis jedis = Cache.getCachePool().getResource()) {
+            jedis.set(prefix + obj.getId(), mapper.writeValueAsString(obj));
+        }
+    }
+
+    public static String getCookieFromCache(String prefix, String key) {
+        try (Jedis jedis = Cache.getCachePool().getResource()) {
+            return jedis.get(prefix + key);
+        } catch (Exception e) {
+            return null;
+        }
+    }
+
     public static <T extends HasId> void putInCache(T obj, String prefix) throws JsonProcessingException {
-        if (AzureManagement.CREATE_REDIS && cacheOn)
+        if (CACHE_ON)
             try (Jedis jedis = Cache.getCachePool().getResource()) {
                 jedis.set(prefix + obj.getId(), mapper.writeValueAsString(obj));
             }
     }
 
     public static String getFromCache(String prefix, String key) {
-        if (AzureManagement.CREATE_REDIS && cacheOn)
+        if (CACHE_ON)
             try (Jedis jedis = Cache.getCachePool().getResource()) {
                 return jedis.get(prefix + key);
             }
@@ -57,24 +70,32 @@ public class Cache {
     }
 
     public static void deleteFromCache(String prefix, String id) {
-        if (AzureManagement.CREATE_REDIS && cacheOn)
+        if (CACHE_ON)
             try (Jedis jedis = Cache.getCachePool().getResource()) {
                 jedis.del(prefix + id);
             }
     }
 
+    public static void deleteAllFromCache(String prefix, List<String> ids) {
+        if (CACHE_ON)
+            try (Jedis jedis = Cache.getCachePool().getResource()) {
+                for (String id : ids)
+                    jedis.del(prefix + id);
+            }
+    }
+
     public static List<String> getListFromCache(String key) {
-        if (AzureManagement.CREATE_REDIS && cacheOn)
+        if (CACHE_ON)
             try (Jedis jedis = Cache.getCachePool().getResource()) {
                 return jedis.lrange(key, 0, -1);
             }
         return new ArrayList<>();
     }
 
-    public static <T extends HasId> void putListInCache(List<T> data, String prefix) throws JsonProcessingException {
-        if (AzureManagement.CREATE_REDIS && cacheOn)
+    public static <T extends HasId> void putListInCache(List<T> list, String prefix) throws JsonProcessingException {
+        if (CACHE_ON)
             try (Jedis jedis = Cache.getCachePool().getResource()) {
-                for (T obj : data) {
+                for (T obj : list) {
                     jedis.lpush(prefix, mapper.writeValueAsString(obj));
                 }
                 jedis.expire(prefix, CACHE_EXPIRE_TIME);
@@ -82,22 +103,22 @@ public class Cache {
     }
 
     public static <T> void addToListInCache(T obj, String key) throws JsonProcessingException {
-        if (AzureManagement.CREATE_REDIS && cacheOn)
+        if (CACHE_ON)
             try (Jedis jedis = Cache.getCachePool().getResource()) {
                 jedis.lpush(key, mapper.writeValueAsString(obj));
                 jedis.expire(key, CACHE_EXPIRE_TIME);
             }
     }
 
-    public static void removeListInCache(String prefix) {
-        if (AzureManagement.CREATE_REDIS && cacheOn)
+    public static void removeListInCache(String key) {
+        if (CACHE_ON)
             try (Jedis jedis = Cache.getCachePool().getResource()) {
-                jedis.ltrim(prefix, 0, 0);
+                jedis.ltrim(key, 0, 0);
             }
     }
 
     public static boolean hasKey(String key) {
-        if (AzureManagement.CREATE_REDIS && cacheOn)
+        if (CACHE_ON)
             try (Jedis jedis = Cache.getCachePool().getResource()) {
                 var res = jedis.get(key);
                 if (res != null && !res.isEmpty())
@@ -107,18 +128,4 @@ public class Cache {
     }
 
 
-    public static <T extends HasId> void putCookieInCache(T obj, String prefix) throws JsonProcessingException {
-        if (AzureManagement.CREATE_REDIS)
-            try (Jedis jedis = Cache.getCachePool().getResource()) {
-                jedis.set(prefix + obj.getId(), mapper.writeValueAsString(obj));
-            }
-    }
-
-    public static String getCookieFromCache(String prefix, String key) {
-        if (AzureManagement.CREATE_REDIS)
-            try (Jedis jedis = Cache.getCachePool().getResource()) {
-                return jedis.get(prefix + key);
-            }
-        return null;
-    }
 }

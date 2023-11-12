@@ -60,7 +60,7 @@ public class QuestionResource extends Validations implements QuestionService {
         }
     }
 
-    // Todo: pagination ?? Rever este metodo
+    //TODO GERAL: cache + offset (rever este metodo)
     @Override
     public Response listQuestions(String houseId) {
         if (Validations.houseExists(houseId) == null)
@@ -129,7 +129,6 @@ public class QuestionResource extends Validations implements QuestionService {
         question.setAnswer(answer);
 
         return question;
-
     }
 
     private Response handleCreateException(int statusCode, String msg, QuestionDAO questionDAO) {

@@ -184,16 +184,15 @@ public class UsersResource extends Validations implements UsersService {
         }
     }
 
+    //TODO GERAL: cache + offset (rever este metodo)
     @Override
-    public Response getUserHouses(String id, String offset) throws JsonProcessingException {
+    public Response getUserHouses(String id, String offset) {
         if (Validations.badParams(id))
             return sendResponse(BAD_REQUEST, BAD_REQUEST_MSG);
 
         try {
             var user = Validations.userExists(id);
             if (user != null) {
-
-                Cache.putInCache(user, USER_PREFIX);
 
                 var userHouses = db.listUserHouses(id, offset).stream().map(HouseDAO::toHouse).toList();
                 return sendResponse(OK, userHouses.isEmpty() ? new ArrayList<>() : userHouses);

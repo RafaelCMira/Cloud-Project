@@ -25,6 +25,7 @@ public class RentalResource extends Validations implements RentalService {
     private final CosmosDBLayer db = CosmosDBLayer.getInstance();
     private static final ObjectMapper mapper = new ObjectMapper();
 
+    //TODO: Ver como fazer com as listas na cache, se adicionamos o rental a alguma lista ou nao
     @Override
     public Response createRental(Cookie session, String houseId, RentalDAO rentalDAO) throws Exception {
         try {
@@ -53,9 +54,9 @@ public class RentalResource extends Validations implements RentalService {
 
             Cache.putInCache(rentalDAO, RENTAL_PREFIX);
 
-            String key = HOUSE_RENTALS + rentalDAO.getId();
+            /*String key = HOUSE_RENTALS + rentalDAO.getId();
             if (Cache.hasKey(key))
-                Cache.addToListInCache(rentalDAO, key);
+                Cache.addToListInCache(rentalDAO, key);*/
 
             house.setRentalsCounter(house.getRentalsCounter() + 1);
             db.update(house, HousesService.CONTAINER, houseId);
@@ -98,7 +99,7 @@ public class RentalResource extends Validations implements RentalService {
             db.delete(id, CONTAINER, houseId);
 
             Cache.deleteFromCache(RENTAL_PREFIX, id);
-            Cache.removeListInCache(HOUSE_RENTALS);
+            Cache.removeListInCache(HOUSE_RENTALS + houseId);
 
             return sendResponse(OK, String.format(RESOURCE_WAS_DELETED, RENTAL_MSG, id));
 
@@ -123,7 +124,7 @@ public class RentalResource extends Validations implements RentalService {
         }
     }
 
-    //TODO (testar) : pagination
+    //TODO GERAL: cache + offset
     @Override
     public Response listHouseRentals(String houseId, String offset) {
         try {
@@ -145,10 +146,10 @@ public class RentalResource extends Validations implements RentalService {
         }*/
     }
 
+    //TODO GERAL: cache + offset (rever este metodo)
     @Override
     public Response getHousesInDiscount(String offset) {
-        //TODO: rever este método
-        // make an azure function to updated the cache in x time
+        //TODO: make an azure function to updated the cache in x time
         try {
             List<HouseDAO> houses = new ArrayList<>();
             boolean updateCache = false;
@@ -195,13 +196,13 @@ public class RentalResource extends Validations implements RentalService {
         if (house == null)
             throw new WebApplicationException(HOUSE_MSG, Response.Status.NOT_FOUND);
 
-        var rentalDAO = Validations.rentalExists(id);
-        if (rentalDAO == null)
-            throw new WebApplicationException(RENTAL_MSG, Response.Status.NOT_FOUND);
-
         var checkCookies = checkUserSession(session, house.getOwnerId());
         if (checkCookies.getStatus() != Response.Status.OK.getStatusCode())
             throw new WebApplicationException(checkCookies.getEntity().toString(), Response.Status.UNAUTHORIZED);
+
+        var rentalDAO = Validations.rentalExists(id);
+        if (rentalDAO == null)
+            throw new WebApplicationException(RENTAL_MSG, Response.Status.NOT_FOUND);
 
         var newPrice = rental.getPrice();
         if (newPrice != null)
