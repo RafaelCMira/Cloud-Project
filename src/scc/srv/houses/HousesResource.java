@@ -1,7 +1,6 @@
 package scc.srv.houses;
 
 import com.azure.cosmos.CosmosException;
-import com.azure.resourcemanager.containerregistry.models.RegistrySourceTrigger;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import jakarta.ws.rs.WebApplicationException;
@@ -31,6 +30,7 @@ public class HousesResource extends Validations implements HousesService {
     public Response createHouse(Cookie session, HouseDAO houseDAO) throws Exception {
         try {
             checkHouseCreation(session, houseDAO);
+            houseDAO.setRentalsCounter(0);
 
             db.create(houseDAO, CONTAINER);
 
@@ -112,12 +112,10 @@ public class HousesResource extends Validations implements HousesService {
 
             Cache.putInCache(house, HOUSE_PREFIX);
 
-            //Todo (já feito) : quando fazemos get de uma casa, colocar na cache a lista de questoes
-            // para estarem prontas para serem vistas (pre-load dos recursos)
             CompletableFuture.runAsync(() -> {
-                var questions = db.listHouseQuestions(id).stream().map(QuestionDAO::toQuestion).toList();
+                var questions = db.getHouseLast5Questions(id).stream().map(QuestionDAO::toQuestion).toList();
                 try {
-                    Cache.uploadListToCache(questions, QuestionService.QUESTIONS_LIST_PREFIX + id);
+                    Cache.putListInCache(questions, QuestionService.QUESTIONS_LIST_PREFIX + id);
                 } catch (JsonProcessingException e) {
                     throw new RuntimeException(e);
                 }
@@ -161,7 +159,7 @@ public class HousesResource extends Validations implements HousesService {
     }
 
     @Override
-    public Response getAvailHouseByLocation(String location, String offset) {
+    public Response getAvailableHouseByLocation(String location, String offset) {
         try {
             var houses = db.getHousesByLocation(location, offset);
             var availableHouses = new ArrayList<>();

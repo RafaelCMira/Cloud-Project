@@ -25,6 +25,8 @@ public class CosmosDBLayer {
 
     private static final String HOUSES_LIMIT = "25";
 
+    private static final String QUESTIONS_LIMIT = "5";
+
     private static CosmosDBLayer instance;
     private final CosmosClient client;
     private CosmosDatabase db;
@@ -120,12 +122,14 @@ public class CosmosDBLayer {
     ////////////////////////////// RENTALS
     ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
+    //TODO: pagination
     public CosmosPagedIterable<RentalDAO> getHouseRentals(String houseId) {
         init();
         PartitionKey key = new PartitionKey(houseId);
         return db.getContainer(RentalResource.CONTAINER).readAllItems(key, RentalDAO.class);
     }
 
+    //TODO: pagination
     public CosmosPagedIterable<RentalDAO> getUserRentals(String userId) {
         init();
         String query = String.format("SELECT * FROM rentals WHERE rentals.userId=\"%s\"", userId);
@@ -136,9 +140,18 @@ public class CosmosDBLayer {
     ////////////////////////////// QUESTIONS
     ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
+    //TODO: pagination
     public CosmosPagedIterable<QuestionDAO> listHouseQuestions(String houseId) {
         init();
         String query = String.format("SELECT * FROM questions WHERE questions.houseId=\"%s\"", houseId);
+        return db.getContainer(QuestionResource.CONTAINER).queryItems(query, new CosmosQueryRequestOptions(), QuestionDAO.class);
+    }
+
+    // Usado para fazer pre-load das questoes quando se faz get de uma casa
+    public CosmosPagedIterable<QuestionDAO> getHouseLast5Questions(String houseId) {
+        init();
+        String query = String.format("SELECT * FROM questions WHERE questions.houseId=\"%s\" ORDER BY questions._ts DESC OFFSET 0 LIMIT 5",
+                houseId);
         return db.getContainer(QuestionResource.CONTAINER).queryItems(query, new CosmosQueryRequestOptions(), QuestionDAO.class);
     }
 

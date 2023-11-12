@@ -44,7 +44,7 @@ scenarios:
                 pwd: "{{ pwd }}"
                 photoId: "{{ imageId }}"
               afterResponse: "genNewUserReply"
-        count: 2
+        count: 5
 
       #### Create 250 houses ####
       - loop:
@@ -91,11 +91,39 @@ scenarios:
                 ownerId: "{{ ownerId }}"
                 price: "{{ price }}"
                 discount: "{{ discount }}"
-                rentalsCounter: "0"
+                # rentalsCounter: "0"
               afterResponse: "genNewHouseReply"
-        count: 1
+        count: 5
 
+      #### Create 200 questions ####
+      - loop:
+          - function: "genNewQuestion"
+          #### Auth User ####
+          - post:
+              url: "/user/auth"
+              name: "POST:/user/auth"
+              headers:
+                Content-Type: application/json
+                Accept: application/json
+              json:
+                id: "{{ askerId }}"
+                pwd: "{{ askerId }}"
 
+          #### Post Questions ####
+          - post:
+              url: "/house/{{ houseId }}/question"
+              name: "POST:/question"
+              cookie:
+                scc:session: "{{ askerId }}"
+              headers:
+                Content-Type: application/json
+                Accept: application/json
+              json:
+                houseId: "{{ houseId }}"
+                askerId: "{{ askerId }}"
+                text: "{{ text }}"
+              afterResponse: "genNewQuestionReply"
+        count: 5
 
       #### Create 200 rentals ####
       - loop:
@@ -126,4 +154,4 @@ scenarios:
                 initialDate: "{{ initialDate }}"
                 endDate: "{{ endDate }}"
               afterResponse: "genNewRentalReply"
-        count: 1
+        count: 5

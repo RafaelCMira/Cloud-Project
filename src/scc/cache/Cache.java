@@ -71,7 +71,7 @@ public class Cache {
         return new ArrayList<>();
     }
 
-    public static <T extends HasId> void uploadListToCache(List<T> data, String prefix) throws JsonProcessingException {
+    public static <T extends HasId> void putListInCache(List<T> data, String prefix) throws JsonProcessingException {
         if (AzureManagement.CREATE_REDIS && cacheOn)
             try (Jedis jedis = Cache.getCachePool().getResource()) {
                 for (T obj : data) {
@@ -81,11 +81,11 @@ public class Cache {
             }
     }
 
-    public static <T> void addToListInCache(T obj, String prefix) throws JsonProcessingException {
+    public static <T> void addToListInCache(T obj, String key) throws JsonProcessingException {
         if (AzureManagement.CREATE_REDIS && cacheOn)
             try (Jedis jedis = Cache.getCachePool().getResource()) {
-                jedis.lpush(prefix, mapper.writeValueAsString(obj));
-                jedis.expire(prefix, CACHE_EXPIRE_TIME);
+                jedis.lpush(key, mapper.writeValueAsString(obj));
+                jedis.expire(key, CACHE_EXPIRE_TIME);
             }
     }
 
@@ -94,6 +94,16 @@ public class Cache {
             try (Jedis jedis = Cache.getCachePool().getResource()) {
                 jedis.ltrim(prefix, 0, 0);
             }
+    }
+
+    public static boolean hasKey(String key) {
+        if (AzureManagement.CREATE_REDIS && cacheOn)
+            try (Jedis jedis = Cache.getCachePool().getResource()) {
+                var res = jedis.get(key);
+                if (res != null && !res.isEmpty())
+                    return true;
+            }
+        return false;
     }
 
 

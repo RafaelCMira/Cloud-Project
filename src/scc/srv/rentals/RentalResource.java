@@ -52,7 +52,10 @@ public class RentalResource extends Validations implements RentalService {
                 return sendResponse(CONFLICT, RENTAL_MSG, rentalDAO.getId());
 
             Cache.putInCache(rentalDAO, RENTAL_PREFIX);
-            Cache.addToListInCache(rentalDAO.toRental(), HOUSE_RENTALS);
+
+            String key = HOUSE_RENTALS + rentalDAO.getId();
+            if (Cache.hasKey(key))
+                Cache.addToListInCache(rentalDAO, key);
 
             house.setRentalsCounter(house.getRentalsCounter() + 1);
             db.update(house, HousesService.CONTAINER, houseId);
@@ -120,25 +123,18 @@ public class RentalResource extends Validations implements RentalService {
         }
     }
 
+    //TODO: pagination
     @Override
     public Response listHouseRentals(String houseId) {
-        //TODO: refactor this method (não precisa de refactor, só não sei se está a funcionar direito)
         try {
-            var cacheHouseRentals = Cache.getListFromCache(HOUSE_RENTALS);
+            var houseRentals = db.getHouseRentals(houseId).stream().toList();
 
-            List<Rental> houseRentals = new ArrayList<>();
-            for (String rental : cacheHouseRentals) {
-                houseRentals.add(mapper.readValue(rental, RentalDAO.class).toRental());
-            }
+            if (houseRentals.isEmpty() && Validations.houseExists(houseId) == null)
+                return sendResponse(NOT_FOUND, HOUSE_MSG, HOUSE_ID);
 
-            if (houseRentals.isEmpty()) {
-                houseRentals = db.getHouseRentals(houseId).stream().map(RentalDAO::toRental).toList();
-                for (Rental rental : houseRentals) {
-                    Cache.addToListInCache(mapper.writeValueAsString(rental), HOUSE_RENTALS);
-                }
-            }
+            Cache.putListInCache(houseRentals, HOUSE_RENTALS + houseId);
 
-            return sendResponse(OK, houseRentals.isEmpty() ? new ArrayList<>() : houseRentals);
+            return sendResponse(OK, houseRentals);
 
         } catch (CosmosException ex) {
             return processException(ex.getStatusCode());
@@ -146,10 +142,11 @@ public class RentalResource extends Validations implements RentalService {
             return processException(500);
         }
     }
-    
+
     @Override
     public Response getHousesInDiscount(String offset) {
-        //TODO: make an azure function to updated the cache in x time
+        //TODO: rever este método
+        // make an azure function to updated the cache in x time
         try {
             List<HouseDAO> houses = new ArrayList<>();
             boolean updateCache = false;
@@ -247,8 +244,7 @@ public class RentalResource extends Validations implements RentalService {
         if (house == null)
             return sendResponse(NOT_FOUND, HOUSE_MSG, houseId);
 
-        //todo (já feito): quando fazemos delete de um rental que não é desta casa vai dar erro que não tratamos ainda
-        // solução -> fazer get do rental e ver se a casa é a mesma do request
+        // Check if rental belongs to the house
         var res = db.get(id, RentalService.CONTAINER, RentalDAO.class).stream().findFirst();
         if (res.isPresent()) {
             var rentalHouse = res.get().getHouseId();

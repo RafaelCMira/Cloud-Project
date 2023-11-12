@@ -12,7 +12,6 @@ import scc.db.CosmosDBLayer;
 import scc.srv.utils.Validations;
 
 import java.util.ArrayList;
-import java.util.List;
 import java.util.UUID;
 
 
@@ -35,12 +34,6 @@ public class QuestionResource extends Validations implements QuestionService {
 
             Cache.putInCache(questionDAO, QUESTION_PREFIX);
 
-            //TODO (remover a linha comentada): acho que não é necesário fazer isto
-            // porque num site real, nunca vamos ver questoes (clicamos sempre 1º na casa e depois é que vemos as questoes associadas)
-            // em vez de termos este addToList, o que fiz foi: cada vez que fazemos um get da casa, colocamos a lista assincronamente no cache
-
-            // Cache.addToListInCache(questionDAO.toQuestion(), QUESTIONS_LIST_PREFIX + houseId);
-
             return sendResponse(OK, questionDAO.toQuestion());
 
         } catch (CosmosException ex) {
@@ -58,12 +51,6 @@ public class QuestionResource extends Validations implements QuestionService {
 
             Cache.putInCache(updatedQuestion, QUESTION_PREFIX);
 
-            //TODO (remover a linha comentada): acho que não é necesário fazer isto
-            // porque num site real, nunca vamos ver questoes (clicamos sempre 1º na casa e depois é que vemos as questoes associadas)
-            // em vez de termos este addToList, o que fiz foi: cada vez que fazemos um get da casa, colocamos a lista assincronamente no cache
-
-            // Cache.addToListInCache(questionDAO.toQuestion(), QUESTIONS_LIST_PREFIX + houseId);
-
             return sendResponse(OK, updatedQuestion.toQuestion());
 
         } catch (CosmosException ex) {
@@ -73,19 +60,13 @@ public class QuestionResource extends Validations implements QuestionService {
         }
     }
 
+    // Todo: pagination ?? Rever este metodo
     @Override
     public Response listQuestions(String houseId) {
-
         if (Validations.houseExists(houseId) == null)
             return sendResponse(NOT_FOUND, HOUSE_MSG, houseId);
 
         try {
-            //TODO (antes do pre-load das questoes): acho que não podemos ter isto assim porque pode não estar atualizado
-            // Se apenas enviamos o que está na cache podemos apenas enviar a última question feita
-            // e as outras que são mais antigas já sairam da cache e não vao aparecer na lista
-
-            //TODO (depois do pre-load): assim acho que faz sentido termos isto. Caaa vez que fazemos get da casa,
-            // e consequentemente fazemos um get das questoes da casa, elas vão estar na cache, logo vê sempre o mais atual
             var cacheQuestions = Cache.getListFromCache(QUESTIONS_LIST_PREFIX + houseId);
 
             if (!cacheQuestions.isEmpty()) {
@@ -96,10 +77,9 @@ public class QuestionResource extends Validations implements QuestionService {
                 return sendResponse(OK, questions);
             }
 
-            //TODO: não devemos fazer upload da lista toda se for muito grande (10 questions por casa no max)
             var questions = db.listHouseQuestions(houseId).stream().map(QuestionDAO::toQuestion).toList();
 
-            Cache.uploadListToCache(questions, QUESTIONS_LIST_PREFIX + houseId);
+            Cache.putListInCache(questions, QUESTIONS_LIST_PREFIX + houseId);
 
             return sendResponse(OK, questions);
 

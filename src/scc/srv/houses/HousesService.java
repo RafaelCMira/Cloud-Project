@@ -58,7 +58,7 @@ public interface HousesService {
 
     @GET
     @Produces(MediaType.APPLICATION_JSON)
-    Response getAvailHouseByLocation(@QueryParam(LOCATION) String location, @QueryParam(OFFSET) String offset);
+    Response getAvailableHouseByLocation(@QueryParam(LOCATION) String location, @QueryParam(OFFSET) String offset);
 
     @GET
     @Path(AVAILABLE)

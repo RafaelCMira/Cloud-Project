@@ -153,7 +153,6 @@ public class UsersResource extends Validations implements UsersService {
     @Override
     public Response updateUser(Cookie session, String id, User user) throws Exception {
         try {
-
             var checkCookies = checkUserSession(session, id);
             if (checkCookies.getStatus() != Response.Status.OK.getStatusCode())
                 return checkCookies;

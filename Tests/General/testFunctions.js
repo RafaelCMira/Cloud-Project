@@ -102,7 +102,6 @@ function genNewUserReply(requestParams, response, context, ee, next) {
 		let user = JSON.parse(response.body);
 		users.push(user)
 		fs.appendFileSync(USERS_PATH, JSON.stringify(user) + "\n");
-		fs.writeFileSync(USERS2_PATH, JSON.stringify(users));
 	} else
 		console.log(response.body);
 
@@ -119,7 +118,7 @@ function randomInBetween(min, max) {
     return 0;
 }
 
-const cities = ["Lisboa", "Chicago", "Houston", "Miami", "Toronto", "Barcelona", "Berlin", "Budapest"];
+const cities = ["Lisboa", "Porto", "Almada", "Cova da moura", "Chicago", "Houston", "Miami", "Toronto", "Barcelona", "Berlin", "Budapest"];
 
 function genNewHouse(context, events, done) {
     const houseName = `${faker.address.streetName()}`;

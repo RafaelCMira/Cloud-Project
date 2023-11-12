@@ -1,5 +1,7 @@
 package scc.data;
 
+import scc.srv.utils.HasId;
+
 import java.text.SimpleDateFormat;
 import java.util.Date;
 
@@ -7,7 +9,7 @@ import java.util.Date;
  * Represents a House Rental, as returned to the client
  */
 
-public class Rental {
+public class Rental implements HasId {
     private String id;
     private String houseId;
     private String userId;
