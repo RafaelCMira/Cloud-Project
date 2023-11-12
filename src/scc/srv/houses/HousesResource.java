@@ -51,7 +51,7 @@ public class HousesResource extends Validations implements HousesService {
             throw new WebApplicationException(checkCookies.getEntity().toString(), Response.Status.UNAUTHORIZED);
 
         if (Validations.badParams(houseDAO.getId(), houseDAO.getName(), houseDAO.getLocation(), houseDAO.getPrice().toString(),
-                houseDAO.getDiscount().toString()) || houseDAO.getPrice() <= 0 || houseDAO.getDiscount() < 0)
+                houseDAO.getDiscount().toString()) || houseDAO.getPrice() <= 0 || houseDAO.getDiscount() < 0 || houseDAO.getDiscount() >= houseDAO.getPrice())
             throw new WebApplicationException(BAD_REQUEST_MSG, Response.Status.BAD_REQUEST);
 
         if (!Validations.mediaExists(houseDAO.getPhotosIds()))
@@ -71,6 +71,8 @@ public class HousesResource extends Validations implements HousesService {
             db.delete(id, CONTAINER, id);
 
             Cache.deleteFromCache(HOUSE_PREFIX, id);
+
+            //TODO: quando se elimina uma casa, eliminar os rentals dessa casa?
 
             return sendResponse(OK, String.format(RESOURCE_WAS_DELETED, HOUSE_MSG, id));
 
@@ -239,7 +241,7 @@ public class HousesResource extends Validations implements HousesService {
 
         var newDiscount = house.getDiscount();
         if (newDiscount != null)
-            if (newDiscount >= 0)
+            if (newDiscount >= 0 && newDiscount < house.getPrice())
                 houseDAO.setDiscount(newDiscount);
             else
                 throw new WebApplicationException(INVALID_DISCOUNT, Response.Status.BAD_REQUEST);
