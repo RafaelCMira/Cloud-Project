@@ -123,24 +123,26 @@ public class RentalResource extends Validations implements RentalService {
         }
     }
 
-    //TODO: pagination
+    //TODO (testar) : pagination
     @Override
-    public Response listHouseRentals(String houseId) {
+    public Response listHouseRentals(String houseId, String offset) {
         try {
-            var houseRentals = db.getHouseRentals(houseId).stream().toList();
-
-            if (houseRentals.isEmpty() && Validations.houseExists(houseId) == null)
+            if (Validations.houseExists(houseId) == null)
                 return sendResponse(NOT_FOUND, HOUSE_MSG, HOUSE_ID);
 
-            Cache.putListInCache(houseRentals, HOUSE_RENTALS + houseId);
+            var houseRentals = db.getHouseRentals(houseId, offset).stream().map(RentalDAO::toRental).toList();
+
+            //TODO: verificar se a lista já existe na cache adicionar os novos elemento desta lista à outra
+            // OU então nem fazer cache disto...
+            //  Cache.putListInCache(houseRentals, HOUSE_RENTALS + houseId);
 
             return sendResponse(OK, houseRentals);
 
         } catch (CosmosException ex) {
             return processException(ex.getStatusCode());
-        } catch (JsonProcessingException e) {
+        }/* catch (JsonProcessingException e) {
             return processException(500);
-        }
+        }*/
     }
 
     @Override
@@ -219,8 +221,7 @@ public class RentalResource extends Validations implements RentalService {
         if (checkCookies.getStatus() != Response.Status.OK.getStatusCode())
             throw new WebApplicationException(checkCookies.getEntity().toString(), Response.Status.UNAUTHORIZED);
 
-        if (Validations.badParams(rental.getId(), rental.getHouseId(), rental.getUserId())
-                || !houseId.equals(rental.getHouseId())
+        if (Validations.badParams(rental.getUserId())
                 || rental.getInitialDate().after(rental.getEndDate()))
             throw new WebApplicationException("Something in your request is wrong. Check dates pls.", Response.Status.BAD_REQUEST);
 
