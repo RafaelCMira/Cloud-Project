@@ -19,23 +19,25 @@ public class HouseDAO implements HasId {
     private String description;
 
     private List<String> photosIds;
-    private Integer rentalsCounter;
+
     private String ownerId;
 
     private Integer price;
 
     private Integer discount;
 
+    private Integer rentalsCounter;
+
     public HouseDAO() {
     }
 
     public HouseDAO(House h) {
         this(h.getId(), h.getName(), h.getLocation(), h.getDescription(),
-                h.getPhotosIds(), h.getOwnerId(), h.getPrice(), h.getDiscount());
+                h.getPhotosIds(), h.getOwnerId(), h.getPrice(), h.getDiscount(), h.getRentalsCounter());
     }
 
     public HouseDAO(String id, String name, String location, String description, List<String> photosIds,
-                    String ownerId, Integer price, Integer discount) {
+                    String ownerId, Integer price, Integer discount, Integer rentalsCounter) {
         super();
         this.id = id;
         this.name = name;
@@ -45,6 +47,7 @@ public class HouseDAO implements HasId {
         this.ownerId = ownerId;
         this.price = price;
         this.discount = discount;
+        this.rentalsCounter = rentalsCounter;
     }
 
     public String get_rid() {
@@ -129,7 +132,7 @@ public class HouseDAO implements HasId {
     }
 
     public House toHouse() {
-        return new House(id, name, location, description, photosIds, ownerId, price, discount);
+        return new House(id, name, location, description, photosIds, ownerId, price, discount, rentalsCounter);
     }
 
     public Integer getRentalsCounter() {
@@ -153,6 +156,7 @@ public class HouseDAO implements HasId {
                 ", ownerId='" + ownerId + '\'' +
                 ", price=" + price +
                 ", discount=" + discount +
+                ", rentalsCounter=" + rentalsCounter +
                 '}';
     }
 }

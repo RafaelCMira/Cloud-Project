@@ -3,5 +3,5 @@ set /P confirm=Mudas-te o numero do AzureManagement, pom.xml, Azure Functions? (
 if /i "%confirm%"=="Y" (
      java -cp target/scc2324-1.0-jar-with-dependencies.jar scc.utils.mgt.AzureManagement
 ) else (
-    echo Script execution cancelled.
+    echo Faz compile de novo quando mudares o numero
 )

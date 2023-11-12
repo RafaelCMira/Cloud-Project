@@ -41,5 +41,6 @@ scenarios:
                 ownerId: "{{ ownerId }}"
                 price: "{{ price }}"
                 discount: "{{ discount }}"
+                rentalsCounter: "0"
               afterResponse: "genNewHouseReply"
-        count: 20
+        count: 1

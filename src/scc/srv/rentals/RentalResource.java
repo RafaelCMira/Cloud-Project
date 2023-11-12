@@ -146,7 +146,7 @@ public class RentalResource extends Validations implements RentalService {
             return processException(500);
         }
     }
-
+    
     @Override
     public Response getHousesInDiscount(String offset) {
         //TODO: make an azure function to updated the cache in x time

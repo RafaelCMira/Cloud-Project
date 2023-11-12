@@ -57,7 +57,7 @@ public class AzureManagement {
     static final String AZURE_COSMOSDB_DATABASE = "scc24db" + MY_SUFFIX;    // Cosmos DB database name
     static final String[] BLOB_CONTAINERS = {MediaService.CONTAINER_NAME};    // TODO: Containers to add to the blob storage
 
-    static final Region[] REGIONS = new Region[]{Region.EUROPE_WEST, Region.US_CENTRAL}; // Define the regions to deploy resources here
+    static final Region[] REGIONS = new Region[]{Region.EUROPE_WEST}; // Define the regions to deploy resources here
 
     // Name of resource group for each region
     static final String[] AZURE_RG_REGIONS = Arrays.stream(REGIONS)
@@ -402,6 +402,8 @@ public class AzureManagement {
 
 
     public static void main(String[] args) {
+        var createResources = true;
+
         try {
             System.setProperty(org.slf4j.simple.SimpleLogger.DEFAULT_LOG_LEVEL_KEY, "Error");
 
@@ -412,6 +414,7 @@ public class AzureManagement {
 
             final AzureResourceManager azure = createManagementClient();
             if (args.length == 1 && args[0].equalsIgnoreCase("--delete")) {
+                createResources = false;
                 Arrays.stream(AZURE_RG_REGIONS).forEach(reg -> deleteResourceGroup(azure, reg));
             } else {
                 // Init properties files
@@ -517,10 +520,11 @@ public class AzureManagement {
             e.printStackTrace();
         }
 
-        for (int i = 0; i < AzureManagement.REGIONS.length; i++) {
-            String filename = "azureprops-" + REGIONS[i].name() + ".bat";
-            modifyBatchFile(filename);
-        }
+        if (createResources)
+            for (int i = 0; i < AzureManagement.REGIONS.length; i++) {
+                String filename = "azureprops-" + REGIONS[i].name() + ".bat";
+                modifyBatchFile(filename);
+            }
 
         System.exit(0);
     }

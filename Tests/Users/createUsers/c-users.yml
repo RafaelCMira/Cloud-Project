@@ -4,18 +4,18 @@ config:
     metrics-by-endpoint: { }
   processor: "./users.js"
   variables:
-    metricsProcessEndpoint: "myProcessEndpoint"  # function used to aggregate endpoints for statistics
+    metricsProcessEndpoint: "myProcessEndpoint"
   phases:
-    - name: "Create users"    # Create users
-      duration: 1
-      arrivalCount: 1
+    - name: "Top Phase"
+      duration: 240  # 3 minutes
+      arrivalRate: 1  # Total 720 requests (adjust as needed)
 
 scenarios:
-  - name: 'Create users'
+  - name: 'Create users - Top Phase'
     weight: 1
     flow:
-      - loop: # let's create 50 users - loop ... count
-          - post: # First: post image for the user
+      - loop:
+          - post:
               url: "/media"
               headers:
                 Content-Type: application/octet-stream
@@ -23,8 +23,8 @@ scenarios:
               beforeRequest: "uploadImageBody"
               capture:
                 regexp: "(.+)"
-                as: "imageId"              # capture the reply as image id to be used in user creation
-          - function: "genNewUser"         # Generate the needed information for the user
+                as: "imageId"
+          - function: "genNewUser"
           - post:
               url: "/user"
               headers:
@@ -35,5 +35,20 @@ scenarios:
                 name: "{{ name }}"
                 pwd: "{{ pwd }}"
                 photoId: "{{ imageId }}"
-              afterResponse: "genNewUserReply"    # capture result and store in file
-        count: 1
+              afterResponse: "genNewUserReply"  # capture result and store in file
+        count: 3
+
+# WARMUP PHASE ->
+# Duration 30 seconds
+# Arrival 1
+# Count 1
+
+# RampUp PHASE ->
+# Duration 120 seconds
+# Arrival 1
+# Count 2
+
+# RampUp PHASE ->
+# Duration 240 seconds
+# Arrival 1
+# Count 3

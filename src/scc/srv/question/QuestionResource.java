@@ -24,12 +24,12 @@ public class QuestionResource extends Validations implements QuestionService {
     private static final ObjectMapper mapper = new ObjectMapper();
 
     @Override
-    public Response createQuestion(String houseId, QuestionDAO questionDAO) throws JsonProcessingException {
+    public Response createQuestion(Cookie session, String houseId, QuestionDAO questionDAO) throws Exception {
         try {
             questionDAO.setHouseId(houseId);
             questionDAO.setId(UUID.randomUUID().toString());
 
-            checkQuestionCreation(questionDAO);
+            checkQuestionCreation(session, questionDAO);
 
             db.create(questionDAO, CONTAINER);
 
@@ -110,9 +110,13 @@ public class QuestionResource extends Validations implements QuestionService {
         }
     }
 
-    private void checkQuestionCreation(QuestionDAO questionDAO) throws WebApplicationException {
+    private void checkQuestionCreation(Cookie session, QuestionDAO questionDAO) throws Exception {
         if (Validations.badParams(questionDAO.getHouseId(), questionDAO.getAskerId(), questionDAO.getText()))
             throw new WebApplicationException(BAD_REQUEST_MSG, Response.Status.BAD_REQUEST);
+
+        var checkCookies = checkUserSession(session, questionDAO.getAskerId());
+        if (checkCookies.getStatus() != Response.Status.OK.getStatusCode())
+            throw new WebApplicationException(checkCookies.getEntity().toString(), Response.Status.UNAUTHORIZED);
 
         if (Validations.houseExists(questionDAO.getHouseId()) == null)
             throw new WebApplicationException(HOUSE_MSG, Response.Status.NOT_FOUND);
