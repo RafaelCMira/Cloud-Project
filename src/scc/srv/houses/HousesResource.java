@@ -1,12 +1,17 @@
 package scc.srv.houses;
 
 import com.azure.cosmos.CosmosException;
+import com.azure.search.documents.SearchDocument;
+import com.azure.search.documents.models.SearchOptions;
+import com.azure.search.documents.util.SearchPagedIterable;
+import com.azure.search.documents.util.SearchPagedResponse;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import jakarta.ws.rs.WebApplicationException;
 import jakarta.ws.rs.core.Cookie;
 import jakarta.ws.rs.core.Response;
 import scc.cache.Cache;
+import scc.cognitiveSearch.CognitiveSearchLayer;
 import scc.data.*;
 import scc.db.CosmosDBLayer;
 import scc.srv.question.QuestionService;
@@ -15,10 +20,7 @@ import scc.srv.utils.Utility;
 import scc.srv.utils.Validations;
 
 import java.time.Instant;
-import java.util.ArrayList;
-import java.util.Date;
-import java.util.List;
-import java.util.UUID;
+import java.util.*;
 import java.util.concurrent.CompletableFuture;
 
 import static scc.srv.utils.Utility.*;
@@ -281,6 +283,57 @@ public class HousesResource extends Validations implements HousesService {
             return sendResponse(OK, houses);
 
         } catch (JsonProcessingException e) {
+            return processException(500);
+        }
+    }
+
+    @Override
+    public Response getHousesByDescription(String word) {
+        try {
+            SearchOptions options = new SearchOptions()
+                    .setIncludeTotalCount(true)
+                    .setSearchFields("description")
+                    .setTop(5);
+            SearchPagedIterable search = CognitiveSearchLayer.getInstance().search(word,options);
+            List<Object> houses = new ArrayList<>();
+
+            for (SearchPagedResponse resultResponse : search.iterableByPage()) {
+                resultResponse.getValue().forEach(searchResult -> {
+                    for (Map.Entry<String, Object> res : searchResult.getDocument(SearchDocument.class).entrySet()) {
+                        houses.add(res.getValue());
+                    }
+                });
+            }
+
+            return sendResponse(OK,houses);
+
+        } catch (Exception e) {
+            return processException(500);
+        }
+    }
+
+    @Override
+    public Response getHousesByDescAnd(String word, String location) {
+        try {
+            SearchOptions options = new SearchOptions()
+                    .setIncludeTotalCount(true)
+                    .setFilter("location eq '" + location + "'")
+                    .setSearchFields("description")
+                    .setTop(5);
+            SearchPagedIterable search = CognitiveSearchLayer.getInstance().search(word,options);
+            List<Object> houses = new ArrayList<>();
+
+            for (SearchPagedResponse resultResponse : search.iterableByPage()) {
+                resultResponse.getValue().forEach(searchResult -> {
+                    for (Map.Entry<String, Object> res : searchResult.getDocument(SearchDocument.class).entrySet()) {
+                        houses.add(res.getValue());
+                    }
+                });
+            }
+
+            return sendResponse(OK,houses);
+
+        } catch (Exception e) {
             return processException(500);
         }
     }

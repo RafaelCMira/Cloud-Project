@@ -20,11 +20,12 @@ public interface HousesService {
     String NEW_HOUSES_PREFIX = "newH:";
 
     String ID = "id";
+    String WORD = "word";
     String LOCATION = "location";
     String ALL = "/all";
     String AVAILABLE = "/available";
     String NEW_HOUSES = "/NewHouses";
-    String HOUSE_
+    String HOUSE_BY_DESC = "/HouseByDescription";
     String INITIAL_DATE = "initialDate";
     String END_DATE = "endDate";
 
@@ -78,8 +79,13 @@ public interface HousesService {
 
 
     @GET
-    @Path()
+    @Path(HOUSE_BY_DESC+"/{" + WORD + "}")
     @Produces(MediaType.APPLICATION_JSON)
-    Response getNewHouses();
+    Response getHousesByDescription(@PathParam(WORD) String word);
+
+    @GET
+    @Path(HOUSE_BY_DESC+"/{" + WORD + "}/{" + LOCATION + "}")
+    @Produces(MediaType.APPLICATION_JSON)
+    Response getHousesByDescAnd(@PathParam(WORD) String word,@PathParam(LOCATION) String location);
 
 }
