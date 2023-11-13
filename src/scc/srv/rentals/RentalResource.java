@@ -153,6 +153,17 @@ public class RentalResource extends Validations implements RentalService {
         try {
             List<House> houses = new ArrayList<>();
 
+            if (Integer.parseInt(offset) == -1) {
+                //return most recent houses in discount
+                var mostRecentDiscounts = Cache.getListFromCache(HousesService.MOST_RECENT_DISCOUNTS);
+                if (!mostRecentDiscounts.isEmpty()) {
+                    for (var house : mostRecentDiscounts) {
+                        houses.add(mapper.readValue(house, House.class));
+                    }
+                    return sendResponse(OK, houses);
+                }
+            }
+
             String key = String.format(DISCOUNTED_HOUSES, offset);
             var cacheHouses = Cache.getListFromCache(key);
             if (!cacheHouses.isEmpty()) {

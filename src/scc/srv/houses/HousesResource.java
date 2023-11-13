@@ -169,7 +169,7 @@ public class HousesResource extends Validations implements HousesService {
     }
 
     @Override
-    public Response listAllHouses(String offset) {
+    public Response listAllHouses() {
         try {
             List<House> houses = db.getAll(CONTAINER, HouseDAO.class).stream().map(HouseDAO::toHouse).toList();
 
@@ -300,13 +300,13 @@ public class HousesResource extends Validations implements HousesService {
     }
 
     @Override
-    public Response getHousesByDescription(String word) {
+    public Response getHousesByDescription(String description) {
         try {
             SearchOptions options = new SearchOptions()
                     .setIncludeTotalCount(true)
                     .setSearchFields("description")
                     .setTop(5);
-            SearchPagedIterable search = CognitiveSearchLayer.getInstance().search(word, options);
+            SearchPagedIterable search = CognitiveSearchLayer.getInstance().search(description, options);
             List<Object> houses = new ArrayList<>();
 
             for (SearchPagedResponse resultResponse : search.iterableByPage()) {

@@ -25,7 +25,9 @@ Rafael Martins - 60602 - rlo.martins@campus.fct.unl.pt
 
 .... <b>4.3 - </b>  azureprops-regiao.bat
 
-.... <b>4.4 - </b>  appDeploy.bat (outra vez) (não tenho a certeza se é necessário mas às vezes falha se não fizer de novo)
+.... <b>4.4 - </b> 1º compile-azure.bat && 2º search-azureprops-regiao.bat
+
+.... <b>4.5 - </b>  appDeploy.bat
 
 
 -------------------------------------------------------------------------------------
