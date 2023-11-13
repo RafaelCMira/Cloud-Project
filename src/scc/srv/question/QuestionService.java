@@ -15,11 +15,14 @@ public interface QuestionService {
     String PARTITION_KEY = "/houseId";
     String CONTAINER = "questions";
     String QUESTION_PREFIX = "q:";
-    String QUESTIONS_LIST_PREFIX = "list:q:";
+    String QUESTIONS_LIST_PREFIX = "q:house:%s-off:%s";
 
     String HOUSE_ID = "id";
     String QUESTION = "/question";
     String QUESTION_ID = "questionId";
+
+
+    String OFFSET = "offset";
 
 
     @POST
@@ -41,5 +44,5 @@ public interface QuestionService {
     @GET
     @Path("/{" + HOUSE_ID + "}" + QUESTION)
     @Produces(MediaType.APPLICATION_JSON)
-    Response listQuestions(@PathParam(HOUSE_ID) String houseId) throws Exception;
+    Response listQuestions(@PathParam(HOUSE_ID) String houseId, @QueryParam(OFFSET) String offset) throws Exception;
 }
