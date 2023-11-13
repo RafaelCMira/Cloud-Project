@@ -181,9 +181,20 @@ const formatDate = (date) => {
   return `${year}-${month}-${day}`;
 };
 
+function generateRandomNumber() {
+    const randomNumber = Math.floor(Math.random() * 100) + 1;
+    if (randomNumber > 15) {
+        return Math.floor(Math.random() * (30 - 16 + 1)) + 16;
+    } else {
+        return Math.floor(Math.random() * 15) + 1;
+    }
+}
+
 function genNewRental(context, events, done) {
-    const initialDate = new Date();
-    const endDate = faker.date.between(initialDate, new Date('2024-12-31'));
+    const initialDate = faker.date.between(new Date(), new Date('2024-12-31'));
+    const endDate = new Date(initialDate);
+    const daysToAdd = generateRandomNumber();
+    endDate.setDate(initialDate.getDate() + daysToAdd);
 
     context.vars.houseId = houses.sample().id;
     context.vars.userId = users.sample().id;

@@ -24,12 +24,16 @@ public interface HousesService {
     String NEW_HOUSES_PREFIX = "newH:";
 
     String ID = "id";
-    String DESCRIPTION = "word";
+
+    String QUESTION = "question";
+    String DESCRIPTION = "description";
     String LOCATION = "location";
     String ALL = "/all";
     String AVAILABLE = "/available";
     String NEW_HOUSES = "/NewHouses";
     String HOUSE_BY_DESC = "/HouseByDescription";
+
+    String COGNITIVE_SEARCH = "/cognitiveSearch";
     String INITIAL_DATE = "initialDate";
     String END_DATE = "endDate";
 
@@ -83,13 +87,14 @@ public interface HousesService {
 
 
     @GET
-    @Path(HOUSE_BY_DESC)
+    @Path(COGNITIVE_SEARCH + HOUSE_BY_DESC)
     @Produces(MediaType.APPLICATION_JSON)
     Response getHousesByDescription(@QueryParam(DESCRIPTION) String description);
 
+
     @GET
-    @Path(HOUSE_BY_DESC + "/{" + DESCRIPTION + "}/{" + LOCATION + "}")
+    @Path(COGNITIVE_SEARCH)
     @Produces(MediaType.APPLICATION_JSON)
-    Response getHousesByDescAnd(@PathParam(DESCRIPTION) String word, @PathParam(LOCATION) String location);
+    Response getHousesByQuestions(@QueryParam(QUESTION) String question);
 
 }

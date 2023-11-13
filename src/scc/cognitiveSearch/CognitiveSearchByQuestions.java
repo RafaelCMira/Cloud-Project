@@ -6,20 +6,20 @@ import com.azure.search.documents.SearchClientBuilder;
 import com.azure.search.documents.models.SearchOptions;
 import com.azure.search.documents.util.SearchPagedIterable;
 
-public class CognitiveSearchLayer {
+public class CognitiveSearchByQuestions {
 
-    private static CognitiveSearchLayer instance;
+    private static CognitiveSearchByQuestions instance;
     private final SearchClient client;
     public static final String PROP_SERVICE_NAME = "SearchServiceName";
     public static final String PROP_SERVICE_URL = "SearchServiceUrl";
-    public static final String PROP_INDEX_NAME = "IndexName";
+    public static final String PROP_INDEX_NAME = "IndexNameQuestions";
     public static final String PROP_QUERY_KEY = "SearchServiceQueryKey";
 
-    public CognitiveSearchLayer(SearchClient client) {
+    public CognitiveSearchByQuestions(SearchClient client) {
         this.client = client;
     }
 
-    public static synchronized CognitiveSearchLayer getInstance() {
+    public static synchronized CognitiveSearchByQuestions getInstance() {
         if (instance != null)
             return instance;
 
@@ -28,7 +28,7 @@ public class CognitiveSearchLayer {
                 .endpoint(System.getenv(PROP_SERVICE_URL))
                 .indexName(System.getenv(PROP_INDEX_NAME))
                 .buildClient();
-        instance = new CognitiveSearchLayer(searchClient);
+        instance = new CognitiveSearchByQuestions(searchClient);
         return instance;
     }
 

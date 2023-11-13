@@ -11,6 +11,7 @@ import jakarta.ws.rs.WebApplicationException;
 import jakarta.ws.rs.core.Cookie;
 import jakarta.ws.rs.core.Response;
 import scc.cache.Cache;
+import scc.cognitiveSearch.CognitiveSearchByQuestions;
 import scc.cognitiveSearch.CognitiveSearchLayer;
 import scc.data.*;
 import scc.db.CosmosDBLayer;
@@ -323,22 +324,26 @@ public class HousesResource extends Validations implements HousesService {
             return processException(500);
         }
     }
-
+    
     @Override
-    public Response getHousesByDescAnd(String word, String location) {
+    public Response getHousesByQuestions(String question) {
         try {
             SearchOptions options = new SearchOptions()
                     .setIncludeTotalCount(true)
-                    .setFilter("location eq '" + location + "'")
-                    .setSearchFields("description")
-                    .setTop(5);
-            SearchPagedIterable search = CognitiveSearchLayer.getInstance().search(word, options);
-            List<Object> houses = new ArrayList<>();
+                    .setSearchFields("text")
+                    .setTop(10);
+            SearchPagedIterable search = CognitiveSearchByQuestions.getInstance().search(question, options);
+
+            var houses = new ArrayList<>();
 
             for (SearchPagedResponse resultResponse : search.iterableByPage()) {
+
                 resultResponse.getValue().forEach(searchResult -> {
                     for (Map.Entry<String, Object> res : searchResult.getDocument(SearchDocument.class).entrySet()) {
-                        houses.add(res.getValue());
+                        if (res.getKey().equals("houseId")) {
+                            var house = db.get(res.getValue().toString(), HousesService.CONTAINER, HouseDAO.class).stream().map(HouseDAO::toHouse).findFirst();
+                            house.ifPresent(houses::add);
+                        }
                     }
                 });
             }

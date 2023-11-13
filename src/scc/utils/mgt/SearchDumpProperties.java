@@ -68,6 +68,8 @@ public class SearchDumpProperties {
 
                     StringBuffer cmd = new StringBuffer();
 
+                    // INDICE HOUSES DESCRIPTION
+
                     if (functionName != null) {
                         appendInfo(cmd, functionName, rgName, "SearchServiceName", searchService);
                         appendInfo(cmd, functionName, rgName, "SearchServiceAdminKey", srv.getAdminKeys().primaryKey());
@@ -83,6 +85,28 @@ public class SearchDumpProperties {
                         appendInfo(cmd, appName, rgName, "SearchServiceQueryKey", qk.key());
                         appendInfo(cmd, appName, rgName, "SearchServiceUrl", "https://" + searchService + ".search.windows.net");
                         appendInfo(cmd, appName, rgName, "IndexName", "cosmosdb-index"); //TODO: replace (se deixarem o mesmo nome no indicenão precisam mudar
+                        appendInfo(cmd, appName, rgName, "ApiVersion", "2020-06-30");
+                    }
+
+                    // INDICE HOUSES QUESTIONS
+
+                    if (functionName != null) {
+                        appendInfo(cmd, functionName, rgName, "SearchServiceName", searchService);
+                        appendInfo(cmd, functionName, rgName, "SearchServiceAdminKey", srv.getAdminKeys().primaryKey());
+                        appendInfo(cmd, functionName, rgName, "SearchServiceQueryKey", qk.key());
+                        appendInfo(cmd, functionName, rgName, "SearchServiceUrl", "https://" + searchService + ".search.windows.net");
+                        appendInfo(cmd, functionName, rgName, "IndexNameQuestions", "cosmosdb-index-questions"); //TODO: replace (se deixarem o mesmo nome no
+                        // indicenão precisam mudar
+                        appendInfo(cmd, functionName, rgName, "ApiVersion", "2020-06-30");
+                    }
+
+                    if (appName != null) {
+                        appendInfo(cmd, appName, rgName, "SearchServiceName", searchService);
+                        appendInfo(cmd, appName, rgName, "SearchServiceAdminKey", srv.getAdminKeys().primaryKey());
+                        appendInfo(cmd, appName, rgName, "SearchServiceQueryKey", qk.key());
+                        appendInfo(cmd, appName, rgName, "SearchServiceUrl", "https://" + searchService + ".search.windows.net");
+                        appendInfo(cmd, appName, rgName, "IndexNameQuestions", "cosmosdb-index-questions"); //TODO: replace (se deixarem o mesmo nome no
+                        // indicenão precisam mudar
                         appendInfo(cmd, appName, rgName, "ApiVersion", "2020-06-30");
                     }
 
