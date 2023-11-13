@@ -170,7 +170,7 @@ public class HousesResource extends Validations implements HousesService {
     @Override
     public Response listAllHouses(String offset) {
         try {
-            List<House> houses = db.getAll(CONTAINER, offset, HouseDAO.class).stream().map(HouseDAO::toHouse).toList();
+            List<House> houses = db.getAll(CONTAINER, HouseDAO.class).stream().map(HouseDAO::toHouse).toList();
 
             return sendResponse(OK, houses.isEmpty() ? new ArrayList<>() : houses);
 
@@ -179,23 +179,38 @@ public class HousesResource extends Validations implements HousesService {
         }
     }
 
-    //TODO GERAL: cache + offset
     @Override
     public Response getAvailableHouseByLocation(String location, String offset) {
         try {
-            var houses = db.getHousesByLocation(location, offset);
-            var availableHouses = new ArrayList<>();
+            List<House> houses = new ArrayList<>();
+
+            String key = String.format(HOUSES_BY_LOCATION_PREFIX, location, offset);
+            var cacheHouses = Cache.getListFromCache(key);
+            if (!cacheHouses.isEmpty()) {
+                for (var house : cacheHouses) {
+                    houses.add(mapper.readValue(house, House.class));
+                }
+                return sendResponse(OK, houses);
+            }
+
+            houses = db.getHousesByLocation(location, offset).stream().map(HouseDAO::toHouse).toList();
+
+            List<House> availableHouses = new ArrayList<>();
             Date currentDate = Date.from(Instant.now());
 
-            for (HouseDAO house : houses) {
+            for (var house : houses) {
                 if (Validations.isAvailable(house.getId(), currentDate, currentDate))
-                    availableHouses.add(house.toHouse());
+                    availableHouses.add(house);
             }
+
+            Cache.putListInCache(availableHouses, key);
 
             return sendResponse(OK, availableHouses);
 
         } catch (CosmosException ex) {
             return processException(ex.getStatusCode(), ex.getMessage());
+        } catch (JsonProcessingException e) {
+            throw new RuntimeException(e);
         }
     }
 

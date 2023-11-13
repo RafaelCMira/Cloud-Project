@@ -19,6 +19,8 @@ public interface UsersService {
     String CONTAINER = "users";
     String USER_PREFIX = "u:";
 
+    String USER_HOUSES_PREFIX = "u:%s-h:-off:%s";
+
 
     String ID = "id";
     String HOUSES = "/houses";

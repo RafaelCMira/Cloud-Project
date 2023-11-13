@@ -24,8 +24,8 @@ public interface RentalService {
     String RENTAL = "/rental";
     String DISCOUNT = "/discount";
 
-    String HOUSE_RENTALS = "houses:r:";
-    String DISCOUNTED_HOUSES = "houses:disc:";
+    String HOUSE_RENTALS = "r:house:%s-off:%s";
+    String DISCOUNTED_HOUSES = "h:discount-off:%s";
 
 
     String OFFSET = "offset";

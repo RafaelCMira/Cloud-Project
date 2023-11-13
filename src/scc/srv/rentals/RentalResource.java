@@ -25,7 +25,6 @@ public class RentalResource extends Validations implements RentalService {
     private final CosmosDBLayer db = CosmosDBLayer.getInstance();
     private static final ObjectMapper mapper = new ObjectMapper();
 
-    //TODO: Ver como fazer com as listas na cache, se adicionamos o rental a alguma lista ou nao
     @Override
     public Response createRental(Cookie session, String houseId, RentalDAO rentalDAO) throws Exception {
         try {
@@ -53,10 +52,6 @@ public class RentalResource extends Validations implements RentalService {
                 return sendResponse(CONFLICT, RENTAL_MSG, rentalDAO.getId());
 
             Cache.putInCache(rentalDAO, RENTAL_PREFIX);
-
-            /*String key = HOUSE_RENTALS + rentalDAO.getId();
-            if (Cache.hasKey(key))
-                Cache.addToListInCache(rentalDAO, key);*/
 
             house.setRentalsCounter(house.getRentalsCounter() + 1);
             db.update(house, HousesService.CONTAINER, houseId);
@@ -99,7 +94,6 @@ public class RentalResource extends Validations implements RentalService {
             db.delete(id, CONTAINER, houseId);
 
             Cache.deleteFromCache(RENTAL_PREFIX, id);
-            Cache.removeListInCache(HOUSE_RENTALS + houseId);
 
             return sendResponse(OK, String.format(RESOURCE_WAS_DELETED, RENTAL_MSG, id));
 
@@ -124,26 +118,34 @@ public class RentalResource extends Validations implements RentalService {
         }
     }
 
-    //TODO GERAL: cache + offset
     @Override
     public Response listHouseRentals(String houseId, String offset) {
         try {
             if (Validations.houseExists(houseId) == null)
                 return sendResponse(NOT_FOUND, HOUSE_MSG, HOUSE_ID);
 
-            var houseRentals = db.getHouseRentals(houseId, offset).stream().map(RentalDAO::toRental).toList();
+            List<Rental> houseRentals = new ArrayList<>();
 
-            //TODO: verificar se a lista já existe na cache adicionar os novos elemento desta lista à outra
-            // OU então nem fazer cache disto...
-            //  Cache.putListInCache(houseRentals, HOUSE_RENTALS + houseId);
+            String key = String.format(HOUSE_RENTALS, houseId, offset);
+            var cacheHouses = Cache.getListFromCache(key);
+            if (!cacheHouses.isEmpty()) {
+                for (var house : cacheHouses) {
+                    houseRentals.add(mapper.readValue(house, Rental.class));
+                }
+                return sendResponse(OK, houseRentals);
+            }
+
+            houseRentals = db.getHouseRentals(houseId, offset).stream().map(RentalDAO::toRental).toList();
+
+            Cache.putListInCache(houseRentals, key);
 
             return sendResponse(OK, houseRentals);
 
         } catch (CosmosException ex) {
             return processException(ex.getStatusCode());
-        }/* catch (JsonProcessingException e) {
+        } catch (JsonProcessingException e) {
             return processException(500);
-        }*/
+        }
     }
 
     //TODO GERAL: cache + offset (rever este metodo)
@@ -151,6 +153,7 @@ public class RentalResource extends Validations implements RentalService {
     public Response getHousesInDiscount(String offset) {
         //TODO: make an azure function to updated the cache in x time
         try {
+            
             List<HouseDAO> houses = new ArrayList<>();
             boolean updateCache = false;
 
@@ -160,7 +163,7 @@ public class RentalResource extends Validations implements RentalService {
             }
 
             if (houses.isEmpty()) {
-                houses = db.getAll(HousesService.CONTAINER, offset, HouseDAO.class).stream().toList();
+                houses = db.getAll(HousesService.CONTAINER, HouseDAO.class).stream().toList();
                 updateCache = true;
             }
 

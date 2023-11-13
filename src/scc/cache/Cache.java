@@ -92,13 +92,13 @@ public class Cache {
         return new ArrayList<>();
     }
 
-    public static <T extends HasId> void putListInCache(List<T> list, String prefix) throws JsonProcessingException {
+    public static <T extends HasId> void putListInCache(List<T> list, String key) throws JsonProcessingException {
         if (CACHE_ON)
             try (Jedis jedis = Cache.getCachePool().getResource()) {
                 for (T obj : list) {
-                    jedis.lpush(prefix, mapper.writeValueAsString(obj));
+                    jedis.lpush(key, mapper.writeValueAsString(obj));
                 }
-                jedis.expire(prefix, CACHE_EXPIRE_TIME);
+                jedis.expire(key, CACHE_EXPIRE_TIME);
             }
     }
 

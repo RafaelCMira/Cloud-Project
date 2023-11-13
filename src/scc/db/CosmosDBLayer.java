@@ -85,17 +85,16 @@ public class CosmosDBLayer {
         return db.getContainer(container).queryItems(query, new CosmosQueryRequestOptions(), c);
     }
 
-    public <T> CosmosPagedIterable<T> getAll(String container, String offset, Class<T> c) {
+    public <T> CosmosPagedIterable<T> getAll(String container, Class<T> c) {
         init();
-        String query = String.format("SELECT * FROM %s OFFSET %s LIMIT %s", container, offset, GET_ALL_LIMIT);
+        String query = String.format("SELECT * FROM %s", container);
         return db.getContainer(container).queryItems(query, new CosmosQueryRequestOptions(), c);
     }
 
     ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
     ////////////////////////////// USERS
     ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-
-    //TODO geral: ver como podemos fazer cache das listas com offset
+    
     public CosmosPagedIterable<HouseDAO> listUserHouses(String id, String offset) {
         init();
         String query = String.format("SELECT * FROM houses WHERE houses.ownerId=\"%s\" OFFSET %s LIMIT %s", id, offset, USER_HOUSES_LIMIT);

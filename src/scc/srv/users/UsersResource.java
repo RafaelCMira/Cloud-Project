@@ -2,11 +2,13 @@ package scc.srv.users;
 
 import com.azure.cosmos.CosmosException;
 import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import jakarta.ws.rs.WebApplicationException;
 import jakarta.ws.rs.core.Cookie;
 import jakarta.ws.rs.core.NewCookie;
 import jakarta.ws.rs.core.Response;
 import scc.cache.Cache;
+import scc.data.House;
 import scc.data.HouseDAO;
 import scc.data.User;
 import scc.data.UserDAO;
@@ -29,6 +31,7 @@ import static scc.srv.utils.Utility.*;
 public class UsersResource extends Validations implements UsersService {
 
     private final CosmosDBLayer db = CosmosDBLayer.getInstance();
+    private static final ObjectMapper mapper = new ObjectMapper();
 
     @Override
     public Response auth(Login credentials) throws Exception {
@@ -175,7 +178,7 @@ public class UsersResource extends Validations implements UsersService {
     @Override
     public Response listUsers(String offset) {
         try {
-            List<User> users = db.getAll(CONTAINER, offset, UserDAO.class).stream().map(UserDAO::toUser).toList();
+            List<User> users = db.getAll(CONTAINER, UserDAO.class).stream().map(UserDAO::toUser).toList();
 
             return sendResponse(OK, users.isEmpty() ? new ArrayList<>() : users);
 
@@ -184,7 +187,6 @@ public class UsersResource extends Validations implements UsersService {
         }
     }
 
-    //TODO GERAL: cache + offset (rever este metodo)
     @Override
     public Response getUserHouses(String id, String offset) {
         if (Validations.badParams(id))
@@ -194,7 +196,20 @@ public class UsersResource extends Validations implements UsersService {
             var user = Validations.userExists(id);
             if (user != null) {
 
+                var houses = new ArrayList<>();
+
+                String key = String.format(USER_HOUSES_PREFIX, id, offset);
+                var cacheHouses = Cache.getListFromCache(key);
+                if (!cacheHouses.isEmpty()) {
+                    for (var house : cacheHouses) {
+                        houses.add(mapper.readValue(house, House.class));
+                    }
+                    return sendResponse(OK, houses);
+                }
+
                 var userHouses = db.listUserHouses(id, offset).stream().map(HouseDAO::toHouse).toList();
+                Cache.putListInCache(userHouses, key);
+
                 return sendResponse(OK, userHouses.isEmpty() ? new ArrayList<>() : userHouses);
 
             } else
@@ -202,6 +217,8 @@ public class UsersResource extends Validations implements UsersService {
 
         } catch (CosmosException ex) {
             return processException(ex.getStatusCode(), USER_MSG, id);
+        } catch (JsonProcessingException e) {
+            throw new RuntimeException(e);
         }
     }
 
