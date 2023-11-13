@@ -33,29 +33,12 @@ public class CosmosDBFunction {
 		try (Jedis jedis = Cache.getCachePool().getResource()) {
 			for( HouseDAO h : houses) {
 				jedis.lpush(NEW_HOUSES_PREFIX, mapper.writeValueAsString(h));
+				if (h.getDiscount() > 0) {
+					jedis.lpush(DISCOUNT_HOUSES, mapper.writeValueAsString(h));
+					jedis.expire(DISCOUNT_HOUSES, EXPIRATION_TIME);
+				}
 			}
 			jedis.ltrim(NEW_HOUSES_PREFIX, 0, 9);
-		} catch (JsonProcessingException e) {
-			throw new RuntimeException(e);
-		}
-	}
-
-	@FunctionName("cosmosDBDiscountHouses")
-	public void updateDiscountHouses(@CosmosDBTrigger(name = "cosmosDiscHouses",
-			databaseName = DB_NAME,
-			collectionName = HOUSES_COLLECTION,
-			preferredLocations="West Europe",
-			createLeaseCollectionIfNotExists = true,
-			connectionStringSetting = "AzureCosmosDBConnection")
-									   HouseDAO[] houses,
-									   final ExecutionContext context ) {
-		context.getLogger().info(houses.length + "house(s) is/are changed");
-		try (Jedis jedis = Cache.getCachePool().getResource()) {
-			for( HouseDAO h : houses) {
-				if (h.getDiscount() > 0)
-					jedis.lpush(DISCOUNT_HOUSES, mapper.writeValueAsString(h));
-			}
-			jedis.expire(DISCOUNT_HOUSES,EXPIRATION_TIME);
 		} catch (JsonProcessingException e) {
 			throw new RuntimeException(e);
 		}
