@@ -23,20 +23,18 @@ public class TimerFunction {
 
 
         try {
-
+            context.getLogger().info("Timer function:"+ timerInfo);
             var res = db.getAll(CosmosDBFunction.HOUSES_COLLECTION, HouseDAO.class);
             int counter = 0;
             var it = res.stream().iterator();
 
             while (it.hasNext()) {
                 HouseDAO h = it.next();
-                context.getLogger().info("Timer function db house:"+ h.getId() + " rentals " + h.getRentalsCounter());
 
                 if (h.getRentalsCounter() <= THRESHOLD && h.getDiscount() == 0) {
                     counter++;
                     h.setDiscount(DISCOUNT);
                     db.update(h,CosmosDBFunction.HOUSES_COLLECTION,h.getId());
-                    context.getLogger().info("Timer function changed house:" + h.getId() + " time:"+ timerInfo);
                 }
                 if (counter > LIMITS)
                     break;
