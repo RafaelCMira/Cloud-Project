@@ -172,7 +172,6 @@ public class RentalResource extends Validations implements RentalService {
                 if (!house.getOwnerId().equals(UsersService.DELETED_USER)) {
                     var currentDate = Date.from(Instant.now());
                     var oneMonthFromNow = Date.from(Instant.now().plus(30, ChronoUnit.DAYS));
-                    //TODO: rever se azure function faz esta validação do isAvailable, não queremos por casas não disponiveis nessa lista
                     if (house.getDiscount() > 0 && Validations.isAvailable(house.getId(), currentDate, oneMonthFromNow)) {
                         result.add(house.toHouse());
                         if (updateCache)

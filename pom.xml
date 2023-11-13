@@ -7,11 +7,16 @@
     <version>1.0</version>
     <packaging>war</packaging>
     <properties>
-        <region>centralus</region>
+        <region>westeurope</region>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-        <authors>60700</authors>
+        <authors>59243</authors>
     </properties>
     <dependencies>
+        <dependency>
+            <groupId>com.azure</groupId>
+            <artifactId>azure-search-documents</artifactId>
+            <version>11.5.12</version>
+        </dependency>
         <dependency>
             <groupId>javax.ws.rs</groupId>
             <artifactId>javax.ws.rs-api</artifactId>

@@ -46,16 +46,15 @@ import scc.srv.users.UsersService;
 
 
 public class AzureManagement {
-    // TODO: These variable allow you to control what is being created
+
     static final boolean CREATE_STORAGE = true;
     static final boolean CREATE_COSMOSDB = true;
     static final boolean CREATE_REDIS = true;
 
-    // TODO: change your suffix and other names if you want
-    static final String MY_SUFFIX = "59243"; // Add your suffix here
+    static final String MY_SUFFIX = "59243"; // TODO: mudem o numero
     static final String AZURE_COSMOSDB_NAME = "scc24account" + MY_SUFFIX;    // Cosmos DB account name
     static final String AZURE_COSMOSDB_DATABASE = "scc24db" + MY_SUFFIX;    // Cosmos DB database name
-    static final String[] BLOB_CONTAINERS = {MediaService.CONTAINER_NAME};    // TODO: Containers to add to the blob storage
+    static final String[] BLOB_CONTAINERS = {MediaService.CONTAINER_NAME};
 
     static final Region[] REGIONS = new Region[]{Region.EUROPE_WEST}; // Define the regions to deploy resources here
 
@@ -65,7 +64,6 @@ public class AzureManagement {
 
     // Name of application server to be launched in each regions
     // -- launching the application server must be done using mvn, as you have been doing
-    // TODO: this name should be the same as defined in your app
     static final String[] AZURE_APP_NAME = Arrays.stream(REGIONS).map(reg -> "scc24app-" + reg.name() + "-" + MY_SUFFIX)
             .toArray(String[]::new);
 
@@ -298,9 +296,8 @@ public class AzureManagement {
             }
             db.createContainer(props);
             System.out.println("CosmosDB collection created with success: name = " + collectionName + "@" + dbname);
-        } catch (Exception e) { // TODO: Something has gone terribly wrong.
+        } catch (Exception e) {
             e.printStackTrace();
-            return;
         }
     }
 
