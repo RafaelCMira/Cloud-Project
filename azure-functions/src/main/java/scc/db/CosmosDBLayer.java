@@ -33,8 +33,8 @@ public class CosmosDBLayer {
         CosmosClient client = new CosmosClientBuilder()
                 .endpoint(CONNECTION_URL)
                 .key(DB_KEY)
-                .directMode()
-                //.gatewayMode() // replace by .directMode() for better performance
+                //.directMode()
+                .gatewayMode() // replace by .directMode() for better performance
                 .consistencyLevel(ConsistencyLevel.SESSION)
                 .connectionSharingAcrossClientsEnabled(true)
                 .contentResponseOnWriteEnabled(true)
