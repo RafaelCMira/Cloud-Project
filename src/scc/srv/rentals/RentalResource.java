@@ -147,11 +147,22 @@ public class RentalResource extends Validations implements RentalService {
             return processException(500);
         }
     }
-    
+
     @Override
     public Response getHousesInDiscount(String offset) {
         try {
             List<House> houses = new ArrayList<>();
+
+            if (Integer.parseInt(offset) == -1) {
+                //return most recent houses in discount
+                var mostRecentDiscounts = Cache.getListFromCache(HousesService.MOST_RECENT_DISCOUNTS);
+                if (!mostRecentDiscounts.isEmpty()) {
+                    for (var house : mostRecentDiscounts) {
+                        houses.add(mapper.readValue(house, House.class));
+                    }
+                    return sendResponse(OK, houses);
+                }
+            }
 
             String key = String.format(DISCOUNTED_HOUSES, offset);
             var cacheHouses = Cache.getListFromCache(key);
@@ -175,7 +186,7 @@ public class RentalResource extends Validations implements RentalService {
             }
 
             Cache.putListInCache(houses, key);
-            return sendResponse(OK, housesWithDiscount);
+            return sendResponse(OK, houses);
 
         } catch (JsonProcessingException e) {
             return processException(500, "Error while parsing questions");

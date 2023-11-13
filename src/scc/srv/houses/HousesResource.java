@@ -140,9 +140,10 @@ public class HousesResource extends Validations implements HousesService {
 
     private void loadHouse5MostRecentQuestions(String houseId) {
         CompletableFuture.runAsync(() -> {
-            var questions = db.getHouseLast5Questions(houseId).stream().map(QuestionDAO::toQuestion).toList();
+            var questions = db.getHouseQuestions(houseId, "0").stream().map(QuestionDAO::toQuestion).toList();
             try {
-                Cache.putListInCache(questions, QuestionService.QUESTIONS_LIST_PREFIX + houseId);
+                String key = String.format(QuestionService.QUESTIONS_LIST_PREFIX, houseId, "0");
+                Cache.putListInCache(questions, key);
             } catch (JsonProcessingException e) {
                 throw new RuntimeException(e);
             }
@@ -168,7 +169,7 @@ public class HousesResource extends Validations implements HousesService {
     }
 
     @Override
-    public Response listAllHouses(String offset) {
+    public Response listAllHouses() {
         try {
             List<House> houses = db.getAll(CONTAINER, HouseDAO.class).stream().map(HouseDAO::toHouse).toList();
 
@@ -270,10 +271,6 @@ public class HousesResource extends Validations implements HousesService {
             else
                 throw new WebApplicationException(INVALID_PRICE, Response.Status.BAD_REQUEST);
 
-
-        //Todo: Alterar a az function do desconto.
-        // Se a casa estiver na lista das casas com desconto e o novo desconto for zero, retirá-la
-
         var newDiscount = house.getDiscount();
         if (newDiscount != null)
             if (newDiscount >= 0 && newDiscount < house.getPrice())
@@ -303,13 +300,13 @@ public class HousesResource extends Validations implements HousesService {
     }
 
     @Override
-    public Response getHousesByDescription(String word) {
+    public Response getHousesByDescription(String description) {
         try {
             SearchOptions options = new SearchOptions()
                     .setIncludeTotalCount(true)
                     .setSearchFields("description")
                     .setTop(5);
-            SearchPagedIterable search = CognitiveSearchLayer.getInstance().search(word,options);
+            SearchPagedIterable search = CognitiveSearchLayer.getInstance().search(description, options);
             List<Object> houses = new ArrayList<>();
 
             for (SearchPagedResponse resultResponse : search.iterableByPage()) {
@@ -320,7 +317,7 @@ public class HousesResource extends Validations implements HousesService {
                 });
             }
 
-            return sendResponse(OK,houses);
+            return sendResponse(OK, houses);
 
         } catch (Exception e) {
             return processException(500);
@@ -335,7 +332,7 @@ public class HousesResource extends Validations implements HousesService {
                     .setFilter("location eq '" + location + "'")
                     .setSearchFields("description")
                     .setTop(5);
-            SearchPagedIterable search = CognitiveSearchLayer.getInstance().search(word,options);
+            SearchPagedIterable search = CognitiveSearchLayer.getInstance().search(word, options);
             List<Object> houses = new ArrayList<>();
 
             for (SearchPagedResponse resultResponse : search.iterableByPage()) {
@@ -346,7 +343,7 @@ public class HousesResource extends Validations implements HousesService {
                 });
             }
 
-            return sendResponse(OK,houses);
+            return sendResponse(OK, houses);
 
         } catch (Exception e) {
             return processException(500);

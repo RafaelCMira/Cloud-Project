@@ -4,7 +4,6 @@ import com.azure.cosmos.*;
 import com.azure.cosmos.models.*;
 import com.azure.cosmos.util.CosmosPagedIterable;
 import scc.data.*;
-import scc.srv.houses.HousesResource;
 import scc.srv.houses.HousesService;
 import scc.srv.question.QuestionService;
 import scc.srv.rentals.RentalService;
@@ -137,7 +136,6 @@ public class CosmosDBLayer {
         return db.getContainer(RentalService.CONTAINER).readAllItems(key, RentalDAO.class);
     }
 
-    //TODO: pagination (testar)
     public CosmosPagedIterable<RentalDAO> getHouseRentals(String houseId, String offset) {
         init();
         String query = String.format("SELECT * FROM rentals WHERE rentals.houseId=\"%s\" OFFSET %s LIMIT %s", houseId, offset, HOUSES_LIMIT);
@@ -155,21 +153,12 @@ public class CosmosDBLayer {
     ////////////////////////////// QUESTIONS
     ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
-    //TODO: pagination
-    public CosmosPagedIterable<QuestionDAO> listHouseQuestions(String houseId) {
+    public CosmosPagedIterable<QuestionDAO> getHouseQuestions(String houseId, String offset) {
         init();
-        String query = String.format("SELECT * FROM questions WHERE questions.houseId=\"%s\"", houseId);
+        String query = String.format("SELECT * FROM questions WHERE questions.houseId=\"%s\" OFFSET %s LIMIT %s", houseId, offset, QUESTIONS_LIMIT);
         return db.getContainer(QuestionService.CONTAINER).queryItems(query, new CosmosQueryRequestOptions(), QuestionDAO.class);
     }
-
-    // Usado para fazer pre-load das questoes quando se faz get de uma casa
-    public CosmosPagedIterable<QuestionDAO> getHouseLast5Questions(String houseId) {
-        init();
-        String query = String.format("SELECT * FROM questions WHERE questions.houseId=\"%s\" ORDER BY questions._ts DESC OFFSET 0 LIMIT 5",
-                houseId);
-        return db.getContainer(QuestionService.CONTAINER).queryItems(query, new CosmosQueryRequestOptions(), QuestionDAO.class);
-    }
-
+    
     public void close() {
         client.close();
     }

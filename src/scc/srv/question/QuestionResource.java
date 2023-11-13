@@ -12,6 +12,7 @@ import scc.db.CosmosDBLayer;
 import scc.srv.utils.Validations;
 
 import java.util.ArrayList;
+import java.util.List;
 import java.util.UUID;
 
 
@@ -60,26 +61,27 @@ public class QuestionResource extends Validations implements QuestionService {
         }
     }
 
-    //TODO GERAL: cache + offset (rever este metodo)
     @Override
-    public Response listQuestions(String houseId) {
+    public Response listQuestions(String houseId, String offset) {
         if (Validations.houseExists(houseId) == null)
             return sendResponse(NOT_FOUND, HOUSE_MSG, houseId);
 
         try {
-            var cacheQuestions = Cache.getListFromCache(QUESTIONS_LIST_PREFIX + houseId);
+            List<Question> questions = new ArrayList<>();
 
+            String key = String.format(QUESTIONS_LIST_PREFIX, houseId, offset);
+            var cacheQuestions = Cache.getListFromCache(key);
             if (!cacheQuestions.isEmpty()) {
-                var questions = new ArrayList<>();
+
                 for (String question : cacheQuestions) {
                     questions.add(mapper.readValue(question, Question.class));
                 }
                 return sendResponse(OK, questions);
             }
 
-            var questions = db.listHouseQuestions(houseId).stream().map(QuestionDAO::toQuestion).toList();
+            questions = db.getHouseQuestions(houseId, offset).stream().map(QuestionDAO::toQuestion).toList();
 
-            Cache.putListInCache(questions, QUESTIONS_LIST_PREFIX + houseId);
+            Cache.putListInCache(questions, key);
 
             return sendResponse(OK, questions);
 

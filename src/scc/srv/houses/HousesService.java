@@ -17,12 +17,14 @@ public interface HousesService {
     String CONTAINER = "houses";
     String HOUSE_PREFIX = "h:";
 
+    String MOST_RECENT_DISCOUNTS = "houses:disc";
+
     String HOUSES_BY_LOCATION_PREFIX = "h:location:%s-off:%s";
 
     String NEW_HOUSES_PREFIX = "newH:";
 
     String ID = "id";
-    String WORD = "word";
+    String DESCRIPTION = "word";
     String LOCATION = "location";
     String ALL = "/all";
     String AVAILABLE = "/available";
@@ -58,7 +60,7 @@ public interface HousesService {
     @GET
     @Path(ALL)
     @Produces(MediaType.APPLICATION_JSON)
-    Response listAllHouses(@QueryParam(OFFSET) String offset);
+    Response listAllHouses();
 
     @GET
     @Produces(MediaType.APPLICATION_JSON)
@@ -81,13 +83,13 @@ public interface HousesService {
 
 
     @GET
-    @Path(HOUSE_BY_DESC+"/{" + WORD + "}")
+    @Path(HOUSE_BY_DESC)
     @Produces(MediaType.APPLICATION_JSON)
-    Response getHousesByDescription(@PathParam(WORD) String word);
+    Response getHousesByDescription(@QueryParam(DESCRIPTION) String description);
 
     @GET
-    @Path(HOUSE_BY_DESC+"/{" + WORD + "}/{" + LOCATION + "}")
+    @Path(HOUSE_BY_DESC + "/{" + DESCRIPTION + "}/{" + LOCATION + "}")
     @Produces(MediaType.APPLICATION_JSON)
-    Response getHousesByDescAnd(@PathParam(WORD) String word,@PathParam(LOCATION) String location);
+    Response getHousesByDescAnd(@PathParam(DESCRIPTION) String word, @PathParam(LOCATION) String location);
 
 }
