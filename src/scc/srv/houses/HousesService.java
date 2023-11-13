@@ -24,6 +24,7 @@ public interface HousesService {
     String ALL = "/all";
     String AVAILABLE = "/available";
     String NEW_HOUSES = "/NewHouses";
+    String HOUSE_
     String INITIAL_DATE = "initialDate";
     String END_DATE = "endDate";
 
@@ -68,6 +69,16 @@ public interface HousesService {
 
     @GET
     @Path(NEW_HOUSES)
+    @Produces(MediaType.APPLICATION_JSON)
+    Response getNewHouses();
+
+    //******************************************************************************************************************
+    //*************************************** COGNITIVE SEARCH *********************************************************
+    //******************************************************************************************************************
+
+
+    @GET
+    @Path()
     @Produces(MediaType.APPLICATION_JSON)
     Response getNewHouses();
 
