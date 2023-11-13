@@ -31,14 +31,9 @@ public class SearchDumpProperties {
     }
 
     public static void main(String[] args) {
-        /*if (args.length == 0) {
-            System.out.println("java scc.utils.mgt.SearchDumpProperties name");
-            return;
-        }
-        String searchService = args[0];*/
-        String searchService = "scc24cs59243"; //TODO: mudem este nome se o vosso for diferente (nome do serviço cognitive search)
-
         try {
+            String searchService = "scc24cs59243"; //TODO: mudem este nome se o vosso for diferente (nome do serviço cognitive search)
+
             System.setProperty(org.slf4j.simple.SimpleLogger.DEFAULT_LOG_LEVEL_KEY, "Error");
 
             final AzureResourceManager azure = AzureManagement.createManagementClient();
@@ -66,7 +61,8 @@ public class SearchDumpProperties {
 
                     QueryKey qk = lst.iterator().next();
                     Files.write(path, ("SearchServiceQueryKey=" + qk.key() + "\n").getBytes(), StandardOpenOption.APPEND);
-                    Files.write(path, ("SearchServiceUrl=https://" + searchService + ".search.windows.net\n").getBytes(), StandardOpenOption.APPEND);
+                    Files.write(path, ("SearchServiceUrl=https://" + searchService + ".search.windows.net\n").getBytes(),
+                            StandardOpenOption.APPEND);
                     Files.write(path, ("IndexName=cosmosdb-index\n").getBytes(), StandardOpenOption.APPEND);
                     Files.write(path, ("ApiVersion=2020-06-30-Preview\n").getBytes(), StandardOpenOption.APPEND);
 
@@ -76,7 +72,7 @@ public class SearchDumpProperties {
                         appendInfo(cmd, functionName, rgName, "SearchServiceName", searchService);
                         appendInfo(cmd, functionName, rgName, "SearchServiceAdminKey", srv.getAdminKeys().primaryKey());
                         appendInfo(cmd, functionName, rgName, "SearchServiceQueryKey", qk.key());
-                        appendInfo(cmd, functionName, rgName, "SearchServiceUrl", "https://\" + searchService + \".search.windows.net");
+                        appendInfo(cmd, functionName, rgName, "SearchServiceUrl", "https://" + searchService + ".search.windows.net");
                         appendInfo(cmd, functionName, rgName, "IndexName", "cosmosdb-index"); //TODO: replace (se deixarem o mesmo nome no indicenão precisam mudar
                         appendInfo(cmd, functionName, rgName, "ApiVersion", "2020-06-30");
                     }
@@ -85,7 +81,7 @@ public class SearchDumpProperties {
                         appendInfo(cmd, appName, rgName, "SearchServiceName", searchService);
                         appendInfo(cmd, appName, rgName, "SearchServiceAdminKey", srv.getAdminKeys().primaryKey());
                         appendInfo(cmd, appName, rgName, "SearchServiceQueryKey", qk.key());
-                        appendInfo(cmd, appName, rgName, "SearchServiceUrl", "https://\" + searchService + \".search.windows.net");
+                        appendInfo(cmd, appName, rgName, "SearchServiceUrl", "https://" + searchService + ".search.windows.net");
                         appendInfo(cmd, appName, rgName, "IndexName", "cosmosdb-index"); //TODO: replace (se deixarem o mesmo nome no indicenão precisam mudar
                         appendInfo(cmd, appName, rgName, "ApiVersion", "2020-06-30");
                     }
@@ -101,10 +97,18 @@ public class SearchDumpProperties {
             e.printStackTrace();
         }
 
-        for (int i = 0; i < AzureManagement.REGIONS.length; i++) {
-            String filename = "search-azureprops-" + AzureManagement.REGIONS[i].name() + ".bat";
-            AzureManagement.modifyBatchFile(filename);
+        try {
+            // Sleep for 1000 milliseconds (1 second)
+            Thread.sleep(5000);
+            for (int i = 0; i < AzureManagement.REGIONS.length; i++) {
+                String filename = "search-azureprops-" + AzureManagement.REGIONS[i].name() + ".bat";
+                AzureManagement.modifyBatchFile(filename);
+            }
+        } catch (InterruptedException e) {
+
+            e.printStackTrace();
         }
+
 
         System.exit(0);
     }
