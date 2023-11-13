@@ -94,7 +94,7 @@ public class CosmosDBLayer {
     ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
     ////////////////////////////// USERS
     ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-    
+
     public CosmosPagedIterable<HouseDAO> listUserHouses(String id, String offset) {
         init();
         String query = String.format("SELECT * FROM houses WHERE houses.ownerId=\"%s\" OFFSET %s LIMIT %s", id, offset, USER_HOUSES_LIMIT);
@@ -115,6 +115,14 @@ public class CosmosDBLayer {
     public CosmosPagedIterable<HouseDAO> getUserHouses(String ownerId) {
         init();
         String query = String.format("SELECT * FROM houses WHERE houses.ownerId=\"%s\"", ownerId);
+        return db.getContainer(HousesService.CONTAINER).queryItems(query, new CosmosQueryRequestOptions(), HouseDAO.class);
+    }
+
+
+    // get houses in with discount
+    public CosmosPagedIterable<HouseDAO> getHousesWithDiscount(String offset) {
+        init();
+        String query = String.format("SELECT * FROM houses WHERE houses.discount > 0 OFFSET %s LIMIT %s", offset, HOUSES_LIMIT);
         return db.getContainer(HousesService.CONTAINER).queryItems(query, new CosmosQueryRequestOptions(), HouseDAO.class);
     }
 

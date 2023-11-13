@@ -147,43 +147,35 @@ public class RentalResource extends Validations implements RentalService {
             return processException(500);
         }
     }
-
-    //TODO GERAL: cache + offset (rever este metodo)
+    
     @Override
     public Response getHousesInDiscount(String offset) {
-        //TODO: make an azure function to updated the cache in x time
         try {
-            
-            List<HouseDAO> houses = new ArrayList<>();
-            boolean updateCache = false;
+            List<House> houses = new ArrayList<>();
 
-            var discountedHouses = Cache.getListFromCache(DISCOUNTED_HOUSES);
-            for (String house : discountedHouses) {
-                houses.add(mapper.readValue(house, HouseDAO.class));
+            String key = String.format(DISCOUNTED_HOUSES, offset);
+            var cacheHouses = Cache.getListFromCache(key);
+            if (!cacheHouses.isEmpty()) {
+                for (var house : cacheHouses) {
+                    houses.add(mapper.readValue(house, House.class));
+                }
+                return sendResponse(OK, houses);
             }
 
-            if (houses.isEmpty()) {
-                houses = db.getAll(HousesService.CONTAINER, HouseDAO.class).stream().toList();
-                updateCache = true;
-            }
+            var housesWithDiscount = db.getHousesWithDiscount(offset);
 
-            var result = new ArrayList<House>();
-
-
-            for (HouseDAO house : houses) {
-
+            for (HouseDAO house : housesWithDiscount) {
                 if (!house.getOwnerId().equals(UsersService.DELETED_USER)) {
                     var currentDate = Date.from(Instant.now());
                     var oneMonthFromNow = Date.from(Instant.now().plus(30, ChronoUnit.DAYS));
-                    if (house.getDiscount() > 0 && Validations.isAvailable(house.getId(), currentDate, oneMonthFromNow)) {
-                        result.add(house.toHouse());
-                        if (updateCache)
-                            Cache.addToListInCache(house, DISCOUNTED_HOUSES);
+                    if (Validations.isAvailable(house.getId(), currentDate, oneMonthFromNow)) {
+                        houses.add(house.toHouse());
                     }
                 }
             }
 
-            return sendResponse(OK, result);
+            Cache.putListInCache(houses, key);
+            return sendResponse(OK, housesWithDiscount);
 
         } catch (JsonProcessingException e) {
             return processException(500, "Error while parsing questions");
