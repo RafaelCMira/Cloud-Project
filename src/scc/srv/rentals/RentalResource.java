@@ -147,7 +147,7 @@ public class RentalResource extends Validations implements RentalService {
             return processException(500);
         }
     }
-    
+
     @Override
     public Response getHousesInDiscount(String offset) {
         try {
@@ -175,7 +175,7 @@ public class RentalResource extends Validations implements RentalService {
             }
 
             Cache.putListInCache(houses, key);
-            return sendResponse(OK, housesWithDiscount);
+            return sendResponse(OK, houses);
 
         } catch (JsonProcessingException e) {
             return processException(500, "Error while parsing questions");
