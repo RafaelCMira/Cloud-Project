@@ -6,30 +6,38 @@ import com.microsoft.azure.functions.annotation.TimerTrigger;
 import scc.data.HouseDAO;
 import scc.db.CosmosDBLayer;
 
-import java.util.ArrayList;
-import java.util.List;
-
-
 public class TimerFunction {
 
     private final CosmosDBLayer db = CosmosDBLayer.getInstance();
-    private static final String TIMER = "0 */10 * * * *";
+    private static final String TIMER = "*/30 * * * * *";
     private static final int THRESHOLD = 0;
     private static final int DISCOUNT = 10;
+    private static final int LIMITS = 5;
 
-    @FunctionName("periodic-discount")
-    public void cosmosFunction( @TimerTrigger(name = "periodic-discount",
+    @FunctionName("periodicDiscount")
+    public void cosmosFunction( @TimerTrigger(name = "periodicDiscount",
                                 schedule = TIMER)
                                 String timerInfo,
                                 ExecutionContext context)
     {
 
-        var houses = db.getAll(CosmosDBFunction.HOUSES_COLLECTION, HouseDAO.class);
-        for (HouseDAO h: houses) {
-            if (h.getRentalsCounter() <= THRESHOLD ) {
-                h.setDiscount(DISCOUNT);
-                db.update(h,CosmosDBFunction.HOUSES_COLLECTION,h.getId());
+
+        try {
+            var res = db.getAll(CosmosDBFunction.HOUSES_COLLECTION, HouseDAO.class);
+            int counter = 0;
+            for (HouseDAO h: res) {
+                counter++;
+                if (h.getRentalsCounter() <= THRESHOLD && h.getDiscount() == 0) {
+                    h.setDiscount(DISCOUNT);
+                    db.update(h,CosmosDBFunction.HOUSES_COLLECTION,h.getId());
+                    context.getLogger().info("Timer function changed house:" + h.getId() + " time:"+ timerInfo);
+                }
+                if (counter > LIMITS)
+                    break;
             }
+
+        } catch (Exception e) {
+            return;
         }
 
     }

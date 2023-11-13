@@ -23,8 +23,6 @@ public class BlobStorageFunction {
             @BindingName("name") String blobname,
             final ExecutionContext context)
     {
-        context.getLogger().info(blobname + ": blob changed");
-
         if(!media.hasPhotos(blobname))
             media.upload(content);
     }

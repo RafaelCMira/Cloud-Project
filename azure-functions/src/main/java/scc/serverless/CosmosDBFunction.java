@@ -17,6 +17,7 @@ public class CosmosDBFunction {
 	 static final String DISCOUNT_HOUSES = "houses:disc:";
 	 static final String DB_NAME = "scc24db60700";
 	 static final String HOUSES_COLLECTION = "houses";
+	 static final int EXPIRATION_TIME = 300;
 
 	private static final ObjectMapper mapper = new ObjectMapper();
     @FunctionName("cosmosDBNewHouses")
@@ -54,6 +55,7 @@ public class CosmosDBFunction {
 				if (h.getDiscount() > 0)
 					jedis.lpush(DISCOUNT_HOUSES, mapper.writeValueAsString(h));
 			}
+			jedis.expire(DISCOUNT_HOUSES,EXPIRATION_TIME);
 		} catch (JsonProcessingException e) {
 			throw new RuntimeException(e);
 		}

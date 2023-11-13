@@ -1,12 +1,14 @@
 package scc.data;
 
+import scc.utils.HasId;
+
 import java.util.List;
 
 /**
  * Represents a House, as returned to the clients
  */
 
-public class House {
+public class House implements HasId {
 
     private String id;
 
@@ -24,11 +26,13 @@ public class House {
 
     private Integer discount;
 
+    private Integer rentalsCounter;
+
     public House() {
     }
 
     public House(String id, String name, String location, String description,
-                 List<String> photosIds, String ownerId, Integer price, Integer discount) {
+                 List<String> photosIds, String ownerId, Integer price, Integer discount, Integer rentalsCounter) {
         super();
         this.id = id;
         this.name = name;
@@ -38,8 +42,10 @@ public class House {
         this.ownerId = ownerId;
         this.price = price;
         this.discount = discount;
+        this.rentalsCounter = rentalsCounter;
     }
 
+    @Override
     public String getId() {
         return id;
     }
@@ -104,6 +110,14 @@ public class House {
         this.discount = discount;
     }
 
+    public Integer getRentalsCounter() {
+        return rentalsCounter;
+    }
+
+    public void setRentalsCounter(Integer rentalsCounter) {
+        this.rentalsCounter = rentalsCounter;
+    }
+
     @Override
     public String toString() {
         return "House{" +
@@ -115,6 +129,7 @@ public class House {
                 ", ownerId='" + ownerId + '\'' +
                 ", price=" + price +
                 ", discount=" + discount +
+                ", rentalsCounter=" + rentalsCounter +
                 '}';
     }
 }
