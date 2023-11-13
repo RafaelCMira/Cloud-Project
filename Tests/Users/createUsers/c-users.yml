@@ -7,8 +7,8 @@ config:
     metricsProcessEndpoint: "myProcessEndpoint"
   phases:
     - name: "Top Phase"
-      duration: 240  # 3 minutes
-      arrivalRate: 1  # Total 720 requests (adjust as needed)
+      duration: 1
+      arrivalRate: 1
 
 scenarios:
   - name: 'Create users - Top Phase'
@@ -36,7 +36,7 @@ scenarios:
                 pwd: "{{ pwd }}"
                 photoId: "{{ imageId }}"
               afterResponse: "genNewUserReply"  # capture result and store in file
-        count: 3
+        count: 1
 
 # WARMUP PHASE ->
 # Duration 30 seconds

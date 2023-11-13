@@ -33,7 +33,6 @@ scenarios:
                 Content-Type: application/json
                 Accept: application/json
               json:
-                id: "{{ id }}"
                 name: "{{ name }}"
                 location: "{{ location }}"
                 description: "{{ description }}"
@@ -41,6 +40,5 @@ scenarios:
                 ownerId: "{{ ownerId }}"
                 price: "{{ price }}"
                 discount: "{{ discount }}"
-                rentalsCounter: "0"
               afterResponse: "genNewHouseReply"
         count: 1

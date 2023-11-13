@@ -18,6 +18,7 @@ import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
+import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
 
 import static scc.srv.utils.Utility.*;
@@ -30,6 +31,7 @@ public class HousesResource extends Validations implements HousesService {
     @Override
     public Response createHouse(Cookie session, HouseDAO houseDAO) throws Exception {
         try {
+            houseDAO.setId(UUID.randomUUID().toString());
             checkHouseCreation(session, houseDAO);
             houseDAO.setRentalsCounter(0);
 
@@ -51,7 +53,7 @@ public class HousesResource extends Validations implements HousesService {
         if (checkCookies.getStatus() != Response.Status.OK.getStatusCode())
             throw new WebApplicationException(checkCookies.getEntity().toString(), Response.Status.UNAUTHORIZED);
 
-        if (Validations.badParams(houseDAO.getId(), houseDAO.getName(), houseDAO.getLocation(), houseDAO.getPrice().toString(),
+        if (Validations.badParams(houseDAO.getName(), houseDAO.getLocation(), houseDAO.getPrice().toString(),
                 houseDAO.getDiscount().toString()) || houseDAO.getPrice() <= 0 || houseDAO.getDiscount() < 0 || houseDAO.getDiscount() >= houseDAO.getPrice())
             throw new WebApplicationException(BAD_REQUEST_MSG, Response.Status.BAD_REQUEST);
 

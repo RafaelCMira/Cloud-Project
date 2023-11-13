@@ -112,18 +112,14 @@ function selectImageToDownload(context, events, done) {
     return done();
 }
 
-const europeanCities = ["Amsterdam", "Barcelona", "Berlin", "Budapest", "Copenhagen", "Dublin", "Edinburgh", "Florence", "Geneva", "Helsinki", "Istanbul", "Krakow", "Lisbon", "London", "Madrid", "Milan", "Munich", "Oslo", "Paris", "Prague", "Rome",  "Marseille", "Belfast"];
-const americanCities = ["New York", "Los Angeles", "Chicago", "Houston", "Miami", "Toronto", "Vancouver", "Mexico City", "Rio de Janeiro", "Buenos Aires", "São Paulo", "Nassau", "Havana"];
-
+const cities = ["Amsterdam", "Lisboa", "Porto", "Barcelona", "Berlin", "Budapest", "Copenhagen"];
 
 function genNewHouse(context, events, done) {
     const houseName = `${faker.address.streetName()}`;
-    context.vars.id = houseName;
     context.vars.name = houseName;
-    context.vars.location = americanCities.sample();
+    context.vars.location = cities.sample();
     context.vars.description = faker.lorem.sentence();
     context.vars.ownerId = usersIds.sample();
-    console.log("onwerId = " + context.vars.ownerId);
     context.vars.price = random(300);
     context.vars.discount = randomInBetween(context.vars.price * 0.05, context.vars.price / 2);
     return done();

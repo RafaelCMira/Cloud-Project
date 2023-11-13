@@ -122,12 +122,10 @@ const cities = ["Lisboa", "Porto", "Almada", "Cova da moura", "Chicago", "Housto
 
 function genNewHouse(context, events, done) {
     const houseName = `${faker.address.streetName()}`;
-    context.vars.id = houseName;
     context.vars.name = houseName;
     context.vars.location = cities.sample();
     context.vars.description = faker.lorem.sentence();
     context.vars.ownerId = users.sample().id;
-    console.log("onwerId = " + context.vars.ownerId);
     context.vars.price = random(300);
     context.vars.discount = randomInBetween(context.vars.price * 0.05, context.vars.price / 2);
     return done();
