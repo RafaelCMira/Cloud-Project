@@ -21,12 +21,15 @@ public interface UsersService {
 
     String USER_HOUSES_PREFIX = "u:%s-h:-off:%s";
 
+    String USER_RENTALS_PREFIX = "u:%s-r:-off:%s";
+
 
     String ID = "id";
     String HOUSES = "/houses";
     String AUTH = "/auth";
     String DELETED_USER = "Deleted User";
 
+    String RENTALS = "/rentals";
 
     String OFFSET = "offset";
 
@@ -66,6 +69,11 @@ public interface UsersService {
     @Path("/{" + ID + "}" + HOUSES)
     @Produces(MediaType.APPLICATION_JSON)
     Response getUserHouses(@PathParam(ID) String id, @QueryParam(OFFSET) String offset) throws Exception;
+
+    @GET
+    @Path("/{" + ID + "}" + RENTALS)
+    @Produces(MediaType.APPLICATION_JSON)
+    Response getUserRentals(@PathParam(ID) String id, @QueryParam(OFFSET) String offset);
 
 }
 

@@ -1,0 +1,1 @@
+call artillery run --output experiment.json experiment.yml

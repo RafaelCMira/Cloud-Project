@@ -101,7 +101,8 @@ function genNewUserReply(requestParams, response, context, ee, next) {
 	if (response.statusCode >= 200 && response.statusCode < 300 && response.body.length > 0) {
 		let user = JSON.parse(response.body);
 		users.push(user)
-		fs.appendFileSync(USERS_PATH, JSON.stringify(user) + "\n");
+		fs.writeFileSync(USERS_PATH, JSON.stringify(users));
+		//fs.appendFileSync(USERS_PATH, JSON.stringify(user) + "\n");
 	} else
 		console.log(response.body);
 
@@ -135,7 +136,8 @@ function genNewHouseReply(requestParams, response, context, ee, next) {
     if (response.statusCode >= 200 && response.statusCode < 300 && response.body.length > 0) {
         let house = JSON.parse(response.body);
         houses.push(house)
-        fs.appendFileSync(HOUSES_PATH, JSON.stringify(house) + "\n");
+        fs.writeFileSync(HOUSES_PATH, JSON.stringify(houses));
+     //   fs.appendFileSync(HOUSES_PATH, JSON.stringify(house) + "\n");
     } else
         console.log(response.body);
 

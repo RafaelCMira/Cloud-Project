@@ -8,10 +8,7 @@ import jakarta.ws.rs.core.Cookie;
 import jakarta.ws.rs.core.NewCookie;
 import jakarta.ws.rs.core.Response;
 import scc.cache.Cache;
-import scc.data.House;
-import scc.data.HouseDAO;
-import scc.data.User;
-import scc.data.UserDAO;
+import scc.data.*;
 import scc.db.CosmosDBLayer;
 import scc.srv.authentication.Login;
 import scc.srv.authentication.Session;
@@ -211,6 +208,41 @@ public class UsersResource extends Validations implements UsersService {
                 Cache.putListInCache(userHouses, key);
 
                 return sendResponse(OK, userHouses.isEmpty() ? new ArrayList<>() : userHouses);
+
+            } else
+                return sendResponse(NOT_FOUND, USER_MSG, id);
+
+        } catch (CosmosException ex) {
+            return processException(ex.getStatusCode(), USER_MSG, id);
+        } catch (JsonProcessingException e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+    @Override
+    public Response getUserRentals(String id, String offset) {
+        if (Validations.badParams(id))
+            return sendResponse(BAD_REQUEST, BAD_REQUEST_MSG);
+
+        try {
+            var user = Validations.userExists(id);
+            if (user != null) {
+
+                var rentals = new ArrayList<>();
+
+                String key = String.format(USER_RENTALS_PREFIX, id, offset);
+                var cacheRentals = Cache.getListFromCache(key);
+                if (!cacheRentals.isEmpty()) {
+                    for (var house : cacheRentals) {
+                        rentals.add(mapper.readValue(house, Rental.class));
+                    }
+                    return sendResponse(OK, rentals);
+                }
+
+                var userRentals = db.getUserRentals(id, offset).stream().map(RentalDAO::toRental).toList();
+                Cache.putListInCache(userRentals, key);
+
+                return sendResponse(OK, userRentals.isEmpty() ? new ArrayList<>() : userRentals);
 
             } else
                 return sendResponse(NOT_FOUND, USER_MSG, id);

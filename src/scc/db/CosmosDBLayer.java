@@ -149,6 +149,12 @@ public class CosmosDBLayer {
         return db.getContainer(RentalService.CONTAINER).queryItems(query, new CosmosQueryRequestOptions(), RentalDAO.class);
     }
 
+    public CosmosPagedIterable<RentalDAO> getUserRentals(String userId, String offset) {
+        init();
+        String query = String.format("SELECT * FROM rentals WHERE rentals.userId=\"%s\" OFFSET %s LIMIT %s", userId, offset, HOUSES_LIMIT);
+        return db.getContainer(RentalService.CONTAINER).queryItems(query, new CosmosQueryRequestOptions(), RentalDAO.class);
+    }
+
     ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
     ////////////////////////////// QUESTIONS
     ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -158,7 +164,7 @@ public class CosmosDBLayer {
         String query = String.format("SELECT * FROM questions WHERE questions.houseId=\"%s\" OFFSET %s LIMIT %s", houseId, offset, QUESTIONS_LIMIT);
         return db.getContainer(QuestionService.CONTAINER).queryItems(query, new CosmosQueryRequestOptions(), QuestionDAO.class);
     }
-    
+
     public void close() {
         client.close();
     }
