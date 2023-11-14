@@ -30,8 +30,10 @@ public interface HousesService {
     String LOCATION = "location";
     String ALL = "/all";
     String AVAILABLE = "/available";
-    String NEW_HOUSES = "/NewHouses";
-    String HOUSE_BY_DESC = "/HouseByDescription";
+    String NEW_HOUSES = "/newHouses";
+    String HOUSE_BY_DESC = "/housesByDescription";
+
+    String HOUSE_BY_QUESTION = "/housesByQuestion";
 
     String COGNITIVE_SEARCH = "/cognitiveSearch";
     String INITIAL_DATE = "initialDate";
@@ -93,7 +95,7 @@ public interface HousesService {
 
 
     @GET
-    @Path(COGNITIVE_SEARCH)
+    @Path(COGNITIVE_SEARCH + HOUSE_BY_QUESTION)
     @Produces(MediaType.APPLICATION_JSON)
     Response getHousesByQuestions(@QueryParam(QUESTION) String question);
 
