@@ -117,7 +117,7 @@ public class UsersResource extends Validations implements UsersService {
         });
 
         var updateRentals = CompletableFuture.runAsync(() -> {
-            var userRentals = db.getUserRentals(id);
+            var userRentals = db.getAllUserRentals(id);
             for (var rental : userRentals) {
                 rental.setUserId(DELETED_USER);
                 db.update(rental, RentalService.CONTAINER, rental.getHouseId());

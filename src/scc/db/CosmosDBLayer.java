@@ -143,7 +143,7 @@ public class CosmosDBLayer {
     }
 
     // Query usada para colocar deleted user nos rentals dele quando é eliminado
-    public CosmosPagedIterable<RentalDAO> getUserRentals(String userId) {
+    public CosmosPagedIterable<RentalDAO> getAllUserRentals(String userId) {
         init();
         String query = String.format("SELECT * FROM rentals WHERE rentals.userId=\"%s\"", userId);
         return db.getContainer(RentalService.CONTAINER).queryItems(query, new CosmosQueryRequestOptions(), RentalDAO.class);
