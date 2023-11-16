@@ -15,7 +15,7 @@ scenarios:
   - name: 'load data'
     weight: 1
     flow:
-      #### Create 250 users ####
+      #### Create 700 users ####
       - loop:
 
           #### Post Images ####
@@ -44,7 +44,7 @@ scenarios:
                 pwd: "{{ pwd }}"
                 photoId: "{{ imageId }}"
               afterResponse: "genNewUserReply"
-        count: 10
+        count: 700
 
       #### Create 250 houses ####
       - loop:
@@ -91,7 +91,7 @@ scenarios:
                 price: "{{ price }}"
                 discount: "{{ discount }}"
               afterResponse: "genNewHouseReply"
-        count: 20
+        count: 300
 
       #### Create 200 questions ####
       - loop:
@@ -121,7 +121,7 @@ scenarios:
                 askerId: "{{ askerId }}"
                 text: "{{ text }}"
               afterResponse: "genNewQuestionReply"
-        count: 10
+        count: 100
 
       #### Create 200 rentals ####
       - loop:
@@ -152,4 +152,4 @@ scenarios:
                 initialDate: "{{ initialDate }}"
                 endDate: "{{ endDate }}"
               afterResponse: "genNewRentalReply"
-        count: 10
+        count: 250

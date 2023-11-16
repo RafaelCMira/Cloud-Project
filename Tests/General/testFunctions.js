@@ -119,7 +119,7 @@ function randomInBetween(min, max) {
     return 0;
 }
 
-const cities = ["Lisboa", "Porto", "Almada", "Cova da moura", "Chicago", "Houston", "Miami", "Toronto", "Barcelona", "Berlin", "Budapest"];
+const cities = ["Lisbon","Porto","Madeira","Azores","Algarve","Braga","Coimbra","Evora","Aveiro","Leiria"]
 
 function genNewHouse(context, events, done) {
     const houseName = `${faker.address.streetName()}`;
@@ -183,7 +183,7 @@ const formatDate = (date) => {
   return `${year}-${month}-${day}`;
 };
 
-function generateRandomNumber() {
+function daysBetween() {
     const randomNumber = Math.floor(Math.random() * 100) + 1;
     if (randomNumber > 15) {
         return Math.floor(Math.random() * (30 - 16 + 1)) + 16;

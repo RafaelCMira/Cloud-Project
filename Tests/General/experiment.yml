@@ -6,11 +6,11 @@ config:
   processor: "./test-utils.js"
   phases:
     - name: "Warm up"
-      duration: 2
+      duration: 10
       arrivalCount: 5
     - name: "Experiment"
-      duration: 3
-      arrivalRate: 2               # set this value as high as possible for avoiding timeouts
+      duration: 20
+      arrivalRate: 3              # set this value as high as possible for avoiding timeouts
 
 scenarios:
   - name: 'User checks own rentals'
@@ -57,7 +57,7 @@ scenarios:
 
       - loop: # Check houses for their rentals
           - get:
-              url: "/house/{{ $loopElement.house }}"
+              url: "/house/{{ $loopElement.houseId }}"
               name: "GET:/house/*"
               headers:
                 Accept: application/json
@@ -104,7 +104,7 @@ scenarios:
             as: "housesDiscountLst"
 
       - loop:
-          - get: # Check houses for their rentals TODO: check link
+          - get: # Check houses for their rentals
               url: "/house/{{ $loopElement.id }}/rental?offset=0"
               name: "GET:/house/*/rental"
               headers:
@@ -181,8 +181,8 @@ scenarios:
           - function: "decideNextAction"
           ################################# Search location
           - get:
-              url: "/house/available?location={{ location }}&initialDate={{ initDate }}$endDate={{ endDate }}&offset=0"
-              name: "GET:/house/*"
+              url: "/house/available?location={{ location }}&initialDate={{ initDate }}&endDate={{ endDate }}&offset=0"
+              name: "GET:/house/*/location & date"
               headers:
                 Accept: application/json
               capture:
@@ -200,7 +200,7 @@ scenarios:
               ifTrue: "afterNextAction == 0 and nextAction == 0"
 
           - get:
-              url: "/house/available?location={{ location }}&initialDate={{ initDate }}$endDate={{ endDate }}&offset=25"
+              url: "/house/available?location={{ location }}&initialDate={{ initDate }}&endDate={{ endDate }}&offset=25"
               name: "GET:/house/search"
               headers:
                 Accept: application/json

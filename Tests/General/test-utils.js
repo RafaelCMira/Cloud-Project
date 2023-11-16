@@ -212,7 +212,7 @@ function genNewRental(context, events, done) {
 		let rental = context.vars.rentalsLst.sample()
 		context.vars.rentalId = rental.id;
 		context.vars.owner = rental.owner;
-		context.vars.houseId = rental.house;
+		context.vars.house = rental.house;
 	} else
 		delete context.vars.rentalId
 	return done()
@@ -251,6 +251,22 @@ function selectLocation(context, events, done) {
 	return done()
 }
 
+const formatDate = (date) => {
+  const year = date.getFullYear();
+  const month = (date.getMonth() + 1).toString().padStart(2, '0');
+  const day = date.getDate().toString().padStart(2, '0');
+  return `${year}-${month}-${day}`;
+};
+
+function daysBetween() {
+    const randomNumber = Math.floor(Math.random() * 100) + 1;
+    if (randomNumber > 15) {
+        return Math.floor(Math.random() * (30 - 16 + 1)) + 16;
+    } else {
+        return Math.floor(Math.random() * 15) + 1;
+    }
+}
+
 /**
  * Decide next action
  * 0 -> browse popular
@@ -263,10 +279,15 @@ function decideNextAction(context, events, done) {
 		context.vars.nextAction = 0; // select discount
 		context.vars.housesLst = context.vars.housesDiscountLst;
 	} else {
+        const initialDate = faker.date.between(new Date(), new Date('2024-12-31'));
+        const endDate = new Date(initialDate);
+        const daysToAdd = daysBetween();
+        endDate.setDate(initialDate.getDate() + daysToAdd);
+
 		context.vars.nextAction = 1; // select location 
 		context.vars.location = locations.sample();
-		context.vars.initDate = randomDate();
-		context.vars.endDate = context.vars.date;
+		context.vars.initDate = formatDate(initialDate);
+		context.vars.endDate = formatDate(endDate);
 	}
 	if( rnd < 0.3)
 		context.vars.afterNextAction = 0; // browsing
@@ -308,7 +329,7 @@ function random70(context, next) {
 }
 
 /**
- * Return true with probability 70% 
+ * Return true with probability 80%
  */
 function random80(context, next) {
   const continueLooping = Math.random() < 0.8
@@ -316,7 +337,7 @@ function random80(context, next) {
 }
 
 /**
- * Return true with probability 70% 
+ * Return true with probability 90%
  */
 function random90(context, next) {
   const continueLooping = Math.random() < 0.9
