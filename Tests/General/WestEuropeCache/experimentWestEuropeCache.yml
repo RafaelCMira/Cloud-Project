@@ -3,14 +3,14 @@ config:
   plugins:
     metrics-by-endpoint:
       useOnlyRequestNames: true
-  processor: "./test-utils.js"
+  processor: "../test-utils.js"
   phases:
     - name: "Warm up"
-      duration: 10
-      arrivalCount: 5
-    - name: "Experiment"
       duration: 20
-      arrivalRate: 3              # set this value as high as possible for avoiding timeouts
+      arrivalCount: 3
+    - name: "Experiment"
+      duration: 90
+      arrivalRate: 1             # set this value as high as possible for avoiding timeouts
 
 scenarios:
   - name: 'User checks own rentals'
@@ -19,7 +19,7 @@ scenarios:
       - function: "selectUserSkewed"
       - post: # First: login as a user
           url: "/user/auth"
-          name: "POST:/user/auth"
+          name: "POST: Auth User"
           headers:
             Content-Type: application/json
           json:
@@ -30,7 +30,7 @@ scenarios:
           url: "/user/{{ user }}/rentals?offset=0"
           cookie:
             scc:session: "{{ user }}"
-          name: "GET:/user/*/rentals"
+          name: "GET: User rentals"
           headers:
             Accept: application/json
           capture:
@@ -39,7 +39,7 @@ scenarios:
 
       - get: # Get houses for the user
           url: "/user/{{ user }}/houses?offset=0"
-          name: "GET:/user/*/houses"
+          name: "GET: User houses"
           headers:
             Accept: application/json
           capture:
@@ -48,7 +48,7 @@ scenarios:
 
       - get: # Get generic discounted houses
           url: "/house/discount?offset=0"
-          name: "GET:/house/discount"
+          name: "GET: Houses in discount"
           headers:
             Accept: application/json
           capture:
@@ -69,7 +69,7 @@ scenarios:
       - function: "selectUser"
       - post: # First: login as a user
           url: "/user/auth"
-          name: "POST:/user/auth"
+          name: "POST: Auth User"
           headers:
             Content-Type: application/json
           json:
@@ -78,7 +78,7 @@ scenarios:
 
       - get: # Get rentals for the user
           url: "/user/{{ user }}/rentals?offset=0"
-          name: "GET:/user/*/rentals"
+          name: "GET: User rentals"
           headers:
             Accept: application/json
           capture:
@@ -87,7 +87,7 @@ scenarios:
 
       - get: # Get houses for the user
           url: "/user/{{ user }}/houses?offset=0"
-          name: "GET:/user/*/houses"
+          name: "GET: User houses"
           headers:
             Accept: application/json
           capture:
@@ -96,7 +96,7 @@ scenarios:
 
       - get: # Get generic discounted houses
           url: "/house/discount?offset=0"
-          name: "GET:/house/discount"
+          name: "GET: Houses in discount"
           headers:
             Accept: application/json
           capture:
@@ -106,7 +106,7 @@ scenarios:
       - loop:
           - get: # Check houses for their rentals
               url: "/house/{{ $loopElement.id }}/rental?offset=0"
-              name: "GET:/house/*/rental"
+              name: "GET: House rentals"
               headers:
                 Accept: application/json
               capture:
@@ -115,7 +115,7 @@ scenarios:
 
           - get: # Get house questions
               url: "/house/{{ $loopElement.id }}/question?offset=0"
-              name: "GET:/house/*/question"
+              name: "GET: House questions"
               headers:
                 Accept: application/json
               capture:
@@ -128,7 +128,7 @@ scenarios:
               url: "/house/{{ houseId }}/question/{{ questionId }}"
               cookie:
                 scc:session: "{{ user }}"
-              name: "PUT:/house/*/question/*"
+              name: "PUT: Reply to question"
               headers:
                 Accept: application/json
                 Content-Type: application/json
@@ -143,7 +143,7 @@ scenarios:
       - function: "selectUser"
       - post: # First: login as a user
           url: "/user/auth"
-          name: "POST:/user/auth"
+          name: "POST: Auth User"
           headers:
             Content-Type: application/json
           json:
@@ -153,7 +153,7 @@ scenarios:
       - loop:
           - get: # Get rentals for the user
               url: "/user/{{ user }}/rentals?offset=0"
-              name: "GET:/user/*/rentals"
+              name: "GET: User rentals"
               headers:
                 Accept: application/json
               capture:
@@ -162,7 +162,7 @@ scenarios:
 
           - get: # Get houses for the user
               url: "/user/{{ user }}/houses?offset=0"
-              name: "GET:/user/*/houses"
+              name: "GET: User houses"
               headers:
                 Accept: application/json
               capture:
@@ -171,7 +171,7 @@ scenarios:
 
           - get: # Get generic discounted houses
               url: "/house/discount?offset=0"
-              name: "GET:/house/discount"
+              name: "GET: Houses in discount"
               headers:
                 Accept: application/json
               capture:
@@ -182,7 +182,7 @@ scenarios:
           ################################# Search location
           - get:
               url: "/house/available?location={{ location }}&initialDate={{ initDate }}&endDate={{ endDate }}&offset=0"
-              name: "GET:/house/*/location & date"
+              name: "GET: Houses in location and by date"
               headers:
                 Accept: application/json
               capture:
@@ -194,14 +194,14 @@ scenarios:
           ################################# Browse next page
           - get:
               url: "/house/discount?offset=0"
-              name: "GET:/house/discount"
+              name: "GET: Houses in discount"
               headers:
                 Accept: application/json
               ifTrue: "afterNextAction == 0 and nextAction == 0"
 
           - get:
               url: "/house/available?location={{ location }}&initialDate={{ initDate }}&endDate={{ endDate }}&offset=25"
-              name: "GET:/house/search"
+              name: "GET: Houses in location and by date (next page)"
               headers:
                 Accept: application/json
               ifTrue: "afterNextAction == 0 and nextAction == 1"
@@ -209,7 +209,7 @@ scenarios:
           ################################# Check questions
           - get:
               url: "/house/{{ houseId }}/question?offset=0"
-              name: "GET:/house/*/question"
+              name: "GET House questions"
               headers:
                 Accept: application/json
               ifTrue: "houseId and afterNextAction == 1"
@@ -219,7 +219,7 @@ scenarios:
               url: "/house/{{ houseId }}/question"
               cookie:
                 scc:session: "{{ user }}"
-              name: "POST:/house/*/question"
+              name: "POST: House question"
               headers:
                 Accept: application/json
                 Content-Type: application/json
@@ -233,7 +233,7 @@ scenarios:
               url: "/house/{{ houseId }}/rental"
               cookie:
                 scc:session: "{{ user }}"
-              name: "POST:/house/*/rental"
+              name: "POST: Rent house"
               headers:
                 Accept: application/json
                 Content-Type: application/json

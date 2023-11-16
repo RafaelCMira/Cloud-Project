@@ -3,7 +3,7 @@ config:
   plugins:
     metrics-by-endpoint:
       useOnlyRequestNames: true
-  processor: "./testFunctions.js"
+  processor: "../testFunctions.js"
   variables:
     metricsProcessEndpoint: "myProcessEndpoint"
   phases:
@@ -44,9 +44,9 @@ scenarios:
                 pwd: "{{ pwd }}"
                 photoId: "{{ imageId }}"
               afterResponse: "genNewUserReply"
-        count: 700
+        count: 500
 
-      #### Create 250 houses ####
+      #### Create 300 houses ####
       - loop:
 
           #### Post Images ####
@@ -91,7 +91,7 @@ scenarios:
                 price: "{{ price }}"
                 discount: "{{ discount }}"
               afterResponse: "genNewHouseReply"
-        count: 300
+        count: 250
 
       #### Create 200 questions ####
       - loop:
@@ -123,7 +123,7 @@ scenarios:
               afterResponse: "genNewQuestionReply"
         count: 100
 
-      #### Create 200 rentals ####
+      #### Create 250 rentals ####
       - loop:
           - function: "genNewRental"
 

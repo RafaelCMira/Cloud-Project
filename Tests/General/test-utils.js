@@ -30,8 +30,8 @@ var images = []
 var users = []
 const locations = ["Lisbon","Porto","Madeira","Azores","Algarve","Braga","Coimbra","Evora","Aveiro","Leiria"]
 
-const IMAGES_PATH = "../images/house.";
-const USERS_PATH = "../Data/users.data";
+const IMAGES_PATH = "../../images/house.";
+const USERS_PATH = "../../Data/users.data";
 
 // Auxiliary function to select an element from an array
 Array.prototype.sample = function(){

@@ -24,11 +24,11 @@ const DATA_FOLDER = path.join(__dirname, "../Data");
 
 const USERS2_PATH = "users2.data";
 
-const IMAGES_PATH = "../images/house.";
-const USERS_PATH = "../Data/users.data";
-const HOUSES_PATH = "../Data/houses.data";
-const QUESTIONS_PATH = "../Data/questions.data";
-const RENTALS_PATH = "../Data/rentals.data";
+const IMAGES_PATH = "../../images/house.";
+const USERS_PATH = "../../Data/users.data";
+const HOUSES_PATH = "../../Data/houses.data";
+const QUESTIONS_PATH = "../../Data/questions.data";
+const RENTALS_PATH = "../../Data/rentals.data";
 
 var imagesIds = []
 var images = [];
