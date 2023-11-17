@@ -9,8 +9,8 @@ config:
       duration: 20
       arrivalCount: 3
     - name: "Experiment"
-      duration: 90
-      arrivalRate: 1             # set this value as high as possible for avoiding timeouts
+      duration: 60
+      arrivalRate: 5             # set this value as high as possible for avoiding timeouts
 
 scenarios:
   - name: 'User checks own rentals'
@@ -181,8 +181,8 @@ scenarios:
           - function: "decideNextAction"
           ################################# Search location
           - get:
-              url: "/house/available?location={{ location }}&initialDate={{ initDate }}&endDate={{ endDate }}&offset=0"
-              name: "GET: Houses in location and by date"
+              url: "/house/?location={{ location }}&offset=0"
+              name: "GET: Houses in location"
               headers:
                 Accept: application/json
               capture:
@@ -193,15 +193,15 @@ scenarios:
           - function: "selectHouse"
           ################################# Browse next page
           - get:
-              url: "/house/discount?offset=0"
-              name: "GET: Houses in discount"
+              url: "/house/discount?offset=25"
+              name: "GET: Houses in discount (next page)"
               headers:
                 Accept: application/json
               ifTrue: "afterNextAction == 0 and nextAction == 0"
 
           - get:
-              url: "/house/available?location={{ location }}&initialDate={{ initDate }}&endDate={{ endDate }}&offset=25"
-              name: "GET: Houses in location and by date (next page)"
+              url: "/house/?location={{ location }}&offset=25"
+              name: "GET: Houses in location (next page)"
               headers:
                 Accept: application/json
               ifTrue: "afterNextAction == 0 and nextAction == 1"
@@ -242,5 +242,5 @@ scenarios:
                 initialDate: "{{ initDate }}"
                 endDate: "{{ endDate }}"
               ifTrue: "houseId and afterNextAction == 3"
-        whileTrue: "random80"
+        whileTrue: "random50"
 

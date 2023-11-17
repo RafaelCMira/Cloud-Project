@@ -1,7 +1,0 @@
-    - name: "Warm up"
-      duration: 20
-      arrivalCount: 2
-
-    - name: "Experiment"
-      duration: 60
-      arrivalRate: 3

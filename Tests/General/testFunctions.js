@@ -195,7 +195,7 @@ function daysBetween() {
 function genNewRental(context, events, done) {
     const initialDate = faker.date.between(new Date(), new Date('2024-12-31'));
     const endDate = new Date(initialDate);
-    const daysToAdd = generateRandomNumber();
+    const daysToAdd = daysBetween();
     endDate.setDate(initialDate.getDate() + daysToAdd);
 
     context.vars.houseId = houses.sample().id;
