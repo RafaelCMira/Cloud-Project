@@ -1,5 +1,5 @@
 config:
-  target: 'https://scc24app-westeurope-59243.azurewebsites.net/rest'
+  target: 'https://scc24app-eastasia-59243.azurewebsites.net/rest'
   plugins:
     metrics-by-endpoint:
       useOnlyRequestNames: true
@@ -13,7 +13,7 @@ config:
       arrivalCount: 4
     - name: "Experiment"
       duration: 60
-      arrivalRate: 5             # set this value as high as possible for avoiding timeouts
+      arrivalRate: 5           # set this value as high as possible for avoiding timeouts
 
 scenarios:
   - name: 'User checks own rentals'
