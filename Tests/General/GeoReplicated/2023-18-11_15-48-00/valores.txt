@@ -1,0 +1,13 @@
+    - name: "Warm up"
+      duration: 15
+      arrivalCount: 2
+
+    - name: "Ramp up"
+      duration: 30
+      arrivalCount: 4
+
+    - name: "Experiment"
+      duration: 60
+      arrivalRate: 5
+
+      random70

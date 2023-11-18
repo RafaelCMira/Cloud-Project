@@ -1,0 +1,155 @@
+config:
+  target: 'https://scc24app-westeurope-59243.azurewebsites.net/rest'
+  plugins:
+    metrics-by-endpoint:
+      useOnlyRequestNames: true
+  processor: "../testFunctions.js"
+  variables:
+    metricsProcessEndpoint: "myProcessEndpoint"
+  phases:
+    - name: "load data"
+      duration: 1
+      arrivalCount: 1
+
+scenarios:
+  - name: 'load data'
+    weight: 1
+    flow:
+      #### Create 700 users ####
+      - loop:
+
+          #### Post Images ####
+          - post:
+              url: "/media"
+              name: "POST:/media"
+              headers:
+                Content-Type: application/octet-stream
+                Accept: application/json
+              beforeRequest: "uploadImageBody"
+              capture:
+                regexp: "(.+)"
+                as: "imageId"
+
+          #### Post Users ####
+          - function: "genNewUser"
+          - post:
+              url: "/user"
+              name: "POST:/user"
+              headers:
+                Content-Type: application/json
+                Accept: application/json
+              json:
+                id: "{{ id }}"
+                name: "{{ name }}"
+                pwd: "{{ pwd }}"
+                photoId: "{{ imageId }}"
+              afterResponse: "genNewUserReply"
+        count: 500
+
+      #### Create 300 houses ####
+      - loop:
+
+          #### Post Images ####
+          - post:
+              url: "/media"
+              name: "POST:/media"
+              headers:
+                Content-Type: application/octet-stream
+                Accept: application/json
+              beforeRequest: "uploadImageBody"
+              capture:
+                regexp: "(.+)"
+                as: "imageId"
+
+          - function: "genNewHouse"
+          #### Auth User ####
+          - post:
+              url: "/user/auth"
+              name: "POST:/user/auth"
+              headers:
+                Content-Type: application/json
+                Accept: application/json
+              json:
+                id: "{{ ownerId }}"
+                pwd: "{{ ownerId }}"
+
+          #### Post Houses ####
+          - post:
+              url: "/house"
+              name: "POST:/house"
+              cookie:
+                scc:session: "{{ ownerId }}"
+              headers:
+                Content-Type: application/json
+                Accept: application/json
+              json:
+                name: "{{ name }}"
+                location: "{{ location }}"
+                description: "{{ description }}"
+                photosIds: [ "{{ imageId }}" ]
+                ownerId: "{{ ownerId }}"
+                price: "{{ price }}"
+                discount: "{{ discount }}"
+              afterResponse: "genNewHouseReply"
+        count: 250
+
+      #### Create 200 questions ####
+      - loop:
+          - function: "genNewQuestion"
+          #### Auth User ####
+          - post:
+              url: "/user/auth"
+              name: "POST:/user/auth"
+              headers:
+                Content-Type: application/json
+                Accept: application/json
+              json:
+                id: "{{ askerId }}"
+                pwd: "{{ askerId }}"
+
+          #### Post Questions ####
+          - post:
+              url: "/house/{{ houseId }}/question"
+              name: "POST:/question"
+              cookie:
+                scc:session: "{{ askerId }}"
+              headers:
+                Content-Type: application/json
+                Accept: application/json
+              json:
+                houseId: "{{ houseId }}"
+                askerId: "{{ askerId }}"
+                text: "{{ text }}"
+              afterResponse: "genNewQuestionReply"
+        count: 100
+
+      #### Create 250 rentals ####
+      - loop:
+          - function: "genNewRental"
+
+          #### Auth User ####
+          - post:
+              url: "/user/auth"
+              name: "POST:/user/auth"
+              headers:
+                Content-Type: application/json
+                Accept: application/json
+              json:
+                id: "{{ userId }}"
+                pwd: "{{ userId }}"
+
+          #### Post Rental ####
+          - post:
+              url: "/house/{{ houseId }}/rental"
+              name: "POST:/rental"
+              cookie:
+                scc:session: "{{ userId }}"
+              headers:
+                Content-Type: application/json
+                Accept: application/json
+              json:
+                userId: "{{ userId }}"
+                initialDate: "{{ initialDate }}"
+                endDate: "{{ endDate }}"
+              afterResponse: "genNewRentalReply"
+        count: 250

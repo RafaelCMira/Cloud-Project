@@ -1,0 +1,249 @@
+config:
+  target: 'https://scc24app-eastasia-59243.azurewebsites.net/rest'
+  plugins:
+    metrics-by-endpoint:
+      useOnlyRequestNames: true
+  processor: "../test-utils.js"
+  phases:
+    - name: "Warm up"
+      duration: 15
+      arrivalCount: 2
+    - name: "Ramp up"
+      duration: 30
+      arrivalCount: 4
+    - name: "Experiment"
+      duration: 60
+      arrivalRate: 5             # set this value as high as possible for avoiding timeouts
+
+scenarios:
+  - name: 'User checks own rentals'
+    weight: 5
+    flow:
+      - function: "selectUserSkewed"
+      - post: # First: login as a user
+          url: "/user/auth"
+          name: "POST: Auth User"
+          headers:
+            Content-Type: application/json
+          json:
+            id: "{{ user }}"
+            pwd: "{{ pwd }}"
+
+      - get: # Get rentals for the user
+          url: "/user/{{ user }}/rentals?offset=0"
+          cookie:
+            scc:session: "{{ user }}"
+          name: "GET: User rentals"
+          headers:
+            Accept: application/json
+          capture:
+            json: "$"
+            as: "rentalsLst"
+
+      - get: # Get houses for the user
+          url: "/user/{{ user }}/houses?offset=0"
+          name: "GET: User houses"
+          headers:
+            Accept: application/json
+          capture:
+            json: "$"
+            as: "housesLst"
+
+      - get: # Get generic discounted houses
+          url: "/house/discount?offset=0"
+          name: "GET: Houses in discount"
+          headers:
+            Accept: application/json
+          capture:
+            json: "$"
+            as: "housesDiscountLst"
+
+      - loop: # Check houses for their rentals
+          - get:
+              url: "/house/{{ $loopElement.houseId }}"
+              name: "GET:/house/*"
+              headers:
+                Accept: application/json
+        over: "rentalsLst"
+
+  - name: 'User checks own houses'
+    weight: 5
+    flow:
+      - function: "selectUser"
+      - post: # First: login as a user
+          url: "/user/auth"
+          name: "POST: Auth User"
+          headers:
+            Content-Type: application/json
+          json:
+            id: "{{ user }}"
+            pwd: "{{ pwd }}"
+
+      - get: # Get rentals for the user
+          url: "/user/{{ user }}/rentals?offset=0"
+          name: "GET: User rentals"
+          headers:
+            Accept: application/json
+          capture:
+            json: "$"
+            as: "rentalsLst"
+
+      - get: # Get houses for the user
+          url: "/user/{{ user }}/houses?offset=0"
+          name: "GET: User houses"
+          headers:
+            Accept: application/json
+          capture:
+            json: "$"
+            as: "housesLst"
+
+      - get: # Get generic discounted houses
+          url: "/house/discount?offset=0"
+          name: "GET: Houses in discount"
+          headers:
+            Accept: application/json
+          capture:
+            json: "$"
+            as: "housesDiscountLst"
+
+      - loop:
+          - get: # Check houses for their rentals
+              url: "/house/{{ $loopElement.id }}/rental?offset=0"
+              name: "GET: House rentals"
+              headers:
+                Accept: application/json
+              capture:
+                json: "$"
+                as: "houseRentalsLst"
+
+          - get: # Get house questions
+              url: "/house/{{ $loopElement.id }}/question?offset=0"
+              name: "GET: House questions"
+              headers:
+                Accept: application/json
+              capture:
+                json: "$"
+                as: "questionLst"
+              ifTrue: "houseId"
+
+          - function: "selectQuestion"
+          - put: # Answer one question
+              url: "/house/{{ houseId }}/question/{{ questionId }}"
+              cookie:
+                scc:session: "{{ user }}"
+              name: "PUT: Reply to question"
+              headers:
+                Accept: application/json
+                Content-Type: application/json
+              json:
+                answer: "{{ reply }}"
+              ifTrue: "houseId and questionId"
+        over: "housesLst"
+
+  - name: 'Mixed browsing'
+    weight: 40
+    flow:
+      - function: "selectUser"
+      - post: # First: login as a user
+          url: "/user/auth"
+          name: "POST: Auth User"
+          headers:
+            Content-Type: application/json
+          json:
+            id: "{{ user }}"
+            pwd: "{{ pwd }}"
+
+      - loop:
+          - get: # Get rentals for the user
+              url: "/user/{{ user }}/rentals?offset=0"
+              name: "GET: User rentals"
+              headers:
+                Accept: application/json
+              capture:
+                json: "$"
+                as: "rentalsLst"
+
+          - get: # Get houses for the user
+              url: "/user/{{ user }}/houses?offset=0"
+              name: "GET: User houses"
+              headers:
+                Accept: application/json
+              capture:
+                json: "$"
+                as: "housesLst"
+
+          - get: # Get generic discounted houses
+              url: "/house/discount?offset=0"
+              name: "GET: Houses in discount"
+              headers:
+                Accept: application/json
+              capture:
+                json: "$"
+                as: "housesDiscountLst"
+
+          - function: "decideNextAction"
+          ################################# Search location
+          - get:
+              url: "/house?location={{ location }}&offset=0"
+              name: "GET: Houses in location"
+              headers:
+                Accept: application/json
+              capture:
+                json: "$"
+                as: "housesLst"
+              ifTrue: "nextAction == 1"
+
+          - function: "selectHouse"
+          ################################# Browse next page
+          - get:
+              url: "/house/discount?offset=25"
+              name: "GET: Houses in discount (next page)"
+              headers:
+                Accept: application/json
+              ifTrue: "afterNextAction == 0 and nextAction == 0"
+
+          - get:
+              url: "/house?location={{ location }}&offset=25"
+              name: "GET: Houses in location (next page)"
+              headers:
+                Accept: application/json
+              ifTrue: "afterNextAction == 0 and nextAction == 1"
+
+          ################################# Check questions
+          - get:
+              url: "/house/{{ houseId }}/question?offset=0"
+              name: "GET House questions"
+              headers:
+                Accept: application/json
+              ifTrue: "houseId and afterNextAction == 1"
+
+          ################################# Post questions
+          - post:
+              url: "/house/{{ houseId }}/question"
+              cookie:
+                scc:session: "{{ user }}"
+              name: "POST: House question"
+              headers:
+                Accept: application/json
+                Content-Type: application/json
+              json:
+                askerId: "{{ user }}"
+                text: "{{ text }}"
+              ifTrue: "houseId and afterNextAction == 2"
+
+          ################################# Rent house
+          - post: # rent house
+              url: "/house/{{ houseId }}/rental"
+              cookie:
+                scc:session: "{{ user }}"
+              name: "POST: Rent house"
+              headers:
+                Accept: application/json
+                Content-Type: application/json
+              json:
+                userId: "{{ user }}"
+                initialDate: "{{ initDate }}"
+                endDate: "{{ endDate }}"
+              ifTrue: "houseId and afterNextAction == 3"
+        whileTrue: "random70"
+

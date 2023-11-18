@@ -1,0 +1,2 @@
+@echo off
+artillery run --output experimentGeoReplicatedWesteurope.json experimentGeoReplicatedWesteurope.yml
