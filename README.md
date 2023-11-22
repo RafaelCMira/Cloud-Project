@@ -6,6 +6,30 @@ Rafael Pereira - 60700 - rl.pereira@campus.fct.unl.pt
 <br>
 Rafael Martins - 60602 - rlo.martins@campus.fct.unl.pt
 
+---
+
+# How to deploy using docker
+
+Use the following command to compile, build docker image and push to docker hub.
+
+```shell
+./buildDocker.bat
+```
+
+To run locally you can use
+
+```shell
+docker run --rm -p 8080:8080 <yourImagename>
+```
+
+After this you can check your image in the URL:
+
+```
+http://localhost:8080/name_of_war_file
+```
+
+---
+
 # How to execute (para testar cog search usar apenas 1 região e não dar deploy das az functions)
 
 -------------------------------------------------------------------------------------
