@@ -9,7 +9,7 @@
     <properties>
         <region>westeurope</region>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-        <authors>59243</authors>
+        <authors>60700</authors>
     </properties>
     <dependencies>
         <dependency>
@@ -151,6 +151,25 @@
                 <configuration>
                     <warSourceDirectory>WebContent</warSourceDirectory>
                 </configuration>
+                <executions>
+                    <execution>
+                        <id>default-war</id>
+                        <phase>package</phase>
+                        <goals>
+                            <goal>war</goal>
+                        </goals>
+                    </execution>
+                    <execution>
+                        <id>additional-war</id>
+                        <phase>package</phase>
+                        <goals>
+                            <goal>war</goal>
+                        </goals>
+                        <configuration>
+                            <outputDirectory>${project.basedir}/docker</outputDirectory>
+                        </configuration>
+                    </execution>
+                </executions>
             </plugin>
             <plugin>
                 <artifactId>maven-assembly-plugin</artifactId>
