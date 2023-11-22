@@ -1,0 +1,85 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: sccapp-redis-60700
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: sccapp-redis-60700
+  template:
+    metadata:
+      labels:
+        app: sccapp-redis-60700
+    spec:
+      nodeSelector:
+        "kubernetes.io/os": linux
+      containers:
+        - name: sccapp-redis-60700
+          image: redis
+          env:                             # environment variable for redis
+            - name: ALLOW_EMPTY_PASSWORD
+              value: "yes"
+          resources:
+            requests:
+              cpu: 100m                     # 100 mili cpu (10% of cpu time)
+              memory: 128Mi                 # 128 MB
+            limits:
+              cpu: 250m
+              memory: 256Mi
+          ports:
+            - containerPort: 6379           # port for accessing the container
+              name: redis
+---
+apiVersion: v1
+kind: Service                               # define a service
+metadata:
+  name: sccapp-redis-60700                  # name to acess the service
+spec:
+  ports:
+  - port: 6379
+  selector:
+    app: sccapp-redis-60700
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: sccapp-server-60700
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: sccapp-server-60700
+  template:
+    metadata:
+      labels:
+        app: sccapp-server-60700
+    spec:
+      nodeSelector:
+        "kubernetes.io/os": linux
+      containers:
+        - name: sccapp-server-60700
+          image: mcr.microsoft.com/azuredocs/azure-vote-front:v2          # needs to change this
+          resources:
+            requests:
+              cpu: 250m
+              memory: 256Mi
+            limits:
+              cpu: 500m
+              memory: 1024Mi
+          ports:
+            - containerPort: 80
+          env:
+            - name: REDIS
+              value: "sccapp-redis-60700"
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: sccapp-server-60700
+spec:
+  type: LoadBalancer
+  ports:
+    - port: 8080
+  selector:
+    app: sccapp-server-60700
