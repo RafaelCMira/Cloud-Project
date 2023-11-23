@@ -27,6 +27,46 @@ After this you can check your image in the URL:
 ```
 http://localhost:8080/name_of_war_file
 ```
+---
+## Deploying Kubernetes
+
+To run in azure Kubernetes you will need to create the azure resources first:
+
+Create resource group
+```shell
+ az group create --name scc2324-cluster-4204 --location westeurope
+```
+
+Create service
+
+```shell
+ az ad sp create-for-rbac --name http://scc2324-kuber --role Contributor --scope /subscriptions/ID_OF_YOUR_SUBSCRIPTION
+```
+
+Create cluster
+
+```shell
+az aks create --resource-group scc2324-cluster-4204 --name myscc2324-cluster-4204 --node-vm-size Standard_B2s --generate-ssh-keys --node-count 2 --service-principal appId_REPLACE --client-secret password_REPLACE
+ ```
+
+Get credentials to access the kubernetes cluster 
+
+```shell
+az aks get-credentials --resource-group scc2324-cluster-4204 --name my-scc2324-cluster-4204
+```
+
+And lastly you just need to apply our yaml in the docker dir.
+```shell
+kubectl apply -f sccapp.yaml
+```
+---
+
+## TO-DO
+
+  - [X] Yaml script to generate Kubernetes containers;
+  - [ ] Make a script to create the necessary resources (resource group, service ,cluster, get credentials);
+  - [ ] Change DB to use MongoDB;
+  - [ ] Change azure functions;
 
 ---
 

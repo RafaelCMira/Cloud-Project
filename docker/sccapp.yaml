@@ -16,17 +16,17 @@ spec:
         "kubernetes.io/os": linux
       containers:
         - name: sccapp-redis-60700
-          image: redis
+          image: mcr.microsoft.com/oss/bitnami/redis:6.0.8
           env:                             # environment variable for redis
             - name: ALLOW_EMPTY_PASSWORD
               value: "yes"
           resources:
             requests:
-              cpu: 100m                     # 100 mili cpu (10% of cpu time)
-              memory: 128Mi                 # 128 MB
+              cpu: 200m                     # 100 mili cpu (10% of cpu time)
+              memory: 256Mi                 # 128 MB
             limits:
-              cpu: 250m
-              memory: 256Mi
+              cpu: 500m
+              memory: 1024Mi
           ports:
             - containerPort: 6379           # port for accessing the container
               name: redis
@@ -59,7 +59,7 @@ spec:
         "kubernetes.io/os": linux
       containers:
         - name: sccapp-server-60700
-          image: mcr.microsoft.com/azuredocs/azure-vote-front:v2          # needs to change this
+          image: rlpereirafct2002/scc60700-app         # needs to change this
           resources:
             requests:
               cpu: 250m
