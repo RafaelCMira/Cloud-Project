@@ -8,6 +8,32 @@ Rafael Martins - 60602 - rlo.martins@campus.fct.unl.pt
 
 ---
 
+# Utils
+
+Run this script to do all the commands below at once
+
+```shell
+doesItall.ps1
+```
+
+To kill Kubernetes resources
+
+```shell
+kubectl delete deployments,services,pods --all
+```
+
+See Pods
+
+```shell
+kubectl get pods
+```
+
+See Services
+
+```shell
+kubectl get services
+```
+
 # How to deploy using docker
 
 Use the following command to compile, build docker image and push to docker hub.
