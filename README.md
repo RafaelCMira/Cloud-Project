@@ -25,48 +25,53 @@ docker run --rm -p 8080:8080 <yourImagename>
 After this you can check your image in the URL:
 
 ```
-http://localhost:8080/name_of_war_file
+http://localhost:8080/scc2324-1.0
 ```
+
 ---
+
 ## Deploying Kubernetes
 
 To run in azure Kubernetes you will need to create the azure resources first:
 
 Create resource group
+
 ```shell
- az group create --name scc2324-cluster-4204 --location westeurope
+ az group create --name scc2324-cluster-<student_number> --location westeurope
 ```
 
 Create service
 
 ```shell
- az ad sp create-for-rbac --name http://scc2324-kuber --role Contributor --scope /subscriptions/ID_OF_YOUR_SUBSCRIPTION
+ az ad sp create-for-rbac --name http://scc2324-kuber-<student_number> --role Contributor --scope <result_id_from_command_above> 
 ```
 
 Create cluster
 
 ```shell
-az aks create --resource-group scc2324-cluster-4204 --name myscc2324-cluster-4204 --node-vm-size Standard_B2s --generate-ssh-keys --node-count 2 --service-principal appId_REPLACE --client-secret password_REPLACE
+az aks create --resource-group scc2324-cluster-<student_number> --name my-scc2324-cluster-<student_number> --node-vm-size Standard_B2s --generate-ssh-keys --node-count 2 --service-principal <appId_from_command_above>  --client-secret <pwd_from_command_above>
  ```
 
-Get credentials to access the kubernetes cluster 
+Get credentials to access the kubernetes cluster
 
 ```shell
-az aks get-credentials --resource-group scc2324-cluster-4204 --name my-scc2324-cluster-4204
+az aks get-credentials --resource-group scc2324-cluster-<student_number> --name my-scc2324-cluster-<student_number>
 ```
 
 And lastly you just need to apply our yaml in the docker dir.
+
 ```shell
-kubectl apply -f sccapp.yaml
+kubectl apply -f .\docker\sccapp.yaml
 ```
+
 ---
 
 ## TO-DO
 
-  - [X] Yaml script to generate Kubernetes containers;
-  - [ ] Make a script to create the necessary resources (resource group, service ,cluster, get credentials);
-  - [ ] Change DB to use MongoDB;
-  - [ ] Change azure functions;
+- [X] Yaml script to generate Kubernetes containers;
+- [ ] Make a script to create the necessary resources (resource group, service ,cluster, get credentials);
+- [ ] Change DB to use MongoDB;
+- [ ] Change azure functions;
 
 ---
 
