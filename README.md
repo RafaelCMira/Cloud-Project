@@ -1,19 +1,19 @@
 # Group Members
 
-Rafael Mira - 59243 - rs.mira@campus.fct.unl.pt
-<br>
-Rafael Pereira - 60700 - rl.pereira@campus.fct.unl.pt
-<br>
-Rafael Martins - 60602 - rlo.martins@campus.fct.unl.pt
+| Nome           | Nº    | Email                         |
+|----------------|-------|-------------------------------|
+| Rafael Mira    | 59243 | rs.mira@campus.fct.unl.pt     |
+| Rafael Pereira | 60700 | rl.pereira@campus.fct.unl.pt  | 
+| Rafael Martins | 60602 | rlo.martins@campus.fct.unl.pt | 
 
 ---
 
 # Utils
 
-Run this script to do all the commands below at once
+Run this script to do the Kubernetes Deploy commands at once
 
 ```shell
-doesItall.ps1
+deployKubernetes.ps1
 ```
 
 To kill Kubernetes resources
@@ -95,13 +95,13 @@ kubectl apply -f .\docker\sccapp.yaml
 ## TO-DO
 
 - [X] Yaml script to generate Kubernetes containers;
-- [ ] Make a script to create the necessary resources (resource group, service ,cluster, get credentials);
+- [X] Make a script to create the necessary resources (resource group, service ,cluster, get credentials);
 - [ ] Change DB to use MongoDB;
 - [ ] Change azure functions;
 
 ---
 
-# How to execute (para testar cog search usar apenas 1 região e não dar deploy das az functions)
+# How to execute Project 1
 
 -------------------------------------------------------------------------------------
 -

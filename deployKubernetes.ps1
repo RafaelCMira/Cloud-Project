@@ -50,7 +50,6 @@ $appId = $serviceJSON.appId
 $password = $serviceJSON.password
 
 Write-Host "Creating Cluster..."
-Write-Host "service appId = $appId, password = $password"
 $resourceGroupOutput = az aks create --resource-group scc2324-cluster-$studentNumber --name my-scc2324-cluster-$studentNumber --node-vm-size Standard_B2s --generate-ssh-keys --node-count 2 --service-principal $appId  --client-secret $password
 
 Write-Host "Getting Kubernetes credentials..."
