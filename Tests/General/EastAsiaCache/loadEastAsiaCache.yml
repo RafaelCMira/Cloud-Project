@@ -15,7 +15,7 @@ scenarios:
   - name: 'load data'
     weight: 1
     flow:
-      #### Create 700 users ####
+      #### Create 500 users ####
       - loop:
 
           #### Post Images ####
