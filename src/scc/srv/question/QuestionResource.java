@@ -31,7 +31,7 @@ public class QuestionResource extends Validations implements QuestionService {
 
             checkQuestionCreation(session, questionDAO);
 
-            db.create(questionDAO, CONTAINER);
+            db.create(questionDAO, COLLECTION);
 
             Cache.putInCache(questionDAO, QUESTION_PREFIX);
 
@@ -48,7 +48,7 @@ public class QuestionResource extends Validations implements QuestionService {
     public Response replyToQuestion(Cookie session, String houseId, String questionId, QuestionDAO questionDAO) throws Exception {
         try {
             var updatedQuestion = genUpdatedQuestion(session, houseId, questionId, questionDAO);
-            db.update(updatedQuestion, CONTAINER, updatedQuestion.getHouseId());
+            db.update(updatedQuestion, COLLECTION, updatedQuestion.getHouseId());
 
             Cache.putInCache(updatedQuestion, QUESTION_PREFIX);
 

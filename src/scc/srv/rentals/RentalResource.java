@@ -40,7 +40,7 @@ public class RentalResource extends Validations implements RentalService {
 
             rentalDAO.setPrice((int) (daysBetween * (house.getPrice() - house.getDiscount())));
 
-            db.create(rentalDAO, CONTAINER);
+            db.create(rentalDAO, COLLECTION);
 
             // Check if the rental was successfull or some concurrent one got there first
             var rentalInDB = Validations.rentalExists(rentalDAO.getId());
@@ -54,7 +54,7 @@ public class RentalResource extends Validations implements RentalService {
             Cache.putInCache(rentalDAO, RENTAL_PREFIX);
 
             house.setRentalsCounter(house.getRentalsCounter() + 1);
-            db.update(house, HousesService.CONTAINER, houseId);
+            db.update(house, HousesService.COLLECTION, houseId);
 
             return sendResponse(OK, rentalDAO.toRental());
 
@@ -91,7 +91,7 @@ public class RentalResource extends Validations implements RentalService {
             if (checks.getStatus() != Response.Status.OK.getStatusCode())
                 return checks;
 
-            db.delete(id, CONTAINER, houseId);
+            db.delete(id, COLLECTION, houseId);
 
             Cache.deleteFromCache(RENTAL_PREFIX, id);
 
@@ -107,7 +107,7 @@ public class RentalResource extends Validations implements RentalService {
         try {
             var updatedRental = genUpdatedRental(session, houseId, id, rentalDAO);
 
-            db.update(updatedRental, RentalService.CONTAINER, updatedRental.getHouseId());
+            db.update(updatedRental, RentalService.COLLECTION, updatedRental.getHouseId());
 
             Cache.putInCache(updatedRental, RENTAL_PREFIX);
 
@@ -252,7 +252,7 @@ public class RentalResource extends Validations implements RentalService {
             return sendResponse(NOT_FOUND, HOUSE_MSG, houseId);
 
         // Check if rental belongs to the house
-        var res = db.get(id, RentalService.CONTAINER, RentalDAO.class).stream().findFirst();
+        var res = db.get(id, RentalService.COLLECTION, RentalDAO.class).stream().findFirst();
         if (res.isPresent()) {
             var rentalHouse = res.get().getHouseId();
             if (!rentalHouse.equals(houseId))

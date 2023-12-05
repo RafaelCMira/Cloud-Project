@@ -133,6 +133,16 @@
             <artifactId>jedis</artifactId>
             <version>5.0.1</version>
         </dependency>
+        <dependency>
+            <groupId>org.mongodb</groupId>
+            <artifactId>mongo-java-driver</artifactId>
+            <version>3.12.10</version> <!-- Replace with the latest version available -->
+        </dependency>
+        <dependency>
+            <groupId>jakarta.servlet</groupId>
+            <artifactId>jakarta.servlet-api</artifactId>
+            <version>6.0.0</version>
+        </dependency>
     </dependencies>
     <build>
         <sourceDirectory>src</sourceDirectory>
@@ -187,7 +197,7 @@
                 <version>2.12.0</version>
                 <configuration>
                     <schemaVersion>V2</schemaVersion>
-                    <pricingTier>F1</pricingTier>
+                    <pricingTier>B1</pricingTier>
                     <region>${region}</region>
                     <runtime>
                         <os>linux</os>

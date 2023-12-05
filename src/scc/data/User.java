@@ -2,8 +2,6 @@ package scc.data;
 
 import scc.srv.utils.HasId;
 
-import java.util.List;
-
 /**
  * Represents a User, as returned to the clients
  * <p>
@@ -11,7 +9,7 @@ import java.util.List;
  * handle the empty list.
  */
 public class User implements HasId {
-    private String id;
+    private String _id;
     private String name;
     private String pwd;
     private String photoId;
@@ -21,7 +19,7 @@ public class User implements HasId {
 
     public User(String id, String name, String pwd, String photoId) {
         super();
-        this.id = id;
+        this._id = id;
         this.name = name;
         this.pwd = pwd;
         this.photoId = photoId;
@@ -29,11 +27,11 @@ public class User implements HasId {
 
     @Override
     public String getId() {
-        return id;
+        return _id;
     }
 
     public void setId(String id) {
-        this.id = id;
+        this._id = id;
     }
 
     public String getName() {
@@ -63,7 +61,7 @@ public class User implements HasId {
     @Override
     public String toString() {
         return "User{" +
-                "id='" + id + '\'' +
+                "id='" + _id + '\'' +
                 ", name='" + name + '\'' +
                 ", pwd='" + pwd + '\'' +
                 ", photoId='" + photoId + '\'' +

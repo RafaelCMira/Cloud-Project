@@ -13,7 +13,7 @@ public interface QuestionService {
 
 
     String PARTITION_KEY = "/houseId";
-    String CONTAINER = "questions";
+    String COLLECTION = "questions";
     String QUESTION_PREFIX = "q:";
     String QUESTIONS_LIST_PREFIX = "q:house:%s-off:%s";
 

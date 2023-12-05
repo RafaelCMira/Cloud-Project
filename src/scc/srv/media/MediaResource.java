@@ -35,18 +35,8 @@ public class MediaResource implements MediaService {
         String id = Hash.of(contents);
         Path path = Path.of(STORAGE_PATH + id);
         try {
-            // BinaryData data = BinaryData.fromBytes(contents);
 
-            // Get container client
-            // BlobContainerClient containerClient = getContainerClient(MediaService.CONTAINER_NAME);
-
-            // Get client to blob
-            // BlobClient blob = containerClient.getBlobClient(id);
-
-            // Upload contents from BinaryData (check documentation for other alternatives)
-            // blob.upload(data);
-
-            Files.write(path,contents);
+            Files.write(path, contents);
 
         } catch (Exception e) {
             e.printStackTrace();
@@ -58,21 +48,12 @@ public class MediaResource implements MediaService {
         byte[] content = null;
 
         try {
-            // Get container client
-            //BlobContainerClient containerClient = getContainerClient(MediaService.CONTAINER_NAME);
 
-            // Get client to blob
-            //BlobClient blob = containerClient.getBlobClient(id);
-
-            // Download contents to BinaryData (check documentation for other alternatives)
-            //BinaryData data = blob.downloadContent();
             Path path = Path.of(STORAGE_PATH + id);
             if (!Files.exists(path))
                 return sendResponse(NOT_FOUND, MEDIA_MSG, id);
 
             content = Files.readAllBytes(path);
-
-            // content = data.toBytes();
 
             if (content.length == 0)
                 return sendResponse(NOT_FOUND, MEDIA_MSG, id);
@@ -84,11 +65,8 @@ public class MediaResource implements MediaService {
         return Response.ok(content).build();
     }
 
-
     public boolean hasPhotos(List<String> photosIds) {
         try {
-            // Get container client
-            //BlobContainerClient containerClient = getContainerClient(MediaService.CONTAINER_NAME);
             for (String photo : photosIds) {
                 Path path = Path.of(STORAGE_PATH + photo);
                 if (!Files.exists(path))
@@ -101,8 +79,6 @@ public class MediaResource implements MediaService {
     }
 
     public List<String> listImages() {
-        // Get container client
-        //BlobContainerClient containerClient = getContainerClient(MediaService.CONTAINER_NAME);
 
         //Get blobs
         Path path = Path.of(STORAGE_PATH);
@@ -113,17 +89,7 @@ public class MediaResource implements MediaService {
             return new ArrayList<>();
         }
 
-        // List blobs in the container
         return Arrays.stream(blob).toList();
     }
-
-    /*
-    // Get container client
-    private BlobContainerClient getContainerClient(String containerName) {
-        return new BlobContainerClientBuilder()
-                .connectionString(MediaService.storageConnectionString)
-                .containerName(containerName)
-                .buildClient();
-    }
-    */
+    
 }

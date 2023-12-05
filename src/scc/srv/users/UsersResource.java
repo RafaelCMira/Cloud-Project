@@ -1,34 +1,31 @@
 package scc.srv.users;
 
-import com.azure.cosmos.CosmosException;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.mongodb.MongoException;
 import jakarta.ws.rs.WebApplicationException;
 import jakarta.ws.rs.core.Cookie;
 import jakarta.ws.rs.core.NewCookie;
 import jakarta.ws.rs.core.Response;
 import scc.cache.Cache;
 import scc.data.*;
-import scc.db.CosmosDBLayer;
+import scc.db.MongoDBLayer;
 import scc.srv.authentication.Login;
 import scc.srv.authentication.Session;
-import scc.srv.houses.HousesService;
-import scc.srv.rentals.RentalService;
 import scc.srv.utils.Validations;
 import scc.utils.Hash;
 
 import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
-import java.util.concurrent.CompletableFuture;
 
 import static scc.srv.utils.Utility.*;
 
 
 public class UsersResource extends Validations implements UsersService {
 
-    private final CosmosDBLayer db = CosmosDBLayer.getInstance();
-    private static final ObjectMapper mapper = new ObjectMapper();
+    //  private final CosmosDBLayer db = CosmosDBLayer.getInstance();
+    private final MongoDBLayer db = MongoDBLayer.getInstance();
 
     @Override
     public Response auth(Login credentials) throws Exception {
@@ -63,8 +60,13 @@ public class UsersResource extends Validations implements UsersService {
 
     @Override
     public Response createUser(UserDAO userDAO) throws Exception {
-        if (Validations.badParams(userDAO.getId(), userDAO.getName(), userDAO.getPwd(), userDAO.getPhotoId()))
+        String id = userDAO.getId();
+
+        if (Validations.badParams(id, userDAO.getName(), userDAO.getPwd(), userDAO.getPhotoId()))
             return sendResponse(BAD_REQUEST, BAD_REQUEST_MSG);
+
+        if (Validations.userExists(id) != null)
+            return sendResponse(CONFLICT, USER_MSG, userDAO.getId());
 
         if (!Validations.mediaExists(List.of(userDAO.getPhotoId())))
             return sendResponse(NOT_FOUND, MEDIA_MSG, "(some id)");
@@ -72,14 +74,14 @@ public class UsersResource extends Validations implements UsersService {
         try {
             var plainPwd = userDAO.getPwd();
             userDAO.setPwd(Hash.of(plainPwd));
-            db.create(userDAO, CONTAINER);
+
+            db.create(userDAO, UsersService.COLLECTION);
 
             Cache.putInCache(userDAO, USER_PREFIX);
 
-            return auth(new Login(userDAO.getId(), plainPwd));
-
-        } catch (CosmosException ex) {
-            return processException(ex.getStatusCode(), USER_MSG, userDAO.getId());
+            return auth(new Login(id, plainPwd));
+        } catch (MongoException ex) {
+            return processException(ex.getCode(), USER_MSG, userDAO.getId());
         }
     }
 
@@ -95,23 +97,24 @@ public class UsersResource extends Validations implements UsersService {
         try {
             updateUserHousesAndRentals(id);
 
-            db.delete(id, CONTAINER, id);
+            db.delete(id, UsersService.COLLECTION);
 
             Cache.deleteFromCache(USER_PREFIX, id);
 
             return sendResponse(OK, String.format(RESOURCE_WAS_DELETED, USER_MSG, id));
 
-        } catch (CosmosException ex) {
-            return processException(ex.getStatusCode(), USER_MSG, id);
+        } catch (MongoException ex) {
+            return processException(ex.getCode(), USER_MSG, id);
         }
     }
 
     private void updateUserHousesAndRentals(String id) {
-        var updateHouses = CompletableFuture.runAsync(() -> {
+        //TODO
+       /* var updateHouses = CompletableFuture.runAsync(() -> {
             var userHouses = db.getUserHouses(id);
             for (var house : userHouses) {
                 house.setOwnerId(DELETED_USER);
-                db.update(house, HousesService.CONTAINER, house.getId());
+                // db.update(house, HousesService.CONTAINER, house.getId());
                 Cache.deleteFromCache(HousesService.HOUSE_PREFIX, house.getId());
             }
         });
@@ -120,13 +123,13 @@ public class UsersResource extends Validations implements UsersService {
             var userRentals = db.getAllUserRentals(id);
             for (var rental : userRentals) {
                 rental.setUserId(DELETED_USER);
-                db.update(rental, RentalService.CONTAINER, rental.getHouseId());
+                // db.update(rental, RentalService.CONTAINER, rental.getHouseId());
                 Cache.deleteFromCache(RentalService.RENTAL_PREFIX, rental.getId());
             }
         });
 
         var allUpdates = CompletableFuture.allOf(updateHouses, updateRentals);
-        allUpdates.join();
+        allUpdates.join();*/
     }
 
     @Override
@@ -136,30 +139,31 @@ public class UsersResource extends Validations implements UsersService {
 
         try {
             var user = Validations.userExists(id);
-            if (user != null) {
 
-                Cache.putInCache(user, USER_PREFIX);
-
-                return sendResponse(OK, user.toUser());
-
-            } else
+            if (user == null)
                 return sendResponse(NOT_FOUND, USER_MSG, id);
 
-        } catch (CosmosException ex) {
-            return processException(ex.getStatusCode(), USER_MSG, id);
+            Cache.putInCache(user, USER_PREFIX);
+
+            return sendResponse(OK, user.toUser());
+
+        } catch (MongoException ex) {
+            return processException(ex.getCode(), USER_MSG, id);
         }
     }
 
     @Override
     public Response updateUser(Cookie session, String id, User user) throws Exception {
-        try {
+        //TODO
+
+        /*try {
             var checkCookies = checkUserSession(session, id);
             if (checkCookies.getStatus() != Response.Status.OK.getStatusCode())
                 return checkCookies;
 
             var updatedUser = genUpdatedUserDAO(id, user);
 
-            db.update(updatedUser, CONTAINER, updatedUser.getId());
+            // db.update(updatedUser, CONTAINER, updatedUser.getId());
 
             Cache.putInCache(updatedUser, USER_PREFIX);
 
@@ -169,27 +173,29 @@ public class UsersResource extends Validations implements UsersService {
             return handleUpdateException(ex.getStatusCode(), ex.getMessage(), id);
         } catch (WebApplicationException ex) {
             return handleUpdateException(ex.getResponse().getStatus(), ex.getMessage(), id);
-        }
+        }*/
+        return null;
     }
 
     @Override
     public Response listUsers() {
         try {
-            List<User> users = db.getAll(CONTAINER, UserDAO.class).stream().map(UserDAO::toUser).toList();
-
+            var users = db.getAll(UsersService.COLLECTION, UserDAO.class);
             return sendResponse(OK, users.isEmpty() ? new ArrayList<>() : users);
 
-        } catch (CosmosException ex) {
-            return processException(ex.getStatusCode());
+        } catch (MongoException ex) {
+            return processException(ex.getCode());
         }
     }
 
     @Override
     public Response getUserHouses(String id, String offset) {
+        //TODO
+
         if (Validations.badParams(id))
             return sendResponse(BAD_REQUEST, BAD_REQUEST_MSG);
 
-        try {
+        /*try {
             var user = Validations.userExists(id);
             if (user != null) {
 
@@ -216,12 +222,14 @@ public class UsersResource extends Validations implements UsersService {
             return processException(ex.getStatusCode(), USER_MSG, id);
         } catch (JsonProcessingException e) {
             throw new RuntimeException(e);
-        }
+        }*/
+        return null;
     }
 
     @Override
     public Response getUserRentals(String id, String offset) {
-        if (Validations.badParams(id))
+        //TODO
+       /* if (Validations.badParams(id))
             return sendResponse(BAD_REQUEST, BAD_REQUEST_MSG);
 
         try {
@@ -251,7 +259,8 @@ public class UsersResource extends Validations implements UsersService {
             return processException(ex.getStatusCode(), USER_MSG, id);
         } catch (JsonProcessingException e) {
             throw new RuntimeException(e);
-        }
+        }*/
+        return null;
     }
 
     private UserDAO genUpdatedUserDAO(String id, User user) throws WebApplicationException {

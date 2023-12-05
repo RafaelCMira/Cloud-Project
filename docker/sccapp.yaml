@@ -1,23 +1,66 @@
+# MongoDB
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: sccapp-redis-60700
+  name: sccapp-mongodb-59243
 spec:
   replicas: 1
   selector:
     matchLabels:
-      app: sccapp-redis-60700
+      app: sccapp-mongodb-59243
   template:
     metadata:
       labels:
-        app: sccapp-redis-60700
+        app: sccapp-mongodb-59243
     spec:
       nodeSelector:
         "kubernetes.io/os": linux
       containers:
-        - name: sccapp-redis-60700
+        - name: sccapp-mongodb-59243
+          image: mongo:latest
+          resources:
+            requests:
+              cpu: 200m
+              memory: 256Mi
+            limits:
+              cpu: 500m
+              memory: 1024Mi
+          ports:
+            - containerPort: 27017  # MongoDB default port
+              name: mongo
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: sccapp-mongodb-59243
+spec:
+  ports:
+    - port: 27017
+  selector:
+    app: sccapp-mongodb-59243
+---
+
+# Redis
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: sccapp-redis-59243
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: sccapp-redis-59243
+  template:
+    metadata:
+      labels:
+        app: sccapp-redis-59243
+    spec:
+      nodeSelector:
+        "kubernetes.io/os": linux
+      containers:
+        - name: sccapp-redis-59243
           image: mcr.microsoft.com/oss/bitnami/redis:6.0.8
-          env:                             # environment variable for redis
+          env: # environment variable for redis
             - name: ALLOW_EMPTY_PASSWORD
               value: "yes"
           resources:
@@ -34,44 +77,48 @@ spec:
 apiVersion: v1
 kind: Service                               # define a service
 metadata:
-  name: sccapp-redis-60700                  # name to acess the service
+  name: sccapp-redis-59243                  # name to acess the service
 spec:
   ports:
-  - port: 6379
+    - port: 6379
   selector:
-    app: sccapp-redis-60700
+    app: sccapp-redis-59243
 ---
+
+# Storage
 apiVersion: v1
 kind: PersistentVolumeClaim
 metadata:
   name: azure-managed-disk
 spec:
   accessModes:
-    - ReadWriteOnce
+    - ReadWriteOnce #TODO -> Usar ReadWriteMany
   storageClassName: azurefile
   resources:
     requests:
       storage: 1Gi
 ---
+
+# App Server
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: sccapp-server-60700
+  name: sccapp-server-59243
 spec:
   replicas: 1
   selector:
     matchLabels:
-      app: sccapp-server-60700
+      app: sccapp-server-59243
   template:
     metadata:
       labels:
-        app: sccapp-server-60700
+        app: sccapp-server-59243
     spec:
       nodeSelector:
         "kubernetes.io/os": linux
       containers:
-        - name: sccapp-server-60700
-          image: rlpereirafct2002/scc60700-app:latest         # needs to change this
+        - name: sccapp-server-59243
+          image: rafaelmira/scc59243-app:latest
           volumeMounts:
             - mountPath: "/mnt/vol"
               name: mediavolume
@@ -86,7 +133,7 @@ spec:
             - containerPort: 80
           env:
             - name: REDIS
-              value: "sccapp-redis-60700"
+              value: "sccapp-redis-59243"
             - name: STORAGE_PATH
               value: "/mnt/vol/"
       volumes:
@@ -97,10 +144,10 @@ spec:
 apiVersion: v1
 kind: Service
 metadata:
-  name: sccapp-server-60700
+  name: sccapp-server-59243
 spec:
   type: LoadBalancer
   ports:
     - port: 8080
   selector:
-    app: sccapp-server-60700
+    app: sccapp-server-59243

@@ -16,7 +16,7 @@ public interface UsersService {
 
 
     String PARTITION_KEY = "/id";
-    String CONTAINER = "users";
+    String COLLECTION = "users";
     String USER_PREFIX = "u:";
 
     String USER_HOUSES_PREFIX = "u:%s-h:-off:%s";

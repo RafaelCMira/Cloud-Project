@@ -1,7 +1,7 @@
 package scc.data;
 
-import java.util.List;
-
+import org.bson.Document;
+import org.bson.codecs.pojo.annotations.BsonId;
 import scc.srv.utils.HasId;
 import scc.utils.Hash;
 
@@ -9,9 +9,9 @@ import scc.utils.Hash;
  * Represents a User, as stored in the database
  */
 public class UserDAO implements HasId {
-    private String _rid;
-    private String _ts;
-    private String id;
+
+    @BsonId
+    private String _id;
     private String name;
     private String pwd;
     private String photoId;
@@ -25,35 +25,19 @@ public class UserDAO implements HasId {
 
     public UserDAO(String userID, String name, String pwd, String photoId) {
         super();
-        this.id = userID;
+        this._id = userID;
         this.name = name;
         this.pwd = Hash.of(pwd);
         this.photoId = photoId;
     }
 
-    public String get_rid() {
-        return _rid;
-    }
-
-    public void set_rid(String _rid) {
-        this._rid = _rid;
-    }
-
-    public String get_ts() {
-        return _ts;
-    }
-
-    public void set_ts(String _ts) {
-        this._ts = _ts;
-    }
-
     @Override
     public String getId() {
-        return id;
+        return _id;
     }
 
     public void setId(String id) {
-        this.id = id;
+        this._id = id;
     }
 
     public String getName() {
@@ -82,15 +66,13 @@ public class UserDAO implements HasId {
 
 
     public User toUser() {
-        return new User(id, name, pwd, photoId);
+        return new User(_id, name, pwd, photoId);
     }
 
     @Override
     public String toString() {
         return "UserDAO{" +
-                "_rid='" + _rid + '\'' +
-                ", _ts='" + _ts + '\'' +
-                ", id='" + id + '\'' +
+                "id='" + _id + '\'' +
                 ", name='" + name + '\'' +
                 ", pwd='" + pwd + '\'' +
                 ", photoId='" + photoId + '\'' +

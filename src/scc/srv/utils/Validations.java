@@ -2,12 +2,15 @@ package scc.srv.utils;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.mongodb.client.FindIterable;
+import org.bson.Document;
 import scc.cache.Cache;
 import scc.data.HouseDAO;
 import scc.data.QuestionDAO;
 import scc.data.RentalDAO;
 import scc.data.UserDAO;
 import scc.db.CosmosDBLayer;
+import scc.db.MongoDBLayer;
 import scc.srv.houses.HousesService;
 import scc.srv.media.MediaResource;
 import scc.srv.question.QuestionService;
@@ -19,7 +22,8 @@ import java.util.List;
 
 public class Validations {
 
-    private static final CosmosDBLayer db = CosmosDBLayer.getInstance();
+    private static final CosmosDBLayer db = null;//CosmosDBLayer.getInstance();
+    private static final MongoDBLayer mongoDBLayer = MongoDBLayer.getInstance();
     private static final ObjectMapper mapper = new ObjectMapper();
 
     public Validations() {
@@ -41,9 +45,10 @@ public class Validations {
             if (userCache != null)
                 return mapper.readValue(userCache, UserDAO.class);
 
-            var dbUser = db.get(userId, UsersService.CONTAINER, UserDAO.class).stream().findFirst();
-            if (dbUser.isPresent())
-                return dbUser.get();
+            Document dbUser = mongoDBLayer.get(userId, UsersService.COLLECTION);
+            if (dbUser != null) {
+                return mapper.readValue(dbUser.toJson(), UserDAO.class);
+            }
 
         } catch (JsonProcessingException ignore) {
         }
@@ -60,9 +65,10 @@ public class Validations {
             if (cacheHouse != null)
                 return mapper.readValue(cacheHouse, HouseDAO.class);
 
-            var dbHouse = db.get(houseId, HousesService.CONTAINER, HouseDAO.class).stream().findFirst();
-            if (dbHouse.isPresent())
-                return dbHouse.get();
+            Document dbHouse = mongoDBLayer.get(houseId, HousesService.COLLECTION);
+            if (dbHouse != null) {
+                return mapper.readValue(dbHouse.toJson(), HouseDAO.class);
+            }
 
         } catch (JsonProcessingException ignore) {
         }
@@ -79,7 +85,7 @@ public class Validations {
             if (rentalCache != null)
                 return mapper.readValue(rentalCache, RentalDAO.class);
 
-            var dbRental = db.get(rentalId, RentalService.CONTAINER, RentalDAO.class).stream().findFirst();
+            var dbRental = db.get(rentalId, RentalService.COLLECTION, RentalDAO.class).stream().findFirst();
             if (dbRental.isPresent())
                 return dbRental.get();
 
@@ -99,7 +105,7 @@ public class Validations {
             if (questionCache != null)
                 return mapper.readValue(questionCache, QuestionDAO.class);
 
-            var dbQuestion = db.get(questionId, QuestionService.CONTAINER, QuestionDAO.class).stream().findFirst();
+            var dbQuestion = db.get(questionId, QuestionService.COLLECTION, QuestionDAO.class).stream().findFirst();
             if (dbQuestion.isPresent())
                 return dbQuestion.get();
 

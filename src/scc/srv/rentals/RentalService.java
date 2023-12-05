@@ -15,7 +15,7 @@ public interface RentalService {
 
 
     String PARTITION_KEY = "/houseId";
-    String CONTAINER = "rentals";
+    String COLLECTION = "rentals";
     String RENTAL_PREFIX = "r:";
 
 

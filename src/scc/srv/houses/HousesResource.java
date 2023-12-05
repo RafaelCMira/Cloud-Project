@@ -1,22 +1,18 @@
 package scc.srv.houses;
 
-import com.azure.cosmos.CosmosException;
-import com.azure.search.documents.SearchDocument;
-import com.azure.search.documents.models.SearchOptions;
-import com.azure.search.documents.util.SearchPagedIterable;
-import com.azure.search.documents.util.SearchPagedResponse;
+
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.mongodb.MongoException;
 import jakarta.ws.rs.WebApplicationException;
 import jakarta.ws.rs.core.Cookie;
 import jakarta.ws.rs.core.Response;
 import scc.cache.Cache;
-import scc.cognitiveSearch.CognitiveSearchByQuestions;
-import scc.cognitiveSearch.CognitiveSearchLayer;
 import scc.data.*;
-import scc.db.CosmosDBLayer;
+import scc.db.MongoDBLayer;
 import scc.srv.question.QuestionService;
 import scc.srv.rentals.RentalService;
+import scc.srv.users.UsersService;
 import scc.srv.utils.Utility;
 import scc.srv.utils.Validations;
 
@@ -28,7 +24,7 @@ import static scc.srv.utils.Utility.*;
 
 public class HousesResource extends Validations implements HousesService {
 
-    private final CosmosDBLayer db = CosmosDBLayer.getInstance();
+    private final MongoDBLayer mongoDB = MongoDBLayer.getInstance();
     private static final ObjectMapper mapper = new ObjectMapper();
 
     @Override
@@ -36,16 +32,20 @@ public class HousesResource extends Validations implements HousesService {
         try {
             houseDAO.setId(UUID.randomUUID().toString());
             checkHouseCreation(session, houseDAO);
+
+            if (Validations.houseExists(houseDAO.getId()) != null)
+                return sendResponse(CONFLICT, HOUSE_MSG, houseDAO.getId());
+
             houseDAO.setRentalsCounter(0);
 
-            db.create(houseDAO, CONTAINER);
+            mongoDB.create(houseDAO, HousesService.COLLECTION);
 
             Cache.putInCache(houseDAO, HOUSE_PREFIX);
 
             return sendResponse(OK, houseDAO.toHouse());
 
-        } catch (CosmosException ex) {
-            return handleCreateException(ex.getStatusCode(), ex.getMessage(), houseDAO);
+        } catch (MongoException ex) {
+            return handleCreateException(ex.getCode(), ex.getMessage(), houseDAO);
         } catch (WebApplicationException ex) {
             return handleCreateException(ex.getResponse().getStatus(), ex.getMessage(), houseDAO);
         }
@@ -74,7 +74,7 @@ public class HousesResource extends Validations implements HousesService {
             if (checks.getStatus() != Response.Status.OK.getStatusCode())
                 return checks;
 
-            db.delete(id, CONTAINER, id);
+            mongoDB.delete(id, HousesService.COLLECTION);
 
             Cache.deleteFromCache(HOUSE_PREFIX, id);
 
@@ -82,19 +82,20 @@ public class HousesResource extends Validations implements HousesService {
 
             return sendResponse(OK, String.format(RESOURCE_WAS_DELETED, HOUSE_MSG, id));
 
-        } catch (CosmosException ex) {
-            return processException(ex.getStatusCode(), ex.getMessage(), id);
+        } catch (MongoException ex) {
+            return processException(ex.getCode(), ex.getMessage(), id);
         }
     }
 
     private void deleteHouseRentals(String id) {
-        CompletableFuture.runAsync(() -> {
+        //todo
+        /*CompletableFuture.runAsync(() -> {
             var houseRentals = db.getAllHouseRentals(id);
             for (var rental : houseRentals) {
-                db.delete(rental.getId(), RentalService.CONTAINER, rental.getHouseId());
+                db.delete(rental.getId(), RentalService.COLLECTION, rental.getHouseId());
             }
             Cache.deleteAllFromCache(RentalService.RENTAL_PREFIX, houseRentals.stream().map(RentalDAO::getId).toList());
-        });
+        });*/
     }
 
     private Response checkHouseDeletion(Cookie session, String id) throws Exception {
@@ -134,13 +135,14 @@ public class HousesResource extends Validations implements HousesService {
 
             return sendResponse(OK, house.toHouse());
 
-        } catch (CosmosException ex) {
-            return processException(ex.getStatusCode(), ex.getMessage());
+        } catch (MongoException ex) {
+            return processException(ex.getCode(), ex.getMessage());
         }
     }
 
     private void loadHouse5MostRecentQuestions(String houseId) {
-        CompletableFuture.runAsync(() -> {
+        //TODO
+        /*CompletableFuture.runAsync(() -> {
             var questions = db.getHouseQuestions(houseId, "0").stream().map(QuestionDAO::toQuestion).toList();
             try {
                 String key = String.format(QuestionService.QUESTIONS_LIST_PREFIX, houseId, "0");
@@ -148,15 +150,16 @@ public class HousesResource extends Validations implements HousesService {
             } catch (JsonProcessingException e) {
                 throw new RuntimeException(e);
             }
-        });
+        });*/
     }
 
     @Override
     public Response updateHouse(Cookie session, String id, House house) throws Exception {
-        try {
+        //TODO
+        /*try {
             var updatedHouse = genUpdatedHouse(session, id, house);
 
-            db.update(updatedHouse, CONTAINER, updatedHouse.getId());
+            db.update(updatedHouse, COLLECTION, updatedHouse.getId());
 
             Cache.putInCache(updatedHouse, HOUSE_PREFIX);
 
@@ -166,24 +169,25 @@ public class HousesResource extends Validations implements HousesService {
             return handleUpdateException(ex.getStatusCode(), ex.getMessage(), id);
         } catch (WebApplicationException ex) {
             return handleUpdateException(ex.getResponse().getStatus(), ex.getMessage(), id);
-        }
+        }*/
+        return null;
     }
 
     @Override
     public Response listAllHouses() {
         try {
-            List<House> houses = db.getAll(CONTAINER, HouseDAO.class).stream().map(HouseDAO::toHouse).toList();
-
+            var houses = mongoDB.getAll(HousesService.COLLECTION, HouseDAO.class);
             return sendResponse(OK, houses.isEmpty() ? new ArrayList<>() : houses);
 
-        } catch (CosmosException ex) {
-            return processException(ex.getStatusCode());
+        } catch (MongoException ex) {
+            return processException(ex.getCode());
         }
     }
 
     @Override
     public Response getAvailableHouseByLocation(String location, String offset) {
-        try {
+        //TODO
+        /*try {
             List<House> houses = new ArrayList<>();
 
             String key = String.format(HOUSES_BY_LOCATION_PREFIX, location, offset);
@@ -213,12 +217,14 @@ public class HousesResource extends Validations implements HousesService {
             return processException(ex.getStatusCode(), ex.getMessage());
         } catch (JsonProcessingException e) {
             throw new RuntimeException(e);
-        }
+        }*/
+        return null;
     }
 
     @Override
     public Response getHouseByLocationPeriod(String location, String initialDate, String endDate, String offset) {
-        try {
+        //todo
+        /*try {
             var houses = db.getHousesByLocation(location, offset);
             var availableHouses = new ArrayList<>();
 
@@ -231,7 +237,8 @@ public class HousesResource extends Validations implements HousesService {
 
         } catch (CosmosException ex) {
             return processException(ex.getStatusCode(), ex.getMessage());
-        }
+        }*/
+        return null;
     }
 
     private HouseDAO genUpdatedHouse(Cookie session, String id, House house) throws Exception {
@@ -285,7 +292,8 @@ public class HousesResource extends Validations implements HousesService {
 
     @Override
     public Response getNewHouses() {
-        try {
+        //TODO
+        /*try {
             var cacheHouses = Cache.getListFromCache(NEW_HOUSES_PREFIX);
 
             List<HouseDAO> houses = new ArrayList<>();
@@ -297,62 +305,8 @@ public class HousesResource extends Validations implements HousesService {
 
         } catch (JsonProcessingException e) {
             return processException(500);
-        }
-    }
-
-    @Override
-    public Response getHousesByDescription(String description) {
-        try {
-            SearchOptions options = new SearchOptions()
-                    .setIncludeTotalCount(true)
-                    .setSearchFields("description")
-                    .setTop(5);
-            SearchPagedIterable search = CognitiveSearchLayer.getInstance().search(description, options);
-            List<Object> houses = new ArrayList<>();
-
-            for (SearchPagedResponse resultResponse : search.iterableByPage()) {
-                resultResponse.getValue().forEach(searchResult -> {
-                    for (Map.Entry<String, Object> res : searchResult.getDocument(SearchDocument.class).entrySet()) {
-                        houses.add(res.getValue());
-                    }
-                });
-            }
-
-            return sendResponse(OK, houses);
-
-        } catch (Exception e) {
-            return processException(500);
-        }
-    }
-    
-    @Override
-    public Response getHousesByQuestions(String question) {
-        try {
-            SearchOptions options = new SearchOptions()
-                    .setIncludeTotalCount(true)
-                    .setSearchFields("text")
-                    .setTop(10);
-            SearchPagedIterable search = CognitiveSearchByQuestions.getInstance().search(question, options);
-
-            var houses = new ArrayList<>();
-
-            for (SearchPagedResponse resultResponse : search.iterableByPage()) {
-
-                resultResponse.getValue().forEach(searchResult -> {
-                    for (Map.Entry<String, Object> res : searchResult.getDocument(SearchDocument.class).entrySet()) {
-                        if (res.getKey().equals("houseId")) {
-                            var house = db.get(res.getValue().toString(), HousesService.CONTAINER, HouseDAO.class).stream().map(HouseDAO::toHouse).findFirst();
-                            house.ifPresent(houses::add);
-                        }
-                    }
-                });
-            }
-
-            return sendResponse(OK, houses);
-
-        } catch (Exception e) {
-            return processException(500);
-        }
+        }*/
+        return null;
     }
 
     private Response handleCreateException(int statusCode, String msg, HouseDAO houseDAO) {

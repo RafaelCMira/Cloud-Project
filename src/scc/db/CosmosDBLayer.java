@@ -97,7 +97,7 @@ public class CosmosDBLayer {
     public CosmosPagedIterable<HouseDAO> listUserHouses(String id, String offset) {
         init();
         String query = String.format("SELECT * FROM houses WHERE houses.ownerId=\"%s\" OFFSET %s LIMIT %s", id, offset, USER_HOUSES_LIMIT);
-        return db.getContainer(HousesService.CONTAINER).queryItems(query, new CosmosQueryRequestOptions(), HouseDAO.class);
+        return db.getContainer(HousesService.COLLECTION).queryItems(query, new CosmosQueryRequestOptions(), HouseDAO.class);
     }
 
     ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -107,14 +107,14 @@ public class CosmosDBLayer {
     public CosmosPagedIterable<HouseDAO> getHousesByLocation(String location, String offset) {
         init();
         String query = String.format("SELECT * FROM houses WHERE houses.location=\"%s\" OFFSET %s LIMIT %s", location, offset, HOUSES_LIMIT);
-        return db.getContainer(HousesService.CONTAINER).queryItems(query, new CosmosQueryRequestOptions(), HouseDAO.class);
+        return db.getContainer(HousesService.COLLECTION).queryItems(query, new CosmosQueryRequestOptions(), HouseDAO.class);
     }
 
     // Query usada para colocar deleted user nas houses dele quando é eliminado
     public CosmosPagedIterable<HouseDAO> getUserHouses(String ownerId) {
         init();
         String query = String.format("SELECT * FROM houses WHERE houses.ownerId=\"%s\"", ownerId);
-        return db.getContainer(HousesService.CONTAINER).queryItems(query, new CosmosQueryRequestOptions(), HouseDAO.class);
+        return db.getContainer(HousesService.COLLECTION).queryItems(query, new CosmosQueryRequestOptions(), HouseDAO.class);
     }
 
 
@@ -122,7 +122,7 @@ public class CosmosDBLayer {
     public CosmosPagedIterable<HouseDAO> getHousesWithDiscount(String offset) {
         init();
         String query = String.format("SELECT * FROM houses WHERE houses.discount > 0 OFFSET %s LIMIT %s", offset, HOUSES_LIMIT);
-        return db.getContainer(HousesService.CONTAINER).queryItems(query, new CosmosQueryRequestOptions(), HouseDAO.class);
+        return db.getContainer(HousesService.COLLECTION).queryItems(query, new CosmosQueryRequestOptions(), HouseDAO.class);
     }
 
     ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -133,26 +133,26 @@ public class CosmosDBLayer {
     public CosmosPagedIterable<RentalDAO> getAllHouseRentals(String houseId) {
         init();
         var key = new PartitionKey(houseId);
-        return db.getContainer(RentalService.CONTAINER).readAllItems(key, RentalDAO.class);
+        return db.getContainer(RentalService.COLLECTION).readAllItems(key, RentalDAO.class);
     }
 
     public CosmosPagedIterable<RentalDAO> getHouseRentals(String houseId, String offset) {
         init();
         String query = String.format("SELECT * FROM rentals WHERE rentals.houseId=\"%s\" OFFSET %s LIMIT %s", houseId, offset, HOUSES_LIMIT);
-        return db.getContainer(RentalService.CONTAINER).queryItems(query, new CosmosQueryRequestOptions(), RentalDAO.class);
+        return db.getContainer(RentalService.COLLECTION).queryItems(query, new CosmosQueryRequestOptions(), RentalDAO.class);
     }
 
     // Query usada para colocar deleted user nos rentals dele quando é eliminado
     public CosmosPagedIterable<RentalDAO> getAllUserRentals(String userId) {
         init();
         String query = String.format("SELECT * FROM rentals WHERE rentals.userId=\"%s\"", userId);
-        return db.getContainer(RentalService.CONTAINER).queryItems(query, new CosmosQueryRequestOptions(), RentalDAO.class);
+        return db.getContainer(RentalService.COLLECTION).queryItems(query, new CosmosQueryRequestOptions(), RentalDAO.class);
     }
 
     public CosmosPagedIterable<RentalDAO> getUserRentals(String userId, String offset) {
         init();
         String query = String.format("SELECT * FROM rentals WHERE rentals.userId=\"%s\" OFFSET %s LIMIT %s", userId, offset, HOUSES_LIMIT);
-        return db.getContainer(RentalService.CONTAINER).queryItems(query, new CosmosQueryRequestOptions(), RentalDAO.class);
+        return db.getContainer(RentalService.COLLECTION).queryItems(query, new CosmosQueryRequestOptions(), RentalDAO.class);
     }
 
     ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -162,7 +162,7 @@ public class CosmosDBLayer {
     public CosmosPagedIterable<QuestionDAO> getHouseQuestions(String houseId, String offset) {
         init();
         String query = String.format("SELECT * FROM questions WHERE questions.houseId=\"%s\" OFFSET %s LIMIT %s", houseId, offset, QUESTIONS_LIMIT);
-        return db.getContainer(QuestionService.CONTAINER).queryItems(query, new CosmosQueryRequestOptions(), QuestionDAO.class);
+        return db.getContainer(QuestionService.COLLECTION).queryItems(query, new CosmosQueryRequestOptions(), QuestionDAO.class);
     }
 
     public void close() {

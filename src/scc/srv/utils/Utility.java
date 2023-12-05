@@ -1,11 +1,14 @@
 package scc.srv.utils;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import jakarta.ws.rs.core.Cookie;
 import jakarta.ws.rs.core.Response;
+import org.bson.Document;
 import scc.cache.Cache;
 import scc.srv.authentication.Session;
 
+import java.io.IOException;
 import java.time.Instant;
 import java.time.LocalDate;
 import java.time.ZoneId;
@@ -118,5 +121,24 @@ public class Utility {
         DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd");
         Instant start = LocalDate.parse(date, formatter).atStartOfDay(ZoneId.systemDefault()).toInstant();
         return Date.from(start);
+    }
+
+    // Converts JSON to Object
+    public static <T> T mapDocumentToObject(Document document, Class<T> c) {
+        try {
+            return mapper.readValue(document.toJson(), c);
+        } catch (IOException e) {
+            return null;
+        }
+    }
+
+    // Convert an object to its JSON representation
+    public static String itemToJsonString(Object item) {
+        ObjectMapper mapper = new ObjectMapper();
+        try {
+            return mapper.writeValueAsString(item);
+        } catch (JsonProcessingException e) {
+            throw new RuntimeException(e);
+        }
     }
 }

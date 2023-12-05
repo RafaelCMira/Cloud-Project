@@ -14,7 +14,7 @@ public interface HousesService {
 
 
     String PARTITION_KEY = "/id";
-    String CONTAINER = "houses";
+    String COLLECTION = "houses";
     String HOUSE_PREFIX = "h:";
 
     String MOST_RECENT_DISCOUNTS = "houses:disc";
@@ -82,21 +82,5 @@ public interface HousesService {
     @Path(NEW_HOUSES)
     @Produces(MediaType.APPLICATION_JSON)
     Response getNewHouses();
-
-    //******************************************************************************************************************
-    //*************************************** COGNITIVE SEARCH *********************************************************
-    //******************************************************************************************************************
-
-
-    @GET
-    @Path(COGNITIVE_SEARCH + HOUSE_BY_DESC)
-    @Produces(MediaType.APPLICATION_JSON)
-    Response getHousesByDescription(@QueryParam(DESCRIPTION) String description);
-
-
-    @GET
-    @Path(COGNITIVE_SEARCH + HOUSE_BY_QUESTION)
-    @Produces(MediaType.APPLICATION_JSON)
-    Response getHousesByQuestions(@QueryParam(QUESTION) String question);
 
 }
