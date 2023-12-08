@@ -15,6 +15,7 @@ import scc.srv.rentals.RentalService;
 import scc.srv.users.UsersService;
 import scc.srv.utils.Utility;
 
+import javax.print.Doc;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -24,7 +25,7 @@ public class MongoDBLayer {
     public static final String CONNECTION_STRING = "mongodb://sccapp-mongodb-59243:27017";
     public static final String DATABASE_NAME = "myMongoDB";
 
-    private final String _ID = "_id";
+    private final String ID = "id";
 
     private static MongoDBLayer instance;
     private final MongoClient mongoClient;
@@ -76,55 +77,25 @@ public class MongoDBLayer {
         init();
         MongoCollection<Document> collection = database.getCollection(collectionName);
         Document document = Document.parse(Utility.itemToJsonString(item));
-
-        System.out.println("JSON Document before insertion: " + document.toJson());
         collection.insertOne(document);
-        System.out.println("Document inserted successfully.");
     }
-
-
-
-   /* public <T> T get(String id, String collectionName, Class<T> c) {
-        init();
-        MongoCollection<T> collection = database.getCollection(collectionName, c);
-        return collection.find(Filters.eq(_ID, id)).first();
-    }
-
-    public <T> void delete(String id, String collectionName, Class<T> c) {
-        init();
-        MongoCollection<T> collection = database.getCollection(collectionName, c);
-        collection.deleteOne(Filters.eq(_ID, id));
-    }
-
-    public <T> FindIterable<T> getAll(String collectionName, Class<T> C) {
-        init();
-        return database.getCollection(collectionName, C).find();
-    }*/
-
+    
     public Document get(String id, String collectionName) {
         init();
         MongoCollection<Document> collection = database.getCollection(collectionName);
-        return collection.find(Filters.eq("id", id)).first();
+        return collection.find(Filters.eq(ID, id)).first();
     }
 
     public void delete(String id, String collectionName) {
         init();
         MongoCollection<Document> collection = database.getCollection(collectionName);
-        collection.deleteOne(new Document(_ID, id));
+        collection.deleteOne(Filters.eq(ID, id));
     }
 
-    public <T> List<T> getAll(String collectionName, Class<T> c) {
+    public FindIterable<Document> getAll(String collectionName) {
         init();
-        FindIterable<Document> documents = database.getCollection(collectionName).find();
-
-        List<T> resultList = new ArrayList<>();
-
-        for (Document doc : documents) {
-            T item = Utility.mapDocumentToObject(doc, c);
-            resultList.add(item);
-        }
-
-        return resultList;
+        return database.getCollection(collectionName).find();
     }
+
 
 }

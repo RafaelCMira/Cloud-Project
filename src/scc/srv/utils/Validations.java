@@ -41,15 +41,19 @@ public class Validations {
      * Verify if house exists
      */
     protected static UserDAO userExists(String userId) {
-      /*  try {
+        try {
             var userCache = Cache.getFromCache(UsersService.USER_PREFIX, userId);
             if (userCache != null)
                 return mapper.readValue(userCache, UserDAO.class);
-*/
-        Document dbUser = mongoDBLayer.get(userId, UsersService.COLLECTION);
-        if (dbUser != null) {
-            return UserDAO.fromDocument(dbUser);
+
+            Document dbUser = mongoDBLayer.get(userId, UsersService.COLLECTION);
+            if (dbUser != null) {
+                return UserDAO.fromDocument(dbUser);
+            }
+            
+        } catch (JsonProcessingException ignore) {
         }
+
         return null;
     }
 
@@ -58,13 +62,13 @@ public class Validations {
      */
     protected static HouseDAO houseExists(String houseId) {
         try {
-            /*var cacheHouse = Cache.getFromCache(HousesService.HOUSE_PREFIX, houseId);
+            var cacheHouse = Cache.getFromCache(HousesService.HOUSE_PREFIX, houseId);
             if (cacheHouse != null)
                 return mapper.readValue(cacheHouse, HouseDAO.class);
-*/
+
             Document dbHouse = mongoDBLayer.get(houseId, HousesService.COLLECTION);
             if (dbHouse != null) {
-                return mapper.readValue(dbHouse.toJson(), HouseDAO.class);
+                return HouseDAO.fromDocument(dbHouse);
             }
 
         } catch (JsonProcessingException ignore) {

@@ -87,7 +87,6 @@ public class UsersResource extends Validations implements UsersService {
             return auth(new Login(id, plainPwd));
         } catch (MongoException ex) {
             return Response.status(500).entity(ex.getMessage()).build();
-            //  return processException(ex.getCode(), USER_MSG, userDAO.getId());
         }
     }
 
@@ -186,9 +185,13 @@ public class UsersResource extends Validations implements UsersService {
     @Override
     public Response listUsers() {
         try {
-            var usersDocuments = db.getAll(UsersService.COLLECTION, UserDAO.class);
+            var usersDocuments = db.getAll(UsersService.COLLECTION);
 
-            var users = new ArrayList<>(usersDocuments);
+            var users = new ArrayList<>();
+
+            for (var doc : usersDocuments) {
+                users.add(UserDAO.fromDocument(doc));
+            }
 
             return sendResponse(OK, users);
 

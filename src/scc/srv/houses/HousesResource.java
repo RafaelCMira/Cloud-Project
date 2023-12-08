@@ -2,6 +2,7 @@ package scc.srv.houses;
 
 
 import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.JsonMappingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.mongodb.MongoException;
 import jakarta.ws.rs.WebApplicationException;
@@ -176,8 +177,15 @@ public class HousesResource extends Validations implements HousesService {
     @Override
     public Response listAllHouses() {
         try {
-            var houses = mongoDB.getAll(HousesService.COLLECTION, HouseDAO.class);
-            return sendResponse(OK, houses.isEmpty() ? new ArrayList<>() : houses);
+            var housesDocuments = mongoDB.getAll(HousesService.COLLECTION);
+
+            var houses = new ArrayList<>();
+
+            for (var doc : housesDocuments) {
+                houses.add(HouseDAO.fromDocument(doc));
+            }
+
+            return sendResponse(OK, houses);
 
         } catch (MongoException ex) {
             return processException(ex.getCode());
