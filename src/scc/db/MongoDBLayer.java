@@ -34,6 +34,8 @@ public class MongoDBLayer {
 
     private static final int USER_LISTS_LIMIT = 10;
 
+    private static final int HOUSES_LIMIT = 10;
+
     private static MongoDBLayer instance;
     private final MongoClient mongoClient;
     private MongoDatabase database;
@@ -181,5 +183,37 @@ public class MongoDBLayer {
 
         return houses;
     }
-    
+
+    ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+    ////////////////////////////// HOUSES
+    ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+    public List<RentalDAO> getAllHouseRentals(String houseId) {
+        init();
+        MongoCollection<Document> collection = database.getCollection(RentalService.COLLECTION);
+        Bson filter = Filters.eq("houseId", houseId);
+        var result = collection.find(filter);
+
+        List<RentalDAO> houses = new ArrayList<>();
+        for (var doc : result)
+            houses.add(RentalDAO.fromDocument(doc));
+
+        return houses;
+    }
+
+    public List<House> getHousesByLocation(String location, int offset) {
+        init();
+        MongoCollection<Document> collection = database.getCollection(HousesService.COLLECTION);
+        Bson filter = Filters.eq("location", location);
+        var result = collection
+                .find(filter)
+                .skip(offset)
+                .limit(HOUSES_LIMIT);
+
+        List<House> houses = new ArrayList<>();
+        for (var doc : result)
+            houses.add(HouseDAO.fromDocument(doc).toHouse());
+
+        return houses;
+    }
 }

@@ -70,7 +70,7 @@ public interface HousesService {
 
     @GET
     @Produces(MediaType.APPLICATION_JSON)
-    Response getAvailableHouseByLocation(@QueryParam(LOCATION) String location, @QueryParam(OFFSET) String offset);
+    Response getAvailableHouseByLocation(@QueryParam(LOCATION) String location, @QueryParam(OFFSET) int offset);
 
     @GET
     @Path(AVAILABLE)

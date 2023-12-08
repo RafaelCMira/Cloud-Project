@@ -1,21 +1,15 @@
 package scc.srv.utils;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.mongodb.client.FindIterable;
 import org.bson.Document;
-import scc.cache.Cache;
 import scc.data.HouseDAO;
 import scc.data.QuestionDAO;
 import scc.data.RentalDAO;
 import scc.data.UserDAO;
-import scc.db.CosmosDBLayer;
 import scc.db.MongoDBLayer;
-import scc.srv.houses.HousesResource;
 import scc.srv.houses.HousesService;
 import scc.srv.media.MediaResource;
 import scc.srv.question.QuestionService;
-import scc.srv.rentals.RentalService;
 import scc.srv.users.UsersService;
 
 import java.util.Date;
@@ -23,8 +17,7 @@ import java.util.List;
 
 public class Validations {
 
-    private static final CosmosDBLayer db = null;//CosmosDBLayer.getInstance();
-    private static final MongoDBLayer mongoDBLayer = MongoDBLayer.getInstance();
+    private static final MongoDBLayer db = MongoDBLayer.getInstance();
     private static final ObjectMapper mapper = new ObjectMapper();
 
     public Validations() {
@@ -46,7 +39,7 @@ public class Validations {
             if (userCache != null)
                 return mapper.readValue(userCache, UserDAO.class);
 */
-        Document dbUser = mongoDBLayer.get(userId, UsersService.COLLECTION);
+        Document dbUser = db.get(userId, UsersService.COLLECTION);
         if (dbUser != null) {
             return UserDAO.fromDocument(dbUser);
         }
@@ -68,7 +61,7 @@ public class Validations {
             if (cacheHouse != null)
                 return mapper.readValue(cacheHouse, HouseDAO.class);
 */
-        Document dbHouse = mongoDBLayer.get(houseId, HousesService.COLLECTION);
+        Document dbHouse = db.get(houseId, HousesService.COLLECTION);
         if (dbHouse != null) {
             return HouseDAO.fromDocument(dbHouse);
         }
@@ -88,7 +81,7 @@ public class Validations {
             if (rentalCache != null)
                 return mapper.readValue(rentalCache, RentalDAO.class);
             */
-        Document dbRental = mongoDBLayer.get(rentalId, HousesService.COLLECTION);
+        Document dbRental = db.get(rentalId, HousesService.COLLECTION);
         if (dbRental != null) {
             return RentalDAO.fromDocument(dbRental);
         }
@@ -109,7 +102,7 @@ public class Validations {
             if (questionCache != null)
                 return mapper.readValue(questionCache, QuestionDAO.class);*/
 
-        Document dbQuestion = mongoDBLayer.get(questionId, QuestionService.COLLECTION);
+        Document dbQuestion = db.get(questionId, QuestionService.COLLECTION);
         if (dbQuestion != null) {
             return QuestionDAO.fromDocument(dbQuestion);
         }

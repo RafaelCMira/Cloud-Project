@@ -15,7 +15,7 @@ public class Cache {
     private static final long CACHE_EXPIRE_TIME = 300; // 5 minutes
     private static final String RedisHostname = System.getenv("REDIS");
     // private static final String RedisKey = System.getenv(AzureProperties.REDIS_KEY);
-    private static final boolean CACHE_ON = true;
+    private static final boolean CACHE_ON = false;
 
     private static JedisPool instance;
 
@@ -108,6 +108,15 @@ public class Cache {
                 jedis.lpush(key, mapper.writeValueAsString(obj));
                 jedis.expire(key, CACHE_EXPIRE_TIME);
             }
+    }
+
+    public static <T> void removeFromListInCache(T obj, String key) throws JsonProcessingException {
+        if (CACHE_ON) {
+            try (Jedis jedis = Cache.getCachePool().getResource()) {
+                String valueToRemove = mapper.writeValueAsString(obj);
+                jedis.lrem(key, 0, valueToRemove);
+            }
+        }
     }
 
     public static void removeListInCache(String key) {
