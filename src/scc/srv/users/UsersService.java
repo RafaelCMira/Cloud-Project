@@ -68,12 +68,12 @@ public interface UsersService {
     @GET
     @Path("/{" + ID + "}" + HOUSES)
     @Produces(MediaType.APPLICATION_JSON)
-    Response getUserHouses(@PathParam(ID) String id, @QueryParam(OFFSET) String offset) throws Exception;
+    Response getUserHouses(@PathParam(ID) String id, @QueryParam(OFFSET) int offset) throws Exception;
 
     @GET
     @Path("/{" + ID + "}" + RENTALS)
     @Produces(MediaType.APPLICATION_JSON)
-    Response getUserRentals(@PathParam(ID) String id, @QueryParam(OFFSET) String offset);
+    Response getUserRentals(@PathParam(ID) String id, @QueryParam(OFFSET) int offset);
 
 }
 

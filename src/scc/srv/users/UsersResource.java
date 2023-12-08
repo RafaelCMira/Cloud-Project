@@ -200,13 +200,11 @@ public class UsersResource extends Validations implements UsersService {
     }
 
     @Override
-    public Response getUserHouses(String id, String offset) {
-        //TODO
-
+    public Response getUserHouses(String id, int offset) {
         if (Validations.badParams(id))
             return sendResponse(BAD_REQUEST, BAD_REQUEST_MSG);
 
-        /*try {
+        try {
             var user = Validations.userExists(id);
             if (user != null) {
 
@@ -221,26 +219,26 @@ public class UsersResource extends Validations implements UsersService {
                     return sendResponse(OK, houses);
                 }
 
-                var userHouses = db.listUserHouses(id, offset).stream().map(HouseDAO::toHouse).toList();
+                var userHouses = db.listUserHouses(id, offset);
                 Cache.putListInCache(userHouses, key);
 
-                return sendResponse(OK, userHouses.isEmpty() ? new ArrayList<>() : userHouses);
+                return sendResponse(OK, userHouses);
 
             } else
                 return sendResponse(NOT_FOUND, USER_MSG, id);
 
-        } catch (CosmosException ex) {
-            return processException(ex.getStatusCode(), USER_MSG, id);
+        } catch (MongoException ex) {
+            return Response.status(500).entity(ex.getMessage()).build();
         } catch (JsonProcessingException e) {
             throw new RuntimeException(e);
-        }*/
-        return null;
+        }
+
     }
 
     @Override
-    public Response getUserRentals(String id, String offset) {
-        //TODO
-       /* if (Validations.badParams(id))
+    public Response getUserRentals(String id, int offset) {
+        //TODO -> CHECK IF WORKING
+        if (Validations.badParams(id))
             return sendResponse(BAD_REQUEST, BAD_REQUEST_MSG);
 
         try {
@@ -258,20 +256,20 @@ public class UsersResource extends Validations implements UsersService {
                     return sendResponse(OK, rentals);
                 }
 
-                var userRentals = db.getUserRentals(id, offset).stream().map(RentalDAO::toRental).toList();
+                var userRentals = db.listUserRentals(id, offset);
                 Cache.putListInCache(userRentals, key);
 
-                return sendResponse(OK, userRentals.isEmpty() ? new ArrayList<>() : userRentals);
+                return sendResponse(OK, userRentals);
 
             } else
                 return sendResponse(NOT_FOUND, USER_MSG, id);
 
-        } catch (CosmosException ex) {
-            return processException(ex.getStatusCode(), USER_MSG, id);
+        } catch (MongoException ex) {
+            return Response.status(500).entity(ex.getMessage()).build();
         } catch (JsonProcessingException e) {
             throw new RuntimeException(e);
-        }*/
-        return null;
+        }
+
     }
 
     private UserDAO genUpdatedUserDAO(String id, User user) throws WebApplicationException {
