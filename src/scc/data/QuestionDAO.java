@@ -1,11 +1,12 @@
 package scc.data;
 
+import org.bson.Document;
+import org.bson.codecs.pojo.annotations.BsonId;
 import scc.srv.utils.HasId;
 
 public class QuestionDAO implements HasId {
 
-    private String _rid;
-    private String _ts;
+    @BsonId
     private String id;
     private String askerId;
     private String houseId;
@@ -28,28 +29,22 @@ public class QuestionDAO implements HasId {
         this.answer = answer;
     }
 
+    public static QuestionDAO fromDocument(Document document) {
+        QuestionDAO questionDAO = new QuestionDAO();
+        questionDAO.setId(document.getString("id"));
+        questionDAO.setAskerId(document.getString("askerId"));
+        questionDAO.setHouseId(document.getString("houseId"));
+        questionDAO.setText(document.getString("text"));
+        questionDAO.setAnswer(document.getString("answer"));
+        return questionDAO;
+    }
+
     public String getId() {
         return id;
     }
 
     public void setId(String id) {
         this.id = id;
-    }
-
-    public String get_rid() {
-        return _rid;
-    }
-
-    public void set_rid(String _rid) {
-        this._rid = _rid;
-    }
-
-    public String get_ts() {
-        return _ts;
-    }
-
-    public void set_ts(String _ts) {
-        this._ts = _ts;
     }
 
     public String getAskerId() {
@@ -91,9 +86,7 @@ public class QuestionDAO implements HasId {
     @Override
     public String toString() {
         return "QuestionDAO{" +
-                "_rid='" + _rid + '\'' +
-                ", _ts='" + _ts + '\'' +
-                ", id='" + id + '\'' +
+                "id='" + id + '\'' +
                 ", askerId='" + askerId + '\'' +
                 ", houseId='" + houseId + '\'' +
                 ", text='" + text + '\'' +

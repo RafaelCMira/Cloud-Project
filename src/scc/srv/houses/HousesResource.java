@@ -1,8 +1,7 @@
 package scc.srv.houses;
 
 
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.JsonMappingException;
+import com.azure.cosmos.CosmosException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.mongodb.MongoException;
 import jakarta.ws.rs.WebApplicationException;
@@ -11,21 +10,15 @@ import jakarta.ws.rs.core.Response;
 import scc.cache.Cache;
 import scc.data.*;
 import scc.db.MongoDBLayer;
-import scc.srv.question.QuestionService;
-import scc.srv.rentals.RentalService;
-import scc.srv.users.UsersService;
-import scc.srv.utils.Utility;
 import scc.srv.utils.Validations;
 
-import java.time.Instant;
 import java.util.*;
-import java.util.concurrent.CompletableFuture;
 
 import static scc.srv.utils.Utility.*;
 
 public class HousesResource extends Validations implements HousesService {
 
-    private final MongoDBLayer mongoDB = MongoDBLayer.getInstance();
+    private final MongoDBLayer db = MongoDBLayer.getInstance();
     private static final ObjectMapper mapper = new ObjectMapper();
 
     @Override
@@ -39,14 +32,14 @@ public class HousesResource extends Validations implements HousesService {
 
             houseDAO.setRentalsCounter(0);
 
-            mongoDB.create(houseDAO, HousesService.COLLECTION);
+            db.create(houseDAO, HousesService.COLLECTION);
 
             Cache.putInCache(houseDAO, HOUSE_PREFIX);
 
             return sendResponse(OK, houseDAO.toHouse());
 
         } catch (MongoException ex) {
-            return handleCreateException(ex.getCode(), ex.getMessage(), houseDAO);
+            return Response.status(500).entity(ex.getMessage()).build();
         } catch (WebApplicationException ex) {
             return handleCreateException(ex.getResponse().getStatus(), ex.getMessage(), houseDAO);
         }
@@ -75,7 +68,7 @@ public class HousesResource extends Validations implements HousesService {
             if (checks.getStatus() != Response.Status.OK.getStatusCode())
                 return checks;
 
-            mongoDB.delete(id, HousesService.COLLECTION);
+            db.delete(id, HousesService.COLLECTION);
 
             Cache.deleteFromCache(HOUSE_PREFIX, id);
 
@@ -156,28 +149,26 @@ public class HousesResource extends Validations implements HousesService {
 
     @Override
     public Response updateHouse(Cookie session, String id, House house) throws Exception {
-        //TODO
-        /*try {
+        try {
             var updatedHouse = genUpdatedHouse(session, id, house);
 
-            db.update(updatedHouse, COLLECTION, updatedHouse.getId());
+            db.update(id, updatedHouse, COLLECTION);
 
             Cache.putInCache(updatedHouse, HOUSE_PREFIX);
 
             return sendResponse(OK, updatedHouse.toHouse());
 
-        } catch (CosmosException ex) {
-            return handleUpdateException(ex.getStatusCode(), ex.getMessage(), id);
+        } catch (MongoException ex) {
+            return Response.status(500).entity(ex.getMessage()).build();
         } catch (WebApplicationException ex) {
             return handleUpdateException(ex.getResponse().getStatus(), ex.getMessage(), id);
-        }*/
-        return null;
+        }
     }
 
     @Override
     public Response listAllHouses() {
         try {
-            var housesDocuments = mongoDB.getAll(HousesService.COLLECTION);
+            var housesDocuments = db.getAll(HousesService.COLLECTION);
 
             var houses = new ArrayList<>();
 

@@ -41,18 +41,20 @@ public class Validations {
      * Verify if house exists
      */
     protected static UserDAO userExists(String userId) {
-        try {
+        /*try {
             var userCache = Cache.getFromCache(UsersService.USER_PREFIX, userId);
             if (userCache != null)
                 return mapper.readValue(userCache, UserDAO.class);
+*/
+        Document dbUser = mongoDBLayer.get(userId, UsersService.COLLECTION);
+        if (dbUser != null) {
+            return UserDAO.fromDocument(dbUser);
+        }
+/*
 
-            Document dbUser = mongoDBLayer.get(userId, UsersService.COLLECTION);
-            if (dbUser != null) {
-                return UserDAO.fromDocument(dbUser);
-            }
-            
         } catch (JsonProcessingException ignore) {
         }
+*/
 
         return null;
     }
@@ -61,19 +63,19 @@ public class Validations {
      * Verify if house exists
      */
     protected static HouseDAO houseExists(String houseId) {
-        try {
+       /* try {
             var cacheHouse = Cache.getFromCache(HousesService.HOUSE_PREFIX, houseId);
             if (cacheHouse != null)
                 return mapper.readValue(cacheHouse, HouseDAO.class);
-
-            Document dbHouse = mongoDBLayer.get(houseId, HousesService.COLLECTION);
-            if (dbHouse != null) {
-                return HouseDAO.fromDocument(dbHouse);
-            }
-
-        } catch (JsonProcessingException ignore) {
+*/
+        Document dbHouse = mongoDBLayer.get(houseId, HousesService.COLLECTION);
+        if (dbHouse != null) {
+            return HouseDAO.fromDocument(dbHouse);
         }
 
+       /* } catch (JsonProcessingException ignore) {
+        }
+*/
         return null;
     }
 
@@ -81,18 +83,19 @@ public class Validations {
      * Verify if house exists
      */
     protected static RentalDAO rentalExists(String rentalId) {
-        try {
+       /* try {
             var rentalCache = Cache.getFromCache(RentalService.RENTAL_PREFIX, rentalId);
             if (rentalCache != null)
                 return mapper.readValue(rentalCache, RentalDAO.class);
-
-            var dbRental = db.get(rentalId, RentalService.COLLECTION, RentalDAO.class).stream().findFirst();
-            if (dbRental.isPresent())
-                return dbRental.get();
-
-        } catch (JsonProcessingException ignore) {
+            */
+        Document dbRental = mongoDBLayer.get(rentalId, HousesService.COLLECTION);
+        if (dbRental != null) {
+            return RentalDAO.fromDocument(dbRental);
         }
 
+       /* } catch (JsonProcessingException ignore) {
+        }
+*/
         return null;
     }
 
@@ -101,18 +104,19 @@ public class Validations {
      * Verify if questiom exists
      */
     protected static QuestionDAO questionExists(String questionId) {
-        try {
+        /*try {
             var questionCache = Cache.getFromCache(QuestionService.QUESTION_PREFIX, questionId);
             if (questionCache != null)
-                return mapper.readValue(questionCache, QuestionDAO.class);
+                return mapper.readValue(questionCache, QuestionDAO.class);*/
 
-            var dbQuestion = db.get(questionId, QuestionService.COLLECTION, QuestionDAO.class).stream().findFirst();
-            if (dbQuestion.isPresent())
-                return dbQuestion.get();
-
-        } catch (JsonProcessingException ignore) {
+        Document dbQuestion = mongoDBLayer.get(questionId, QuestionService.COLLECTION);
+        if (dbQuestion != null) {
+            return QuestionDAO.fromDocument(dbQuestion);
         }
 
+        /*} catch (JsonProcessingException ignore) {
+        }
+*/
         return null;
     }
 

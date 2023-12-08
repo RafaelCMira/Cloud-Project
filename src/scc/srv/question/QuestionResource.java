@@ -3,12 +3,14 @@ package scc.srv.question;
 import com.azure.cosmos.CosmosException;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.mongodb.MongoException;
 import jakarta.ws.rs.WebApplicationException;
 import jakarta.ws.rs.core.Cookie;
 import jakarta.ws.rs.core.Response;
 import scc.cache.Cache;
 import scc.data.*;
 import scc.db.CosmosDBLayer;
+import scc.db.MongoDBLayer;
 import scc.srv.utils.Validations;
 
 import java.util.ArrayList;
@@ -20,7 +22,7 @@ import static scc.srv.utils.Utility.*;
 
 public class QuestionResource extends Validations implements QuestionService {
 
-    private final CosmosDBLayer db = CosmosDBLayer.getInstance();
+    private final MongoDBLayer db = MongoDBLayer.getInstance();
     private static final ObjectMapper mapper = new ObjectMapper();
 
     @Override
@@ -37,8 +39,8 @@ public class QuestionResource extends Validations implements QuestionService {
 
             return sendResponse(OK, questionDAO.toQuestion());
 
-        } catch (CosmosException ex) {
-            return handleCreateException(ex.getStatusCode(), ex.getMessage(), questionDAO);
+        } catch (MongoException ex) {
+            return Response.status(500).entity(ex.getMessage()).build();
         } catch (WebApplicationException ex) {
             return handleCreateException(ex.getResponse().getStatus(), ex.getMessage(), questionDAO);
         }
@@ -46,7 +48,7 @@ public class QuestionResource extends Validations implements QuestionService {
 
     @Override
     public Response replyToQuestion(Cookie session, String houseId, String questionId, QuestionDAO questionDAO) throws Exception {
-        try {
+        /*try {
             var updatedQuestion = genUpdatedQuestion(session, houseId, questionId, questionDAO);
             db.update(updatedQuestion, COLLECTION, updatedQuestion.getHouseId());
 
@@ -58,12 +60,13 @@ public class QuestionResource extends Validations implements QuestionService {
             return handleUpdateException(ex.getStatusCode(), ex.getMessage(), questionId, houseId);
         } catch (WebApplicationException ex) {
             return handleUpdateException(ex.getResponse().getStatus(), ex.getMessage(), questionId, houseId);
-        }
+        }*/
+        return null;
     }
 
     @Override
     public Response listQuestions(String houseId, String offset) {
-        if (Validations.houseExists(houseId) == null)
+        /*if (Validations.houseExists(houseId) == null)
             return sendResponse(NOT_FOUND, HOUSE_MSG, houseId);
 
         try {
@@ -89,7 +92,8 @@ public class QuestionResource extends Validations implements QuestionService {
             return processException(ex.getStatusCode(), ex.getMessage());
         } catch (JsonProcessingException e) {
             return processException(500, "Error while parsing questions");
-        }
+        }*/
+        return null;
     }
 
     private void checkQuestionCreation(Cookie session, QuestionDAO questionDAO) throws Exception {
