@@ -1,8 +1,4 @@
-if ($args.Length -eq 0) {
-    $studentNumber = Read-Host "Enter student number"
-} else {
-    $studentNumber = $args[0]
-}
+$studentNumber = Read-Host "Enter student number"
 
 $propertiesContent = (Get-Content -Path ".\config.properties" -Raw)
 
