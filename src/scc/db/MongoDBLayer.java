@@ -8,8 +8,11 @@ import com.mongodb.client.MongoCollection;
 import com.mongodb.client.MongoDatabase;
 import com.mongodb.client.model.Filters;
 import com.mongodb.client.model.Indexes;
+import com.mongodb.client.model.ReplaceOneModel;
+import com.mongodb.client.model.WriteModel;
 import org.bson.Document;
 import org.bson.conversions.Bson;
+import scc.cache.Cache;
 import scc.data.*;
 import scc.srv.houses.HousesService;
 import scc.srv.question.QuestionService;
@@ -19,6 +22,7 @@ import scc.srv.utils.Utility;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.concurrent.CompletableFuture;
 
 
 public class MongoDBLayer {
@@ -120,6 +124,19 @@ public class MongoDBLayer {
     ////////////////////////////// USERS
     ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
+    public List<HouseDAO> getAllUserHouses(String userId) {
+        init();
+        MongoCollection<Document> collection = database.getCollection(HousesService.COLLECTION);
+        Bson filter = Filters.eq("ownerId", userId);
+        var result = collection.find(filter);
+
+        List<HouseDAO> houses = new ArrayList<>();
+        for (var doc : result)
+            houses.add(HouseDAO.fromDocument(doc));
+
+        return houses;
+    }
+
     public List<House> listUserHouses(String userId, int offset) {
         init();
         MongoCollection<Document> collection = database.getCollection(HousesService.COLLECTION);
@@ -130,9 +147,8 @@ public class MongoDBLayer {
                 .limit(USER_LISTS_LIMIT);
 
         List<House> houses = new ArrayList<>();
-        for (var doc : result) {
+        for (var doc : result)
             houses.add(HouseDAO.fromDocument(doc).toHouse());
-        }
 
         return houses;
     }
@@ -147,11 +163,23 @@ public class MongoDBLayer {
                 .limit(USER_LISTS_LIMIT);
 
         List<Rental> houses = new ArrayList<>();
-        for (var doc : result) {
+        for (var doc : result)
             houses.add(RentalDAO.fromDocument(doc).toRental());
-        }
 
         return houses;
     }
 
+    public List<RentalDAO> getAllUserRentals(String userId) {
+        init();
+        MongoCollection<Document> collection = database.getCollection(RentalService.COLLECTION);
+        Bson filter = Filters.eq("userId", userId);
+        var result = collection.find(filter);
+
+        List<RentalDAO> houses = new ArrayList<>();
+        for (var doc : result)
+            houses.add(RentalDAO.fromDocument(doc));
+
+        return houses;
+    }
+    
 }

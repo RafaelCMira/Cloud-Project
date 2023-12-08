@@ -15,6 +15,8 @@ import scc.data.*;
 import scc.db.MongoDBLayer;
 import scc.srv.authentication.Login;
 import scc.srv.authentication.Session;
+import scc.srv.houses.HousesService;
+import scc.srv.rentals.RentalService;
 import scc.srv.utils.Validations;
 import scc.utils.Hash;
 
@@ -23,6 +25,7 @@ import java.util.ArrayList;
 import java.util.HexFormat;
 import java.util.List;
 import java.util.UUID;
+import java.util.concurrent.CompletableFuture;
 
 import static scc.srv.utils.Utility.*;
 
@@ -110,32 +113,33 @@ public class UsersResource extends Validations implements UsersService {
             return sendResponse(OK, String.format(RESOURCE_WAS_DELETED, USER_MSG, id));
 
         } catch (MongoException ex) {
-            return processException(ex.getCode(), USER_MSG, id);
+            return Response.status(500).entity(ex.getMessage()).build();
         }
     }
 
     private void updateUserHousesAndRentals(String id) {
-        //TODO
-       /* var updateHouses = CompletableFuture.runAsync(() -> {
-            var userHouses = db.getUserHouses(id);
+        //TODO -> try to use updateMany
+        var updateHouses = CompletableFuture.runAsync(() -> {
+            var userHouses = db.getAllUserHouses(id);
             for (var house : userHouses) {
                 house.setOwnerId(DELETED_USER);
-                // db.update(house, HousesService.CONTAINER, house.getId());
+                db.update(house.getId(), house, HousesService.COLLECTION);
                 Cache.deleteFromCache(HousesService.HOUSE_PREFIX, house.getId());
             }
         });
 
+        //TODO -> try to use updateMany
         var updateRentals = CompletableFuture.runAsync(() -> {
             var userRentals = db.getAllUserRentals(id);
             for (var rental : userRentals) {
                 rental.setUserId(DELETED_USER);
-                // db.update(rental, RentalService.CONTAINER, rental.getHouseId());
+                db.update(rental.getHouseId(), rental, RentalService.COLLECTION);
                 Cache.deleteFromCache(RentalService.RENTAL_PREFIX, rental.getId());
             }
         });
 
         var allUpdates = CompletableFuture.allOf(updateHouses, updateRentals);
-        allUpdates.join();*/
+        allUpdates.join();
     }
 
     @Override
@@ -173,8 +177,8 @@ public class UsersResource extends Validations implements UsersService {
 
             return sendResponse(OK, updatedUser.toUser());
 
-        } catch (CosmosException ex) {
-            return handleUpdateException(ex.getStatusCode(), ex.getMessage(), id);
+        } catch (MongoException ex) {
+            return Response.status(500).entity(ex.getMessage()).build();
         } catch (WebApplicationException ex) {
             return handleUpdateException(ex.getResponse().getStatus(), ex.getMessage(), id);
         }
@@ -195,7 +199,7 @@ public class UsersResource extends Validations implements UsersService {
             return sendResponse(OK, users);
 
         } catch (MongoException ex) {
-            return processException(ex.getCode());
+            return Response.status(500).entity(ex.getMessage()).build();
         }
     }
 
