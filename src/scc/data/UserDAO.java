@@ -11,7 +11,7 @@ import scc.utils.Hash;
 public class UserDAO implements HasId {
 
     @BsonId
-    private String _id;
+    private String id;
     private String name;
     private String pwd;
     private String photoId;
@@ -25,19 +25,28 @@ public class UserDAO implements HasId {
 
     public UserDAO(String userID, String name, String pwd, String photoId) {
         super();
-        this._id = userID;
+        this.id = userID;
         this.name = name;
         this.pwd = Hash.of(pwd);
         this.photoId = photoId;
     }
 
+    public static UserDAO fromDocument(Document document) {
+        UserDAO userDAO = new UserDAO();
+        userDAO.setId(document.getString("id"));
+        userDAO.setName(document.getString("name"));
+        userDAO.setPwd(document.getString("pwd"));
+        userDAO.setPhotoId(document.getString("photoId"));
+        return userDAO;
+    }
+
     @Override
     public String getId() {
-        return _id;
+        return id;
     }
 
     public void setId(String id) {
-        this._id = id;
+        this.id = id;
     }
 
     public String getName() {
@@ -66,13 +75,13 @@ public class UserDAO implements HasId {
 
 
     public User toUser() {
-        return new User(_id, name, pwd, photoId);
+        return new User(id, name, pwd, photoId);
     }
 
     @Override
     public String toString() {
         return "UserDAO{" +
-                "id='" + _id + '\'' +
+                "id='" + id + '\'' +
                 ", name='" + name + '\'' +
                 ", pwd='" + pwd + '\'' +
                 ", photoId='" + photoId + '\'' +

@@ -1,12 +1,14 @@
 package scc.srv.users;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.JsonMappingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.mongodb.MongoException;
 import jakarta.ws.rs.WebApplicationException;
 import jakarta.ws.rs.core.Cookie;
 import jakarta.ws.rs.core.NewCookie;
 import jakarta.ws.rs.core.Response;
+import org.bson.types.ObjectId;
 import scc.cache.Cache;
 import scc.data.*;
 import scc.db.MongoDBLayer;
@@ -15,7 +17,9 @@ import scc.srv.authentication.Session;
 import scc.srv.utils.Validations;
 import scc.utils.Hash;
 
+import java.math.BigInteger;
 import java.util.ArrayList;
+import java.util.HexFormat;
 import java.util.List;
 import java.util.UUID;
 
@@ -26,6 +30,7 @@ public class UsersResource extends Validations implements UsersService {
 
     //  private final CosmosDBLayer db = CosmosDBLayer.getInstance();
     private final MongoDBLayer db = MongoDBLayer.getInstance();
+    private final ObjectMapper mapper = new ObjectMapper();
 
     @Override
     public Response auth(Login credentials) throws Exception {
@@ -81,7 +86,8 @@ public class UsersResource extends Validations implements UsersService {
 
             return auth(new Login(id, plainPwd));
         } catch (MongoException ex) {
-            return processException(ex.getCode(), USER_MSG, userDAO.getId());
+            return Response.status(500).entity(ex.getMessage()).build();
+            //  return processException(ex.getCode(), USER_MSG, userDAO.getId());
         }
     }
 
@@ -180,8 +186,11 @@ public class UsersResource extends Validations implements UsersService {
     @Override
     public Response listUsers() {
         try {
-            var users = db.getAll(UsersService.COLLECTION, UserDAO.class);
-            return sendResponse(OK, users.isEmpty() ? new ArrayList<>() : users);
+            var usersDocuments = db.getAll(UsersService.COLLECTION, UserDAO.class);
+
+            var users = new ArrayList<>(usersDocuments);
+
+            return sendResponse(OK, users);
 
         } catch (MongoException ex) {
             return processException(ex.getCode());

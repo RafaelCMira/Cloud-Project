@@ -1,6 +1,5 @@
 package scc.db;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.mongodb.MongoClient;
 import com.mongodb.MongoClientURI;
@@ -8,15 +7,14 @@ import com.mongodb.client.FindIterable;
 import com.mongodb.client.MongoCollection;
 import com.mongodb.client.MongoDatabase;
 import com.mongodb.client.model.Filters;
-import jdk.jshell.execution.Util;
 import org.bson.Document;
+import scc.data.UserDAO;
 import scc.srv.houses.HousesService;
 import scc.srv.question.QuestionService;
 import scc.srv.rentals.RentalService;
 import scc.srv.users.UsersService;
 import scc.srv.utils.Utility;
 
-import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -78,13 +76,35 @@ public class MongoDBLayer {
         init();
         MongoCollection<Document> collection = database.getCollection(collectionName);
         Document document = Document.parse(Utility.itemToJsonString(item));
+
+        System.out.println("JSON Document before insertion: " + document.toJson());
         collection.insertOne(document);
+        System.out.println("Document inserted successfully.");
     }
+
+
+
+   /* public <T> T get(String id, String collectionName, Class<T> c) {
+        init();
+        MongoCollection<T> collection = database.getCollection(collectionName, c);
+        return collection.find(Filters.eq(_ID, id)).first();
+    }
+
+    public <T> void delete(String id, String collectionName, Class<T> c) {
+        init();
+        MongoCollection<T> collection = database.getCollection(collectionName, c);
+        collection.deleteOne(Filters.eq(_ID, id));
+    }
+
+    public <T> FindIterable<T> getAll(String collectionName, Class<T> C) {
+        init();
+        return database.getCollection(collectionName, C).find();
+    }*/
 
     public Document get(String id, String collectionName) {
         init();
         MongoCollection<Document> collection = database.getCollection(collectionName);
-        return collection.find(Filters.eq(_ID, id)).first();
+        return collection.find(Filters.eq("id", id)).first();
     }
 
     public void delete(String id, String collectionName) {
@@ -106,6 +126,5 @@ public class MongoDBLayer {
 
         return resultList;
     }
-
 
 }

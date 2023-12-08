@@ -9,7 +9,7 @@ import scc.srv.utils.HasId;
  * handle the empty list.
  */
 public class User implements HasId {
-    private String _id;
+    private String id;
     private String name;
     private String pwd;
     private String photoId;
@@ -19,7 +19,7 @@ public class User implements HasId {
 
     public User(String id, String name, String pwd, String photoId) {
         super();
-        this._id = id;
+        this.id = id;
         this.name = name;
         this.pwd = pwd;
         this.photoId = photoId;
@@ -27,11 +27,11 @@ public class User implements HasId {
 
     @Override
     public String getId() {
-        return _id;
+        return id;
     }
 
     public void setId(String id) {
-        this._id = id;
+        this.id = id;
     }
 
     public String getName() {
@@ -61,7 +61,7 @@ public class User implements HasId {
     @Override
     public String toString() {
         return "User{" +
-                "id='" + _id + '\'' +
+                "id='" + id + '\'' +
                 ", name='" + name + '\'' +
                 ", pwd='" + pwd + '\'' +
                 ", photoId='" + photoId + '\'' +

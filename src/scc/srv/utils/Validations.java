@@ -11,6 +11,7 @@ import scc.data.RentalDAO;
 import scc.data.UserDAO;
 import scc.db.CosmosDBLayer;
 import scc.db.MongoDBLayer;
+import scc.srv.houses.HousesResource;
 import scc.srv.houses.HousesService;
 import scc.srv.media.MediaResource;
 import scc.srv.question.QuestionService;
@@ -40,19 +41,15 @@ public class Validations {
      * Verify if house exists
      */
     protected static UserDAO userExists(String userId) {
-        try {
+      /*  try {
             var userCache = Cache.getFromCache(UsersService.USER_PREFIX, userId);
             if (userCache != null)
                 return mapper.readValue(userCache, UserDAO.class);
-
-            Document dbUser = mongoDBLayer.get(userId, UsersService.COLLECTION);
-            if (dbUser != null) {
-                return mapper.readValue(dbUser.toJson(), UserDAO.class);
-            }
-
-        } catch (JsonProcessingException ignore) {
+*/
+        Document dbUser = mongoDBLayer.get(userId, UsersService.COLLECTION);
+        if (dbUser != null) {
+            return UserDAO.fromDocument(dbUser);
         }
-
         return null;
     }
 
@@ -61,10 +58,10 @@ public class Validations {
      */
     protected static HouseDAO houseExists(String houseId) {
         try {
-            var cacheHouse = Cache.getFromCache(HousesService.HOUSE_PREFIX, houseId);
+            /*var cacheHouse = Cache.getFromCache(HousesService.HOUSE_PREFIX, houseId);
             if (cacheHouse != null)
                 return mapper.readValue(cacheHouse, HouseDAO.class);
-
+*/
             Document dbHouse = mongoDBLayer.get(houseId, HousesService.COLLECTION);
             if (dbHouse != null) {
                 return mapper.readValue(dbHouse.toJson(), HouseDAO.class);
