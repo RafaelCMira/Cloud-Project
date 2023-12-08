@@ -1,5 +1,6 @@
 package scc.srv.users;
 
+import com.azure.cosmos.CosmosException;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonMappingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -159,16 +160,14 @@ public class UsersResource extends Validations implements UsersService {
 
     @Override
     public Response updateUser(Cookie session, String id, User user) throws Exception {
-        //TODO
-
-        /*try {
+        try {
             var checkCookies = checkUserSession(session, id);
             if (checkCookies.getStatus() != Response.Status.OK.getStatusCode())
                 return checkCookies;
 
             var updatedUser = genUpdatedUserDAO(id, user);
 
-            // db.update(updatedUser, CONTAINER, updatedUser.getId());
+            db.update(id, updatedUser, UsersService.COLLECTION);
 
             Cache.putInCache(updatedUser, USER_PREFIX);
 
@@ -178,8 +177,8 @@ public class UsersResource extends Validations implements UsersService {
             return handleUpdateException(ex.getStatusCode(), ex.getMessage(), id);
         } catch (WebApplicationException ex) {
             return handleUpdateException(ex.getResponse().getStatus(), ex.getMessage(), id);
-        }*/
-        return null;
+        }
+
     }
 
     @Override
