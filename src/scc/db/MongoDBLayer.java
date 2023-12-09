@@ -1,6 +1,6 @@
 package scc.db;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
+
 import com.mongodb.MongoClient;
 import com.mongodb.MongoClientURI;
 import com.mongodb.client.FindIterable;
@@ -8,11 +8,9 @@ import com.mongodb.client.MongoCollection;
 import com.mongodb.client.MongoDatabase;
 import com.mongodb.client.model.Filters;
 import com.mongodb.client.model.Indexes;
-import com.mongodb.client.model.ReplaceOneModel;
-import com.mongodb.client.model.WriteModel;
+
 import org.bson.Document;
 import org.bson.conversions.Bson;
-import scc.cache.Cache;
 import scc.data.*;
 import scc.srv.houses.HousesService;
 import scc.srv.question.QuestionService;
@@ -22,7 +20,6 @@ import scc.srv.utils.Utility;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.concurrent.CompletableFuture;
 
 
 public class MongoDBLayer {
@@ -39,8 +36,6 @@ public class MongoDBLayer {
     private static MongoDBLayer instance;
     private final MongoClient mongoClient;
     private MongoDatabase database;
-
-    private final ObjectMapper mapper = new ObjectMapper();
 
     private MongoDBLayer(MongoClient mongoClient) {
         this.mongoClient = mongoClient;
@@ -232,4 +227,42 @@ public class MongoDBLayer {
 
         return houses;
     }
+
+    public List<House> getHousesWithDiscount(int offset) {
+        init();
+        MongoCollection<Document> collection = database.getCollection(HousesService.COLLECTION);
+        Bson filter = Filters.gt("discount", 0);
+        var result = collection
+                .find(filter)
+                .skip(offset)
+                .limit(HOUSES_LIMIT);
+
+        List<House> houses = new ArrayList<>();
+        for (var doc : result)
+            houses.add(HouseDAO.fromDocument(doc).toHouse());
+
+        return houses;
+    }
+
+    ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+    ////////////////////////////// QUESTIONS
+    ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+    public List<Question> getHouseQuestions(String houseId, int offset) {
+        init();
+        MongoCollection<Document> collection = database.getCollection(QuestionService.COLLECTION);
+        Bson filter = Filters.eq("houseId", houseId);
+        var result = collection
+                .find(filter)
+                .skip(offset)
+                .limit(HOUSES_LIMIT);
+
+        List<Question> questions = new ArrayList<>();
+        for (var doc : result)
+            questions.add(QuestionDAO.fromDocument(doc).toQuestion());
+
+        return questions;
+    }
+
+
 }

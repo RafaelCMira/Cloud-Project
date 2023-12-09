@@ -10,12 +10,14 @@ import jakarta.ws.rs.core.Response;
 import scc.cache.Cache;
 import scc.data.*;
 import scc.db.MongoDBLayer;
+import scc.srv.question.QuestionService;
 import scc.srv.rentals.RentalService;
 import scc.srv.users.UsersService;
 import scc.srv.utils.Utility;
 import scc.srv.utils.Validations;
 
 import java.time.Instant;
+import java.time.temporal.ChronoUnit;
 import java.util.*;
 import java.util.concurrent.CompletableFuture;
 
@@ -89,7 +91,6 @@ public class HousesResource extends Validations implements HousesService {
     }
 
     private void deleteHouseRentals(String id) {
-        //todo -> FAZER ISTO DE OUTRA FORMA, mandar o filtro e a db é que elimina
         CompletableFuture.runAsync(() -> {
             var houseRentals = db.getAllHouseRentals(id);
             for (var rental : houseRentals) {
@@ -142,8 +143,8 @@ public class HousesResource extends Validations implements HousesService {
     }
 
     private void loadHouse5MostRecentQuestions(String houseId) {
-        //TODO
-        /*CompletableFuture.runAsync(() -> {
+        /*//TODO
+        CompletableFuture.runAsync(() -> {
             var questions = db.getHouseQuestions(houseId, "0").stream().map(QuestionDAO::toQuestion).toList();
             try {
                 String key = String.format(QuestionService.QUESTIONS_LIST_PREFIX, houseId, "0");
@@ -315,8 +316,8 @@ public class HousesResource extends Validations implements HousesService {
 
     @Override
     public Response getNewHouses() {
-        //TODO
-        /*try {
+        //TODO -> CHECK IF WORKING
+        try {
             var cacheHouses = Cache.getListFromCache(NEW_HOUSES_PREFIX);
 
             List<HouseDAO> houses = new ArrayList<>();
@@ -328,8 +329,55 @@ public class HousesResource extends Validations implements HousesService {
 
         } catch (JsonProcessingException e) {
             return processException(500);
-        }*/
-        return null;
+        }
+    }
+
+    @Override
+    public Response getHousesInDiscount(int offset) {
+        //TODO -> CHECK IF WORKING
+        try {
+            List<House> houses = new ArrayList<>();
+
+            if (offset == -1) {
+                //return most recent houses in discount
+                var mostRecentDiscounts = Cache.getListFromCache(HousesService.MOST_RECENT_DISCOUNTS);
+                if (!mostRecentDiscounts.isEmpty()) {
+                    for (var house : mostRecentDiscounts) {
+                        houses.add(mapper.readValue(house, House.class));
+                    }
+                    return sendResponse(OK, houses);
+                }
+            }
+
+            String key = String.format(DISCOUNTED_HOUSES, offset);
+            var cacheHouses = Cache.getListFromCache(key);
+            if (!cacheHouses.isEmpty()) {
+                for (var house : cacheHouses) {
+                    houses.add(mapper.readValue(house, House.class));
+                }
+                return sendResponse(OK, houses);
+            }
+
+            var housesWithDiscount = db.getHousesWithDiscount(offset);
+
+            for (House house : housesWithDiscount) {
+                if (!house.getOwnerId().equals(UsersService.DELETED_USER)) {
+                    var currentDate = Date.from(Instant.now());
+                    var oneMonthFromNow = Date.from(Instant.now().plus(30, ChronoUnit.DAYS));
+                    if (Validations.isAvailable(house.getId(), currentDate, oneMonthFromNow)) {
+                        houses.add(house);
+                    }
+                }
+            }
+
+            Cache.putListInCache(houses, key);
+            return sendResponse(OK, houses);
+
+        } catch (MongoException ex) {
+            return Response.status(500).entity(ex.getMessage()).build();
+        } catch (JsonProcessingException e) {
+            return processException(500, "Error while parsing questions");
+        }
     }
 
     private Response handleCreateException(int statusCode, String msg, HouseDAO houseDAO) {

@@ -13,6 +13,7 @@ import scc.srv.houses.HousesService;
 import scc.srv.users.UsersService;
 import scc.srv.utils.Validations;
 
+import java.time.Instant;
 import java.time.ZoneId;
 import java.time.temporal.ChronoUnit;
 import java.util.*;
@@ -155,51 +156,6 @@ public class RentalResource extends Validations implements RentalService {
         }
     }
 
-    @Override
-    public Response getHousesInDiscount(String offset) {
-        /*try {
-            List<House> houses = new ArrayList<>();
-
-            if (Integer.parseInt(offset) == -1) {
-                //return most recent houses in discount
-                var mostRecentDiscounts = Cache.getListFromCache(HousesService.MOST_RECENT_DISCOUNTS);
-                if (!mostRecentDiscounts.isEmpty()) {
-                    for (var house : mostRecentDiscounts) {
-                        houses.add(mapper.readValue(house, House.class));
-                    }
-                    return sendResponse(OK, houses);
-                }
-            }
-
-            String key = String.format(DISCOUNTED_HOUSES, offset);
-            var cacheHouses = Cache.getListFromCache(key);
-            if (!cacheHouses.isEmpty()) {
-                for (var house : cacheHouses) {
-                    houses.add(mapper.readValue(house, House.class));
-                }
-                return sendResponse(OK, houses);
-            }
-
-            var housesWithDiscount = db.getHousesWithDiscount(offset);
-
-            for (HouseDAO house : housesWithDiscount) {
-                if (!house.getOwnerId().equals(UsersService.DELETED_USER)) {
-                    var currentDate = Date.from(Instant.now());
-                    var oneMonthFromNow = Date.from(Instant.now().plus(30, ChronoUnit.DAYS));
-                    if (Validations.isAvailable(house.getId(), currentDate, oneMonthFromNow)) {
-                        houses.add(house.toHouse());
-                    }
-                }
-            }
-
-            Cache.putListInCache(houses, key);
-            return sendResponse(OK, houses);
-
-        } catch (JsonProcessingException e) {
-            return processException(500, "Error while parsing questions");
-        }*/
-        return null;
-    }
 
     private RentalDAO genUpdatedRental(Cookie session, String houseId, String id, RentalDAO rental) throws Exception {
         if (Validations.badParams(id))

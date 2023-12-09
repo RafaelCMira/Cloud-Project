@@ -9,8 +9,8 @@ import jakarta.ws.rs.core.Cookie;
 import jakarta.ws.rs.core.Response;
 import scc.cache.Cache;
 import scc.data.*;
-import scc.db.CosmosDBLayer;
 import scc.db.MongoDBLayer;
+import scc.srv.houses.HousesService;
 import scc.srv.utils.Validations;
 
 import java.util.ArrayList;
@@ -48,25 +48,25 @@ public class QuestionResource extends Validations implements QuestionService {
 
     @Override
     public Response replyToQuestion(Cookie session, String houseId, String questionId, QuestionDAO questionDAO) throws Exception {
-        /*try {
+        try {
             var updatedQuestion = genUpdatedQuestion(session, houseId, questionId, questionDAO);
-            db.update(updatedQuestion, COLLECTION, updatedQuestion.getHouseId());
+            db.update(updatedQuestion.getId(), updatedQuestion, COLLECTION);
 
             Cache.putInCache(updatedQuestion, QUESTION_PREFIX);
 
             return sendResponse(OK, updatedQuestion.toQuestion());
 
-        } catch (CosmosException ex) {
-            return handleUpdateException(ex.getStatusCode(), ex.getMessage(), questionId, houseId);
+        } catch (MongoException ex) {
+            return Response.status(500).entity(ex.getMessage()).build();
         } catch (WebApplicationException ex) {
             return handleUpdateException(ex.getResponse().getStatus(), ex.getMessage(), questionId, houseId);
-        }*/
-        return null;
+        }
     }
 
     @Override
-    public Response listQuestions(String houseId, String offset) {
-        /*if (Validations.houseExists(houseId) == null)
+    public Response listHouseQuestions(String houseId, int offset) {
+        var house = Validations.houseExists(houseId);
+        if (house == null)
             return sendResponse(NOT_FOUND, HOUSE_MSG, houseId);
 
         try {
@@ -75,16 +75,16 @@ public class QuestionResource extends Validations implements QuestionService {
             String key = String.format(QUESTIONS_LIST_PREFIX, houseId, offset);
             var cacheQuestions = Cache.getListFromCache(key);
             if (!cacheQuestions.isEmpty()) {
-
                 for (String question : cacheQuestions) {
                     questions.add(mapper.readValue(question, Question.class));
                 }
                 return sendResponse(OK, questions);
             }
 
-            questions = db.getHouseQuestions(houseId, offset).stream().map(QuestionDAO::toQuestion).toList();
+            questions = db.getHouseQuestions(houseId, offset);
 
             Cache.putListInCache(questions, key);
+            Cache.putInCache(house, HousesService.HOUSE_PREFIX + houseId);
 
             return sendResponse(OK, questions);
 
@@ -92,8 +92,7 @@ public class QuestionResource extends Validations implements QuestionService {
             return processException(ex.getStatusCode(), ex.getMessage());
         } catch (JsonProcessingException e) {
             return processException(500, "Error while parsing questions");
-        }*/
-        return null;
+        }
     }
 
     private void checkQuestionCreation(Cookie session, QuestionDAO questionDAO) throws Exception {

@@ -17,6 +17,8 @@ public interface HousesService {
     String COLLECTION = "houses";
     String HOUSE_PREFIX = "h:";
 
+    String DISCOUNTED_HOUSES = "h:discount-off:%s";
+    
     String MOST_RECENT_DISCOUNTS = "houses:disc";
 
     String HOUSES_BY_LOCATION_PREFIX = "h:location:%s-off:%s";
@@ -29,6 +31,8 @@ public interface HousesService {
     String DESCRIPTION = "description";
     String LOCATION = "location";
     String ALL = "/all";
+    String DISCOUNT = "/discount";
+
     String AVAILABLE = "/available";
     String NEW_HOUSES = "/newHouses";
     String HOUSE_BY_DESC = "/housesByDescription";
@@ -82,5 +86,10 @@ public interface HousesService {
     @Path(NEW_HOUSES)
     @Produces(MediaType.APPLICATION_JSON)
     Response getNewHouses();
+
+    @GET
+    @Path(DISCOUNT)
+    @Produces(MediaType.APPLICATION_JSON)
+    Response getHousesInDiscount(@QueryParam(OFFSET) int offset);
 
 }

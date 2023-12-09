@@ -32,7 +32,6 @@ import static scc.srv.utils.Utility.*;
 
 public class UsersResource extends Validations implements UsersService {
 
-    //  private final CosmosDBLayer db = CosmosDBLayer.getInstance();
     private final MongoDBLayer db = MongoDBLayer.getInstance();
     private final ObjectMapper mapper = new ObjectMapper();
 
@@ -118,7 +117,6 @@ public class UsersResource extends Validations implements UsersService {
     }
 
     private void updateUserHousesAndRentals(String id) {
-        //TODO -> try to use updateMany
         var updateHouses = CompletableFuture.runAsync(() -> {
             var userHouses = db.getAllUserHouses(id);
             for (var house : userHouses) {
@@ -128,7 +126,6 @@ public class UsersResource extends Validations implements UsersService {
             }
         });
 
-        //TODO -> try to use updateMany
         var updateRentals = CompletableFuture.runAsync(() -> {
             var userRentals = db.getAllUserRentals(id);
             for (var rental : userRentals) {
@@ -241,7 +238,6 @@ public class UsersResource extends Validations implements UsersService {
 
     @Override
     public Response getUserRentals(String id, int offset) {
-        //TODO -> CHECK IF WORKING
         if (Validations.badParams(id))
             return sendResponse(BAD_REQUEST, BAD_REQUEST_MSG);
 

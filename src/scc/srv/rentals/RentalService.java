@@ -22,10 +22,8 @@ public interface RentalService {
     String HOUSE_ID = "houseId";
     String RENTAL_ID = "id";
     String RENTAL = "/rental";
-    String DISCOUNT = "/discount";
 
     String HOUSE_RENTALS = "r:house:%s-off:%s";
-    String DISCOUNTED_HOUSES = "h:discount-off:%s";
 
 
     String OFFSET = "offset";
@@ -61,9 +59,5 @@ public interface RentalService {
     @Produces(MediaType.APPLICATION_JSON)
     Response listHouseRentals(@PathParam(HOUSE_ID) String houseID, @QueryParam(OFFSET) int offset);
 
-    @GET
-    @Path(DISCOUNT)
-    @Produces(MediaType.APPLICATION_JSON)
-    Response getHousesInDiscount(@QueryParam(OFFSET) String offset);
 
 }
