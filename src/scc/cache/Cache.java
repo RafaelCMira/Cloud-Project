@@ -6,7 +6,6 @@ import redis.clients.jedis.Jedis;
 import redis.clients.jedis.JedisPool;
 import redis.clients.jedis.JedisPoolConfig;
 import scc.srv.utils.HasId;
-import scc.utils.props.AzureProperties;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -14,7 +13,6 @@ import java.util.List;
 public class Cache {
     private static final long CACHE_EXPIRE_TIME = 300; // 5 minutes
     private static final String RedisHostname = System.getenv("REDIS");
-    // private static final String RedisKey = System.getenv(AzureProperties.REDIS_KEY);
     private static final boolean CACHE_ON = true;
 
     private static JedisPool instance;

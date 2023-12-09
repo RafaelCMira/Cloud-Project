@@ -1,11 +1,9 @@
 package scc.srv.media;
 
 import jakarta.ws.rs.*;
-import jakarta.ws.rs.core.Cookie;
 import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
-import scc.srv.authentication.Session;
-import scc.utils.props.AzureProperties;
+
 
 import java.util.List;
 
@@ -13,15 +11,7 @@ import java.util.List;
 public interface MediaService {
     String PATH = "/media";
 
-
-    String CONTAINER_NAME = "media";
-    String MEDIA_PREFIX = "media:";
-
-
     String ID = "id";
-
-    String storageConnectionString = System.getenv(AzureProperties.BLOB_KEY);
-
 
     /**
      * Post a new image. The id of the media file is its hash.
