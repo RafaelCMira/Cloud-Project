@@ -15,7 +15,7 @@ public class Cache {
     private static final long CACHE_EXPIRE_TIME = 300; // 5 minutes
     private static final String RedisHostname = System.getenv("REDIS");
     // private static final String RedisKey = System.getenv(AzureProperties.REDIS_KEY);
-    private static final boolean CACHE_ON = false;
+    private static final boolean CACHE_ON = true;
 
     private static JedisPool instance;
 
