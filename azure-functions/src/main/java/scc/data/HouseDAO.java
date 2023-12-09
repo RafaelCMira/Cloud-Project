@@ -1,14 +1,15 @@
 package scc.data;
 
+import org.bson.Document;
+import org.bson.codecs.pojo.annotations.BsonId;
 import scc.utils.HasId;
+
+import java.util.ArrayList;
 import java.util.List;
 
 public class HouseDAO implements HasId {
 
-    private String _rid;
-
-    private String _ts;
-
+    @BsonId
     private String id;
 
     private String name;
@@ -49,20 +50,18 @@ public class HouseDAO implements HasId {
         this.rentalsCounter = rentalsCounter;
     }
 
-    public String get_rid() {
-        return _rid;
-    }
-
-    public void set_rid(String _rid) {
-        this._rid = _rid;
-    }
-
-    public String get_ts() {
-        return _ts;
-    }
-
-    public void set_ts(String _ts) {
-        this._ts = _ts;
+    public static HouseDAO fromDocument(Document document) {
+        HouseDAO houseDAO = new HouseDAO();
+        houseDAO.setId(document.getString("id"));
+        houseDAO.setName(document.getString("name"));
+        houseDAO.setLocation(document.getString("location"));
+        houseDAO.setDescription(document.getString("description"));
+        houseDAO.setPhotosIds(document.getList("photosIds", String.class, new ArrayList<>()));
+        houseDAO.setOwnerId(document.getString("ownerId"));
+        houseDAO.setPrice(document.getInteger("price"));
+        houseDAO.setDiscount(document.getInteger("discount"));
+        houseDAO.setRentalsCounter(document.getInteger("rentalsCounter"));
+        return houseDAO;
     }
 
     @Override
@@ -145,9 +144,7 @@ public class HouseDAO implements HasId {
     @Override
     public String toString() {
         return "HouseDAO{" +
-                "_rid='" + _rid + '\'' +
-                ", _ts='" + _ts + '\'' +
-                ", id='" + id + '\'' +
+                "id='" + id + '\'' +
                 ", name='" + name + '\'' +
                 ", location='" + location + '\'' +
                 ", description='" + description + '\'' +
