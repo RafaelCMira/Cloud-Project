@@ -201,6 +201,22 @@ public class MongoDBLayer {
         return houses;
     }
 
+    public List<Rental> listHouseRentals(String houseId, int offset) {
+        init();
+        MongoCollection<Document> collection = database.getCollection(RentalService.COLLECTION);
+        Bson filter = Filters.eq("houseId", houseId);
+        var result = collection
+                .find(filter)
+                .skip(offset)
+                .limit(HOUSES_LIMIT);
+
+        List<Rental> houses = new ArrayList<>();
+        for (var doc : result)
+            houses.add(RentalDAO.fromDocument(doc).toRental());
+
+        return houses;
+    }
+
     public List<House> getHousesByLocation(String location, int offset) {
         init();
         MongoCollection<Document> collection = database.getCollection(HousesService.COLLECTION);

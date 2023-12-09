@@ -1,19 +1,18 @@
 package scc.srv.rentals;
 
-import com.azure.cosmos.CosmosException;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.mongodb.MongoException;
 import jakarta.ws.rs.WebApplicationException;
 import jakarta.ws.rs.core.Cookie;
 import jakarta.ws.rs.core.Response;
 import scc.cache.Cache;
 import scc.data.*;
-import scc.db.CosmosDBLayer;
+import scc.db.MongoDBLayer;
 import scc.srv.houses.HousesService;
 import scc.srv.users.UsersService;
 import scc.srv.utils.Validations;
 
-import java.time.Instant;
 import java.time.ZoneId;
 import java.time.temporal.ChronoUnit;
 import java.util.*;
@@ -22,7 +21,7 @@ import static scc.srv.utils.Utility.*;
 
 public class RentalResource extends Validations implements RentalService {
 
-    private final CosmosDBLayer db = CosmosDBLayer.getInstance();
+    private final MongoDBLayer db = MongoDBLayer.getInstance();
     private static final ObjectMapper mapper = new ObjectMapper();
 
     @Override
@@ -54,12 +53,12 @@ public class RentalResource extends Validations implements RentalService {
             Cache.putInCache(rentalDAO, RENTAL_PREFIX);
 
             house.setRentalsCounter(house.getRentalsCounter() + 1);
-            db.update(house, HousesService.COLLECTION, houseId);
+            db.update(house.getId(), house, HousesService.COLLECTION);
 
             return sendResponse(OK, rentalDAO.toRental());
 
-        } catch (CosmosException ex) {
-            return processException(ex.getStatusCode(), RENTAL_MSG, rentalDAO.getId());
+        } catch (MongoException ex) {
+            return Response.status(500).entity(ex.getMessage()).build();
         } catch (WebApplicationException ex) {
             return handleCreateException(ex.getResponse().getStatus(), ex.getMessage(), rentalDAO);
         }
@@ -75,12 +74,17 @@ public class RentalResource extends Validations implements RentalService {
             if (rental == null)
                 return sendResponse(NOT_FOUND, RENTAL_MSG, id);
 
+            var rentalHouse = rental.getHouseId();
+            if (!houseId.equals(rentalHouse)) {
+                return sendResponse(BAD_REQUEST, String.format(RENTAL_NOT_BELONG_TO_HOUSE, id, houseId));
+            }
+
             Cache.putInCache(rental, RENTAL_PREFIX);
 
             return sendResponse(OK, rental.toRental());
 
-        } catch (CosmosException ex) {
-            return processException(ex.getStatusCode(), ex.getMessage());
+        } catch (MongoException ex) {
+            return Response.status(500).entity(ex.getMessage()).build();
         }
     }
 
@@ -91,14 +95,14 @@ public class RentalResource extends Validations implements RentalService {
             if (checks.getStatus() != Response.Status.OK.getStatusCode())
                 return checks;
 
-            db.delete(id, COLLECTION, houseId);
+            db.delete(id, COLLECTION);
 
             Cache.deleteFromCache(RENTAL_PREFIX, id);
 
             return sendResponse(OK, String.format(RESOURCE_WAS_DELETED, RENTAL_MSG, id));
 
-        } catch (CosmosException ex) {
-            return processException(ex.getStatusCode(), ex.getMessage(), id);
+        } catch (MongoException ex) {
+            return Response.status(500).entity(ex.getMessage()).build();
         }
     }
 
@@ -106,20 +110,23 @@ public class RentalResource extends Validations implements RentalService {
     public Response updateRental(Cookie session, String houseId, String id, RentalDAO rentalDAO) throws Exception {
         try {
             var updatedRental = genUpdatedRental(session, houseId, id, rentalDAO);
+            rentalDAO = updatedRental;
 
-            db.update(updatedRental, RentalService.COLLECTION, updatedRental.getHouseId());
+            db.update(updatedRental.getId(), updatedRental, RentalService.COLLECTION);
 
             Cache.putInCache(updatedRental, RENTAL_PREFIX);
 
             return sendResponse(OK, updatedRental.toRental());
 
-        } catch (CosmosException ex) {
-            return processException(ex.getStatusCode(), RENTAL_MSG, id);
+        } catch (MongoException ex) {
+            return Response.status(500).entity(ex.getMessage()).build();
+        } catch (WebApplicationException ex) {
+            return handleCreateException(ex.getResponse().getStatus(), ex.getMessage(), rentalDAO);
         }
     }
 
     @Override
-    public Response listHouseRentals(String houseId, String offset) {
+    public Response listHouseRentals(String houseId, int offset) {
         try {
             if (Validations.houseExists(houseId) == null)
                 return sendResponse(NOT_FOUND, HOUSE_MSG, HOUSE_ID);
@@ -135,14 +142,14 @@ public class RentalResource extends Validations implements RentalService {
                 return sendResponse(OK, houseRentals);
             }
 
-            houseRentals = db.getHouseRentals(houseId, offset).stream().map(RentalDAO::toRental).toList();
+            houseRentals = db.listHouseRentals(houseId, offset);
 
             Cache.putListInCache(houseRentals, key);
 
             return sendResponse(OK, houseRentals);
 
-        } catch (CosmosException ex) {
-            return processException(ex.getStatusCode());
+        } catch (MongoException ex) {
+            return Response.status(500).entity(ex.getMessage()).build();
         } catch (JsonProcessingException e) {
             return processException(500);
         }
@@ -150,7 +157,7 @@ public class RentalResource extends Validations implements RentalService {
 
     @Override
     public Response getHousesInDiscount(String offset) {
-        try {
+        /*try {
             List<House> houses = new ArrayList<>();
 
             if (Integer.parseInt(offset) == -1) {
@@ -190,7 +197,8 @@ public class RentalResource extends Validations implements RentalService {
 
         } catch (JsonProcessingException e) {
             return processException(500, "Error while parsing questions");
-        }
+        }*/
+        return null;
     }
 
     private RentalDAO genUpdatedRental(Cookie session, String houseId, String id, RentalDAO rental) throws Exception {
@@ -208,6 +216,11 @@ public class RentalResource extends Validations implements RentalService {
         var rentalDAO = Validations.rentalExists(id);
         if (rentalDAO == null)
             throw new WebApplicationException(RENTAL_MSG, Response.Status.NOT_FOUND);
+
+        var rentalHouse = rentalDAO.getHouseId();
+        if (!houseId.equals(rentalHouse)) {
+            throw new WebApplicationException(String.format(RENTAL_NOT_BELONG_TO_HOUSE, id, houseId), Response.Status.BAD_REQUEST);
+        }
 
         var newPrice = rental.getPrice();
         if (newPrice != null)
@@ -227,8 +240,7 @@ public class RentalResource extends Validations implements RentalService {
         if (checkCookies.getStatus() != Response.Status.OK.getStatusCode())
             throw new WebApplicationException(checkCookies.getEntity().toString(), Response.Status.UNAUTHORIZED);
 
-        if (Validations.badParams(rental.getUserId())
-                || rental.getInitialDate().after(rental.getEndDate()))
+        if (Validations.badParams(rental.getUserId()) || Validations.datesNotValid(rental.getInitialDate(), rental.getEndDate()))
             throw new WebApplicationException("Something in your request is wrong. Check dates pls.", Response.Status.BAD_REQUEST);
 
         var house = Validations.houseExists(houseId);
@@ -252,11 +264,14 @@ public class RentalResource extends Validations implements RentalService {
             return sendResponse(NOT_FOUND, HOUSE_MSG, houseId);
 
         // Check if rental belongs to the house
-        var res = db.get(id, RentalService.COLLECTION, RentalDAO.class).stream().findFirst();
-        if (res.isPresent()) {
-            var rentalHouse = res.get().getHouseId();
-            if (!rentalHouse.equals(houseId))
-                return sendResponse(BAD_REQUEST, "Rental (" + id + ") does not belong to this house (" + houseId + ")");
+        var rental = Validations.rentalExists(id);
+        if (rental == null) {
+            return sendResponse(NOT_FOUND, RENTAL_MSG, id);
+        } else {
+            var rentalHouse = rental.getHouseId();
+            if (!houseId.equals(rentalHouse)) {
+                return sendResponse(BAD_REQUEST, String.format(RENTAL_NOT_BELONG_TO_HOUSE, id, houseId));
+            }
         }
 
         return Response.ok().build();

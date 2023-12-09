@@ -59,7 +59,7 @@ public interface RentalService {
     @Path("/{" + HOUSE_ID + "}" + RENTAL)
     @Consumes(MediaType.APPLICATION_JSON)
     @Produces(MediaType.APPLICATION_JSON)
-    Response listHouseRentals(@PathParam(HOUSE_ID) String houseID, @QueryParam(OFFSET) String offset);
+    Response listHouseRentals(@PathParam(HOUSE_ID) String houseID, @QueryParam(OFFSET) int offset);
 
     @GET
     @Path(DISCOUNT)

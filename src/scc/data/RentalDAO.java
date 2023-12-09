@@ -1,6 +1,9 @@
 package scc.data;
 
+import org.bson.Document;
+import org.bson.codecs.pojo.annotations.BsonId;
 import scc.srv.utils.HasId;
+import scc.srv.utils.Utility;
 
 import java.time.Instant;
 import java.util.Date;
@@ -10,8 +13,8 @@ import java.util.Date;
  */
 
 public class RentalDAO implements HasId {
-    private String _rid;
-    private String _ts;
+
+    @BsonId
     private String id;
     private String houseId;
     private String userId;
@@ -37,20 +40,15 @@ public class RentalDAO implements HasId {
         this.endDate = endDate;
     }
 
-    public String get_rid() {
-        return _rid;
-    }
-
-    public void set_rid(String _rid) {
-        this._rid = _rid;
-    }
-
-    public String get_ts() {
-        return _ts;
-    }
-
-    public void set_ts(String _ts) {
-        this._ts = _ts;
+    public static RentalDAO fromDocument(Document document) {
+        RentalDAO rentalDAO = new RentalDAO();
+        rentalDAO.setId(document.getString("id"));
+        rentalDAO.setHouseId(document.getString("houseId"));
+        rentalDAO.setUserId(document.getString("userId"));
+        rentalDAO.setPrice(document.getInteger("price"));
+        rentalDAO.setInitialDate(Utility.formatDate(document.getLong("initialDate")));
+        rentalDAO.setEndDate(Utility.formatDate(document.getLong("endDate")));
+        return rentalDAO;
     }
 
     public void setId(String id) {
@@ -108,9 +106,7 @@ public class RentalDAO implements HasId {
     @Override
     public String toString() {
         return "RentalDAO{" +
-                "_rid='" + _rid + '\'' +
-                ", _ts='" + _ts + '\'' +
-                ", id='" + id + '\'' +
+                "id='" + id + '\'' +
                 ", houseId='" + houseId + '\'' +
                 ", userId='" + userId + '\'' +
                 ", price=" + price +

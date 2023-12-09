@@ -34,6 +34,10 @@ public class Utility {
     public static final String RENTAL_MSG = "Rental";
 
 
+    public static final String INVALID_DATES = "Invalid dates.";
+
+    public static final String RENTAL_NOT_BELONG_TO_HOUSE = "Rental (%s) does not belong to this house (%s)";
+
     public static final String QUESTION_MSG = "Question";
 
     public static final String QUESTION_ALREADY_ANSWERED = "Question %s already answered";
@@ -121,6 +125,11 @@ public class Utility {
         DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd");
         Instant start = LocalDate.parse(date, formatter).atStartOfDay(ZoneId.systemDefault()).toInstant();
         return Date.from(start);
+    }
+
+    public static Date formatDate(long timestamp) {
+        Instant instant = Instant.ofEpochMilli(timestamp);
+        return Date.from(instant);
     }
 
     // Converts JSON to Object

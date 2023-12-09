@@ -76,7 +76,7 @@ public interface HousesService {
     @Path(AVAILABLE)
     @Produces(MediaType.APPLICATION_JSON)
     Response getHouseByLocationPeriod(@QueryParam(LOCATION) String location, @QueryParam(INITIAL_DATE) String initialDate,
-                                      @QueryParam(END_DATE) String endDate, @QueryParam(OFFSET) String offset);
+                                      @QueryParam(END_DATE) String endDate, @QueryParam(OFFSET) int offset);
 
     @GET
     @Path(NEW_HOUSES)

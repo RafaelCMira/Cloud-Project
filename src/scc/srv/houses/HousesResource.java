@@ -1,9 +1,7 @@
 package scc.srv.houses;
 
 
-import com.azure.cosmos.CosmosException;
 import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.JsonMappingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.mongodb.MongoException;
 import jakarta.ws.rs.WebApplicationException;
@@ -14,6 +12,7 @@ import scc.data.*;
 import scc.db.MongoDBLayer;
 import scc.srv.rentals.RentalService;
 import scc.srv.users.UsersService;
+import scc.srv.utils.Utility;
 import scc.srv.utils.Validations;
 
 import java.time.Instant;
@@ -228,23 +227,41 @@ public class HousesResource extends Validations implements HousesService {
     }
 
     @Override
-    public Response getHouseByLocationPeriod(String location, String initialDate, String endDate, String offset) {
-        //todo
-        /*try {
-            var houses = db.getHousesByLocation(location, offset);
-            var availableHouses = new ArrayList<>();
+    public Response getHouseByLocationPeriod(String location, String initialDate, String endDate, int offset) {
+        var startDate = Utility.formatDate(initialDate);
+        var finishDate = Utility.formatDate(endDate);
 
-            for (HouseDAO house : houses) {
-                if (Validations.isAvailable(house.getId(), Utility.formatDate(initialDate), Utility.formatDate(endDate)))
-                    availableHouses.add(house.toHouse());
+        if (Validations.datesNotValid(startDate, finishDate))
+            return sendResponse(BAD_REQUEST, INVALID_DATES);
+
+        try {
+            List<House> availableHouses = new ArrayList<>();
+
+            String key = String.format(HOUSES_BY_LOCATION_PREFIX, location, offset);
+            var cacheHouses = Cache.getListFromCache(key);
+            if (!cacheHouses.isEmpty()) {
+                for (var jsonHouse : cacheHouses) {
+                    var house = mapper.readValue(jsonHouse, House.class);
+                    if (Validations.isAvailable(house.getId(), startDate, finishDate))
+                        availableHouses.add(house);
+                }
+                return sendResponse(OK, availableHouses);
+            }
+
+            var dbHouses = db.getHousesByLocation(location, offset);
+
+            for (House house : dbHouses) {
+                if (Validations.isAvailable(house.getId(), startDate, finishDate))
+                    availableHouses.add(house);
             }
 
             return sendResponse(OK, availableHouses);
 
-        } catch (CosmosException ex) {
-            return processException(ex.getStatusCode(), ex.getMessage());
-        }*/
-        return null;
+        } catch (MongoException ex) {
+            return Response.status(500).entity(ex.getMessage()).build();
+        } catch (JsonProcessingException e) {
+            throw new RuntimeException(e);
+        }
     }
 
     private HouseDAO genUpdatedHouse(Cookie session, String id, House house) throws Exception {
