@@ -133,7 +133,7 @@ public class HousesResource extends Validations implements HousesService {
 
             Cache.putInCache(house, HOUSE_PREFIX);
 
-            loadHouse5MostRecentQuestions(id);
+            load5Houseuestions(id);
 
             return sendResponse(OK, house.toHouse());
 
@@ -142,17 +142,16 @@ public class HousesResource extends Validations implements HousesService {
         }
     }
 
-    private void loadHouse5MostRecentQuestions(String houseId) {
-        /*//TODO
+    private void load5Houseuestions(String houseId) {
         CompletableFuture.runAsync(() -> {
-            var questions = db.getHouseQuestions(houseId, "0").stream().map(QuestionDAO::toQuestion).toList();
+            var questions = db.getHouseQuestions(houseId, 0);
             try {
                 String key = String.format(QuestionService.QUESTIONS_LIST_PREFIX, houseId, "0");
                 Cache.putListInCache(questions, key);
             } catch (JsonProcessingException e) {
                 throw new RuntimeException(e);
             }
-        });*/
+        });
     }
 
     @Override
@@ -316,7 +315,7 @@ public class HousesResource extends Validations implements HousesService {
 
     @Override
     public Response getNewHouses() {
-        //TODO -> CHECK IF WORKING
+        //TODO -> CHECK IF WORKING // only works with azure functions
         try {
             var cacheHouses = Cache.getListFromCache(NEW_HOUSES_PREFIX);
 
@@ -334,7 +333,6 @@ public class HousesResource extends Validations implements HousesService {
 
     @Override
     public Response getHousesInDiscount(int offset) {
-        //TODO -> CHECK IF WORKING
         try {
             List<House> houses = new ArrayList<>();
 

@@ -21,7 +21,7 @@ import java.util.Date;
 public class Utility {
     public static final String OK = "OK@%s";
     public static final String BAD_REQUEST = "BAD_REQUEST@%s";
-    public static final String BAD_REQUEST_MSG = "Some mandatory value is empty";
+    public static final String BAD_REQUEST_MSG = "Something ie wrong in your request parameters";
     public static final String FORBIDDEN = "FORBIDDEN@%s: %s can't do that operation";
     public static final String NOT_FOUND = "NOT_FOUND@%s: %s does not exist";
     public static final String CONFLICT = "CONFLICT@%s with this id: %s already exists";
