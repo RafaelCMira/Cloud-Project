@@ -134,8 +134,14 @@ spec:
           env:
             - name: REDIS
               value: "sccapp-redis-59243"
+            - name: REDIS_PORT
+              value: "6379"
             - name: STORAGE_PATH
               value: "/mnt/vol/"
+            - name: MONGO_DB_SERVICE
+              value: "sccapp-mongodb-59243"
+            - name: MONGO_DB_PORT
+              value: "27017"
       volumes:
         - name: mediavolume
           persistentVolumeClaim:
