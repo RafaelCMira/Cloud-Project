@@ -9,11 +9,10 @@ RUN npm install -g artillery && \
     npm install -g node-fetch && \
     npm install -g https://github.com/preguica/artillery-plugin-metrics-by-endpoint.git
 
-COPY ../Data/*.data ./Tests/Data/
-COPY ../*.js ./Tests/General/
-#COPY ./experimentWestEuropeCache.yml ./Tests/General/Kubernetes/
+COPY ./Data/*.data ./Tests/Data/
+COPY ./images/*.jpg ./Tests/images/
+COPY ./node_modules ./node_modules
+COPY ./*.js ./Tests/General/
+COPY ./experimentWestEuropeCache.yml ./Tests/General/Kubernetes/
 
-# Define a volume to store the output file
 VOLUME /app/output
-
-CMD ["artillery", "run", "--output", "/app/output/experimentWestEuropeCache.json", "experimentWestEuropeCache.yml"]
