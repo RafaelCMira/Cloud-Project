@@ -24,7 +24,10 @@ import java.util.List;
 
 public class MongoDBLayer {
 
-    public static final String CONNECTION_STRING = "mongodb://sccapp-mongodb-59243:27017";
+    private static final String MONGO_DB_SERVICE_NAME = System.getenv("MONGO_DB_SERVICE");
+    private static final int MONGO_DB_PORT = Integer.parseInt(System.getenv("MONGO_DB_PORT"));
+    public static final String CONNECTION_STRING = "mongodb://" + MONGO_DB_SERVICE_NAME + ":" + MONGO_DB_PORT;
+
     public static final String DATABASE_NAME = "myMongoDB";
 
     private final String ID = "id";

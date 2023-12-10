@@ -12,7 +12,9 @@ import java.util.List;
 
 public class Cache {
     private static final long CACHE_EXPIRE_TIME = 300; // 5 minutes
-    private static final String RedisHostname = System.getenv("REDIS");
+    private static final String REDIS_HOSTNAME = System.getenv("REDIS");
+    private static final int REDIS_PORT = Integer.parseInt(System.getenv("REDIS_PORT"));
+
     private static final boolean CACHE_ON = true;
 
     private static JedisPool instance;
@@ -29,7 +31,7 @@ public class Cache {
         poolConfig.setTestWhileIdle(true);
         poolConfig.setNumTestsPerEvictionRun(3);
         poolConfig.setBlockWhenExhausted(true);
-        instance = new JedisPool(poolConfig, RedisHostname, 6379, 1000, false);
+        instance = new JedisPool(poolConfig, REDIS_HOSTNAME, REDIS_PORT, 1000, false);
         return instance;
     }
 
