@@ -13,7 +13,7 @@
 
 	<properties>
 		<project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-		<java.version>11</java.version>
+		<java.version>17</java.version>
 		<author>60700</author>
 		<functionAppName>scc24functionswesteurope${author}</functionAppName>
 		<functionAppRegion>westeurope</functionAppRegion>
@@ -100,7 +100,7 @@
 		<dependency>
 			<groupId>org.mongodb</groupId>
 			<artifactId>mongo-java-driver</artifactId>
-			<version>3.12.10</version>
+			<version>3.12.10</version> <!-- Replace with the latest version available -->
 		</dependency>
 	</dependencies>
 
@@ -123,7 +123,7 @@
 				<configuration>
 					<archive>
 						<manifest>
-							<mainClass>scc.example.YourMainClass</mainClass>
+							<mainClass>scc.serverless.TimerFunction</mainClass>
 						</manifest>
 					</archive>
 				</configuration>
@@ -186,6 +186,19 @@
 							<directory>obj</directory>
 						</fileset>
 					</filesets>
+				</configuration>
+			</plugin>
+			<plugin>
+				<artifactId>maven-assembly-plugin</artifactId>
+				<configuration>
+					<archive>
+						<manifest>
+							<mainClass>scc.serverless.TimerFunction</mainClass>
+						</manifest>
+					</archive>
+					<descriptorRefs>
+						<descriptorRef>jar-with-dependencies</descriptorRef>
+					</descriptorRefs>
 				</configuration>
 			</plugin>
 		</plugins>
